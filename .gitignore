@@ -12,3 +12,4 @@
 *.out
 
 # Other files I will not need to include
+config.yml
