@@ -1,0 +1,10 @@
+Servers:
+  - FQDN: hostname1
+    Username: user
+    Password: password
+    Key_Path: /path/to/key
+
+  - FQDN: hostname2
+    Username: user2
+    Password: password2
+    Key_Path: /path/to/key
