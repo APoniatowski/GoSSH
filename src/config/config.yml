@@ -1,10 +1,12 @@
-Servers:
-  - FQDN: hostname1
+---
+ServerList:
+  Server1:
+    FQDN: hostname1.whatever.com
     Username: user
     Password: password
     Key_Path: /path/to/key
-
-  - FQDN: hostname2
+  Server2:
+    FQDN: hostname2.whatever.com
     Username: user2
     Password: password2
     Key_Path: /path/to/key
