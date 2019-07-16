@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"path/filepath"
@@ -36,5 +35,5 @@ func main() {
 	var configs Config
 	err = yaml.Unmarshal(configYaml, &configs)
 	check(err)
-	fmt.Printf("%+v\n", configs)
+	// will add the funcs from the lib, once I have it setup with the proper args... when I have the time
 }
