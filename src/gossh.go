@@ -1,11 +1,8 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
-	"path/filepath"
-
-	"gopkg.in/yaml.v2"
+	"../lib/yamlparser"  // need to look into this, as I would like to have separate libs, this is easier in python and rust
 )
 
 // Error checking function
@@ -15,25 +12,9 @@ func check(e error) {
 	}
 }
 
-// Yaml structs goes here
-type Config struct {
-	ServerList map[string]Servers `yaml:"ServerList"`
-}
-
-type Servers struct {
-	FQDN     string `yaml:"FQDN"`
-	Username string `yaml:"Username"`
-	Password string `yaml:"Password"`
-	Key      string `yaml:"Key"`
-}
-
 // Main function to carry out operations
 func main() {
-	yamlLocation, _ := filepath.Abs("./config/config.yml")
-	configYaml, err := ioutil.ReadFile(yamlLocation)
-	check(err)
-	var configs Config
-	err = yaml.Unmarshal(configYaml, &configs)
+	infotoProcess, err := yamlparser.parseYaml()
 	check(err)
 	// will add the funcs from the lib, once I have it setup with the proper args... when I have the time
 }
