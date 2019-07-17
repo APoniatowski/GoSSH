@@ -3,8 +3,16 @@ package yamlParser
 import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"log"
 	"path/filepath"
 )
+
+// Error checking function
+func check(e error) {
+	if e != nil {
+		log.Fatalf("error: %v", e)
+	}
+}
 
 // Yaml structs goes here
 type Config struct {
