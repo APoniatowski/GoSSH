@@ -1,4 +1,4 @@
-package yamlParser
+package yamlparser
 
 import (
 	"gopkg.in/yaml.v2"
@@ -26,7 +26,7 @@ type Servers struct {
 	Key      string `yaml:"Key"`
 }
 // parse function to return the parsed yaml file as an map/dictionary/vector
-func parseYaml() map[string]string {
+func ParseYAML() map[string]string {
 	yamlLocation, _ := filepath.Abs("./config/config.yml")
 	configYaml, err := ioutil.ReadFile(yamlLocation)
 	check(err)
