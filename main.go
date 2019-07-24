@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	ymlp "github.com/APoniatowski/GoSSH/yamlparser"
@@ -16,7 +17,7 @@ func check(e error) {
 // Main function to carry out operations
 func main() {
 	test := ymlp.ParseYAML()
-	log.Fatalf("%v      %T", test, test)
+	fmt.Printf("%v      %T\n", test, test)
 	// check(err)
 	// will add the funcs from the lib, once I have it setup with the proper args... when I have the time
 }
