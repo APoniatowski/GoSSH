@@ -15,7 +15,8 @@ func check(e error) {
 
 // Main function to carry out operations
 func main() {
-	log.Fatal(ymlp.ParseYAML())
+	test := ymlp.ParseYAML()
+	log.Fatalf("%v      %T", test, test)
 	// check(err)
 	// will add the funcs from the lib, once I have it setup with the proper args... when I have the time
 }
