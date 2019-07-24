@@ -2,7 +2,8 @@ package main
 
 import (
 	"log"
-	ymlp "yamlparser"
+
+	ymlp "github.com/APoniatowski/GoSSH/yamlparser"
 )
 
 // Error checking function
@@ -14,7 +15,7 @@ func check(e error) {
 
 // Main function to carry out operations
 func main() {
-	ymlp.ParseYAML()
+	log.Fatal(ymlp.ParseYAML())
 	// check(err)
 	// will add the funcs from the lib, once I have it setup with the proper args... when I have the time
 }
