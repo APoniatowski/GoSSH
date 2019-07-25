@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"reflect"
 
 	ymlp "github.com/APoniatowski/GoSSH/yamlparser"
 )
@@ -16,8 +17,15 @@ func check(e error) {
 
 // Main function to carry out operations
 func main() {
-	test := ymlp.ParseYAML()
-	fmt.Printf("%v      %T\n", test, test)
+	configs := ymlp.ParseYAML()
+	v := reflect.ValueOf(configs)
+	values := make([]interface{}, v.NumField())
+	for i := 0; i < v.NumField(); i++ {
+		values[i] = v.Field(i).Interface()
+	}
+	// configmap, err := ymlp.InterfaceToMap(configs)
 	// check(err)
-	// will add the funcs from the lib, once I have it setup with the proper args... when I have the time
+	fmt.Printf("%v \n  %T \n", values, values)
+
+	// fmt.Printf("%v \n  %T \n", configmap, configmap)
 }
