@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
-	"reflect"
+	"path/filepath"
 
-	ymlp "github.com/APoniatowski/GoSSH/yamlparser"
+	"gopkg.in/yaml.v2"
 )
 
 // Error checking function
@@ -15,17 +16,30 @@ func check(e error) {
 	}
 }
 
+type Config struct {
+	FQDN     string `yaml:"FQDN"`
+	Username string `yaml:"Username"`
+	Password string `yaml:"Password"`
+	Key_Path string `yaml:"Key_Path"`
+}
+
 // Main function to carry out operations
 func main() {
-	configs := ymlp.ParseYAML()
-	v := reflect.ValueOf(configs)
-	values := make([]interface{}, v.NumField())
-	for i := 0; i < v.NumField(); i++ {
-		values[i] = v.Field(i).Interface()
-	}
-	// configmap, err := ymlp.InterfaceToMap(configs)
-	// check(err)
-	fmt.Printf("%v \n  %T \n", values, values)
+	var config map[string]map[string]Config
+	yamlLocation, _ := filepath.Abs("./config/config.yml")
+	configYaml, err := ioutil.ReadFile(yamlLocation)
+	check(err)
 
-	// fmt.Printf("%v \n  %T \n", configmap, configmap)
+	err = yaml.Unmarshal([]byte(configYaml), &config)
+
+	for k, v := range config {
+		fmt.Printf("KEY: %v\n", k)
+		for key, val := range v {
+			fmt.Printf("KEY2: %v\n", key)
+			fmt.Printf("VALUE: %v\n", val)
+		}
+	}
+	// fmt.Printf("Result: %v\n", config)
+	// fmt.Printf("Server22 is: %s\n", config["ServerGroup2"]["Server22"])
+
 }

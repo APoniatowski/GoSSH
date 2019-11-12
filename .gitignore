@@ -12,5 +12,6 @@
 *.out
 
 # Other files I will not need to include
-/config/config.yml
+# /config/config.yml
 /bin
+/.vscode
