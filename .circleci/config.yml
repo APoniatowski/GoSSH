@@ -26,4 +26,4 @@ jobs:
       - run: go test -v ./...
       - run: go run -v main.go
       - run: go build -i -race -v
-      - run: go build -i -msan -v 
+      # - run: go build -i -msan -v   # Failing at this step with Permission Denied errors 
