@@ -8,12 +8,19 @@ jobs:
       - image: circleci/golang:1.12
     working_directory: /go/src/github.com/APoniatowski/GoSSH
     steps:
-      - checkout
-
-      # specify any bash command here prefixed with `run: `
+      - checkout # Checks out the source code
       - run: go get -v -t -d ./...
-      - run: go build -i -race -v
+      - run:
+          name: Build the executable
+          command: |
+            echo "Starting compilation..."
+            go build -i -race -v
       # - run: go build -i -msan -v   # Failing at this step with Permission Denied errors 
+      - persist_to_workspace:
+          root: . # Persist current working directory
+          paths: ./* # Glob. Will persist everything in folder
+      - store_artifacts:
+          path: ./GoSSH # executable
 
 test:
     docker:
@@ -21,12 +28,17 @@ test:
     working_directory: /go/src/github.com/APoniatowski/GoSSH
     steps:
       - checkout
+      - attach_workspace:
+          at: .
       - run: go get -v -t -d ./...
       - run: go run -v main.go
-      - run: go test -v ./...
+      - run: go test -v
+
 workflows:
   version: 2
-  workflow:
+  build_test:
     jobs:
     - build
-    - test
+    - test:
+        requires:
+            - build
