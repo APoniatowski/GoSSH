@@ -15,7 +15,7 @@ jobs:
       - run: go build -i -race -v
       # - run: go build -i -msan -v   # Failing at this step with Permission Denied errors 
 
-  test:
+test:
     docker:
       - image: circleci/golang:1.12
     working_directory: /go/src/github.com/APoniatowski/GoSSH
