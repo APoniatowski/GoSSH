@@ -25,4 +25,5 @@ jobs:
       - run: go get -v -t -d ./...
       - run: go test -v ./...
       - run: go run -v main.go
-      - run: go build -i -race -msan -v 
+      - run: go build -i -race -v
+      - run: go build -i -msan -v 
