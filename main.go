@@ -10,17 +10,19 @@ import (
 )
 
 // Error checking function
-func check(e error) {
+func generalError(e error) {
 	if e != nil {
-		log.Fatalf("error: %v", e)
+		log.Fatal(e)
 	}
 }
 
+// Config to structure data for querying and/or running the main function of this tool
 type Config struct {
 	FQDN     string `yaml:"FQDN"`
 	Username string `yaml:"Username"`
 	Password string `yaml:"Password"`
 	Key_Path string `yaml:"Key_Path"`
+	Port     string `yaml:"Port"`
 }
 
 // Main function to carry out operations
@@ -28,17 +30,22 @@ func main() {
 	var config map[string]map[string]Config
 	yamlLocation, _ := filepath.Abs("./config/config.yml")
 	configYaml, err := ioutil.ReadFile(yamlLocation)
-	check(err)
+	generalError(err)
 
-	err = yaml.Unmarshal([]byte(configYaml), &config)
+	err = yaml.Unmarshal(configYaml, &config)
 
-	for k, v := range config {
-		fmt.Printf("KEY: %v\n", k)
-		for key, val := range v {
-			fmt.Printf("KEY2: %v\n", key)
-			fmt.Printf("VALUE: %v\n", val)
+	for groupKey, groupValue := range config {
+		fmt.Printf("ServerGroup name: %v\n", groupKey)
+		for serverKey, serverValue := range groupValue {
+			fmt.Printf("\tServer name: %v\n", serverKey)
+			fmt.Printf("\t\t%v\n", serverValue.FQDN)
+			fmt.Printf("\t\t%v\n", serverValue.Username)
+			fmt.Printf("\t\t%v\n", serverValue.Password)
+			fmt.Printf("\t\t%v\n", serverValue.Key_Path)
+			fmt.Printf("\t\t%v\n", serverValue.Port)
 		}
 	}
+
 	// fmt.Printf("Result: %v\n", config)
 	// fmt.Printf("Server22 is: %s\n", config["ServerGroup2"]["Server22"])
 
