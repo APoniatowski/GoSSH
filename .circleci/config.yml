@@ -12,7 +12,7 @@ jobs:
       - run: go get -v -t -d ./...
       - run:
           name: Build the executable
-          command: 
+          command: |
             echo "Starting compilation..."
             go build -i -race -v
       # - run: go build -i -msan -v   # Failing at this step with Permission Denied errors 
