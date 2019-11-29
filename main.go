@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -28,11 +30,22 @@ type Config struct {
 // Main function to carry out operations
 func main() {
 	var config map[string]map[string]Config
-	yamlLocation, _ := filepath.Abs("./config/config.yml")
-	configYaml, err := ioutil.ReadFile(yamlLocation)
-	generalError(err)
 
-	err = yaml.Unmarshal(configYaml, &config)
+	yamlLocation, _ := filepath.Abs("./config/config.yml")
+	bufRead, err := os.Open(yamlLocation)
+	generalError(err)
+	defer bufRead.Close()
+
+	scanner := bufio.NewScanner(bufRead)
+	var configYaml []string
+
+	for scanner.Scan() {
+		configYaml = append(configYaml, scanner.Text())
+	}
+	// configYaml, err := ioutil.ReadFile(yamlLocation)
+	parsed := strings.Join(configYaml, "\n")
+
+	err = yaml.Unmarshal([]byte(parsed), &config)
 
 	for groupKey, groupValue := range config {
 		fmt.Printf("ServerGroup name: %v\n", groupKey)
