@@ -12,8 +12,9 @@
 *.out
 
 # Other files I will not need to include
-/config/config.yml
+
 /bin
 /.vscode
 /pkg
 /.circleci
+config/config.yml
