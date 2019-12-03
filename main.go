@@ -1,13 +1,15 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
-	"strings"
+	"io/ioutil"
 
+	"github.com/APoniatowski/GoSSH/yamlparser"
+	"github.com/APoniatowski/GoSSH/sshlib"
+
+	"golang.org/x/crypto/ssh"
+	// "golang.org/x/crypto/ssh/knownhosts"
 	"gopkg.in/yaml.v2"
 )
 
@@ -30,24 +32,9 @@ type Config struct {
 // Main function to carry out operations
 func main() {
 	var config map[string]map[string]Config
-
-	//TODO This part needs to be in a function... struggling with local/global variables does not function like in rust/python /////////////////////
-	yamlLocation, _ := filepath.Abs("./config/config.yml")
-	bufRead, err := os.Open(yamlLocation)
-	generalError(err)
-	defer bufRead.Close()
-
-	scanner := bufio.NewScanner(bufRead)
-	var configYaml []string
-
-	for scanner.Scan() {
-		configYaml = append(configYaml, scanner.Text())
-	}
-	parse := strings.Join(configYaml, "\n")
-	// TODO ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	err = yaml.Unmarshal([]byte(parse), &config)
-
+	data := yamlparser.ParseServersList()
+	_ = yaml.Unmarshal([]byte(data), &config)
+	// generalError(err)
 	//TODO 4 functions will be made of this in ssh-lib, each using anonymous functions and goroutines, which will be chosen via cmdline args
 	//TODO first option: run groups sequentially and servers concurrently
 	//TODO second option: run groups concurrently and servers sequentially
@@ -57,14 +44,32 @@ func main() {
 		fmt.Printf("ServerGroup name: %v\n", groupKey)
 		for serverKey, serverValue := range groupValue {
 			fmt.Printf("\tServer name: %v\n", serverKey)
-			fmt.Printf("\t\t%v\n", serverValue.FQDN)
-			fmt.Printf("\t\t%v\n", serverValue.Username)
-			fmt.Printf("\t\t%v\n", serverValue.Password)
-			fmt.Printf("\t\t%v\n", serverValue.KeyPath)
-			fmt.Printf("\t\t%v\n", serverValue.Port)
+			//! fmt.Printf("\t\t%v\n", serverValue.FQDN)
+			//! fmt.Printf("\t\t%v\n", serverValue.Username)
+			//! fmt.Printf("\t\t%v\n", serverValue.Password)
+			//! fmt.Printf("\t\t%v\n", serverValue.KeyPath)
+			//! fmt.Printf("\t\t%v\n", serverValue.Port)
 			//! if statement will be needed to make empty ports default to port 22 and passwords to default to ssh keys
-			test := serverValue.FQDN + ":" + serverValue.Port
-			fmt.Printf("%v %T\n", test, test)
+			// FqdnplusPort := serverValue.FQDN + ":" + serverValue.Port
+
+			key, err := ioutil.ReadFile(serverValue.KeyPath)
+			generalError(err)
+			signer, err := ssh.ParsePrivateKey(key)
+			generalError(err)
+
+			sshConfig := &ssh.ClientConfig{
+				User: serverValue.Username,
+				Auth: []ssh.AuthMethod{
+					ssh.PublicKeys(signer),
+				},
+				// HostKeyCallback: ssh.FixedHostKey(),  //* will need to figure out how to use this for public use...
+				HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+			}
+
+			connection, err := ssh.Dial("tcp", serverValue.FQDN + ":" + serverValue.Port, sshConfig)
+			generalError(err)
+			defer connection.Close()
+			sshlib.ExecuteCommand("/usr/bin/uptime", connection)
 		}
 	}
 	//TODO /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
