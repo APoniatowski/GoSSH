@@ -1,6 +1,6 @@
 # GoSSH  -  GoLang SSH tool
 
-[![CircleCI](https://circleci.com/gh/APoniatowski/GoSSH/tree/master.svg?style=svg)](https://circleci.com/gh/APoniatowski/GoSSH/tree/master)     [![Go Report Card](https://goreportcard.com/badge/github.com/APoniatowski/GoSSH)](https://goreportcard.com/report/github.com/APoniatowski/GoSSH)
+![](https://github.com/Aponiatowski/GoSSH/workflows/GoSSH/badge.svg)     [![Go Report Card](https://goreportcard.com/badge/github.com/APoniatowski/GoSSH)](https://goreportcard.com/report/github.com/APoniatowski/GoSSH)
 
 ** WIP **
 
