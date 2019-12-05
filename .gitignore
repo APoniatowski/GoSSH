@@ -18,3 +18,4 @@
 /pkg
 /.circleci
 config/config.yml
+/.github
