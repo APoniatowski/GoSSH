@@ -2,9 +2,14 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
+	"strconv"
 
 	"github.com/APoniatowski/GoSSH/yamlparser"
+	"github.com/APoniatowski/GoSSH/sshlib"
+
+	"golang.org/x/crypto/ssh"
 
 	// "golang.org/x/crypto/ssh/knownhosts"
 	"gopkg.in/yaml.v2"
@@ -40,29 +45,31 @@ func main() {
 			if !ok {
 				panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
 			}
+			fqdn := serverValue[0].Value
+			username := serverValue[1].Value
+			// password := serverValue[2].Value
+			keypath := serverValue[3].Value
+			port := strconv.Itoa(serverValue[4].Value.(int))
+			// fmt.Printf("%v %T\n", port, port)
 
-			for serverContentIndex, serverContentItem := range serverValue {
-				fmt.Printf("\t\t%d %s: %v %T\n", serverContentIndex, serverContentItem.Key, serverContentItem.Value, serverContentItem.Value)
+			key, err := ioutil.ReadFile(keypath.(string))
+			generalError(err)
+			signer, err := ssh.ParsePrivateKey(key)
+			generalError(err)
 
-				// key, err := ioutil.ReadFile(serverItem.KeyPath)
-				// generalError(err)
-				// signer, err := ssh.ParsePrivateKey(key)
-				// generalError(err)
-
-				// sshConfig := &ssh.ClientConfig{
-				// 	User: serverItem.Username,
-				// 	Auth: []ssh.AuthMethod{
-				// 		ssh.PublicKeys(signer),
-				// 	},
-				// 	// HostKeyCallback: ssh.FixedHostKey(),  //* will need to figure out how to use this for public use...
-				// 	HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-				// }
-
-				// connection, err := ssh.Dial("tcp", serverItem.FQDN+":"+serverItem.Port, sshConfig)
-				// generalError(err)
-				// defer connection.Close()
-				// sshlib.ExecuteCommand("/usr/bin/uptime", connection)
+			sshConfig := &ssh.ClientConfig{
+				User: username.(string),
+				Auth: []ssh.AuthMethod{
+					ssh.PublicKeys(signer),
+				},
+				// HostKeyCallback: ssh.FixedHostKey(),  //* will need to figure out how to use this for public use...
+				HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 			}
+
+			connection, err := ssh.Dial("tcp", fqdn.(string)+":"+port, sshConfig)
+			generalError(err)
+			defer connection.Close()
+			sshlib.ExecuteCommand("/usr/bin/uptime", connection)
 		}
 	}
 
