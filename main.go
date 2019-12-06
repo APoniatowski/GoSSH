@@ -3,12 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
-	"io/ioutil"
 
 	"github.com/APoniatowski/GoSSH/yamlparser"
-	"github.com/APoniatowski/GoSSH/sshlib"
 
-	"golang.org/x/crypto/ssh"
 	// "golang.org/x/crypto/ssh/knownhosts"
 	"gopkg.in/yaml.v2"
 )
@@ -20,58 +17,55 @@ func generalError(e error) {
 	}
 }
 
-// Config to structure data for querying and/or running the main function of this tool
-type Config struct {
-	FQDN     string `yaml:"FQDN"`
-	Username string `yaml:"Username"`
-	Password string `yaml:"Password"`
-	KeyPath  string `yaml:"Key_Path"`
-	Port     string `yaml:"Port"`
-}
-
 // Main function to carry out operations
 func main() {
-	var config map[string]map[string]Config
+	var config yaml.MapSlice
 	data := yamlparser.ParseServersList()
-	_ = yaml.Unmarshal([]byte(data), &config)
-	// generalError(err)
+	err := yaml.Unmarshal([]byte(data), &config)
+	generalError(err)
 	//TODO 4 functions will be made of this in ssh-lib, each using anonymous functions and goroutines, which will be chosen via cmdline args
 	//TODO first option: run groups sequentially and servers concurrently
 	//TODO second option: run groups concurrently and servers sequentially
 	//TODO third option: run groups and servers sequentially
 	//TODO fourth option: apocalypse mode, run groups and servers concurrently, execute all in other words
-	for groupKey, groupValue := range config {
-		fmt.Printf("ServerGroup name: %v\n", groupKey)
-		for serverKey, serverValue := range groupValue {
-			fmt.Printf("\tServer name: %v\n", serverKey)
-			//! fmt.Printf("\t\t%v\n", serverValue.FQDN)
-			//! fmt.Printf("\t\t%v\n", serverValue.Username)
-			//! fmt.Printf("\t\t%v\n", serverValue.Password)
-			//! fmt.Printf("\t\t%v\n", serverValue.KeyPath)
-			//! fmt.Printf("\t\t%v\n", serverValue.Port)
-			//! if statement will be needed to make empty ports default to port 22 and passwords to default to ssh keys
-			// FqdnplusPort := serverValue.FQDN + ":" + serverValue.Port
-
-			key, err := ioutil.ReadFile(serverValue.KeyPath)
-			generalError(err)
-			signer, err := ssh.ParsePrivateKey(key)
-			generalError(err)
-
-			sshConfig := &ssh.ClientConfig{
-				User: serverValue.Username,
-				Auth: []ssh.AuthMethod{
-					ssh.PublicKeys(signer),
-				},
-				// HostKeyCallback: ssh.FixedHostKey(),  //* will need to figure out how to use this for public use...
-				HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	for groupIndex, groupItem := range config {
+		fmt.Printf("%d %s %T:\n", groupIndex, groupItem.Key, groupItem.Key)
+		groupValue, ok := groupItem.Value.(yaml.MapSlice)
+		if !ok {
+			panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
+		}
+		for serverIndex, serverItem := range groupValue {
+			fmt.Printf("\t%d %s %T:\n", serverIndex, serverItem.Key, serverItem.Key)
+			serverValue, ok := serverItem.Value.(yaml.MapSlice)
+			if !ok {
+				panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
 			}
 
-			connection, err := ssh.Dial("tcp", serverValue.FQDN + ":" + serverValue.Port, sshConfig)
-			generalError(err)
-			defer connection.Close()
-			sshlib.ExecuteCommand("/usr/bin/uptime", connection)
+			for serverContentIndex, serverContentItem := range serverValue {
+				fmt.Printf("\t\t%d %s: %v %T\n", serverContentIndex, serverContentItem.Key, serverContentItem.Value, serverContentItem.Value)
+
+				// key, err := ioutil.ReadFile(serverItem.KeyPath)
+				// generalError(err)
+				// signer, err := ssh.ParsePrivateKey(key)
+				// generalError(err)
+
+				// sshConfig := &ssh.ClientConfig{
+				// 	User: serverItem.Username,
+				// 	Auth: []ssh.AuthMethod{
+				// 		ssh.PublicKeys(signer),
+				// 	},
+				// 	// HostKeyCallback: ssh.FixedHostKey(),  //* will need to figure out how to use this for public use...
+				// 	HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+				// }
+
+				// connection, err := ssh.Dial("tcp", serverItem.FQDN+":"+serverItem.Port, sshConfig)
+				// generalError(err)
+				// defer connection.Close()
+				// sshlib.ExecuteCommand("/usr/bin/uptime", connection)
+			}
 		}
 	}
+
 	//TODO /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//! fmt.Printf("Result: %v\n", config)
