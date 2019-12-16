@@ -20,3 +20,4 @@
 config/config.yml
 config/config-testing.yml
 /.github
+/src

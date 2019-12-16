@@ -2,16 +2,13 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"strconv"
 
-	"github.com/APoniatowski/GoSSH/yamlparser"
 	"github.com/APoniatowski/GoSSH/sshlib"
+	"github.com/APoniatowski/GoSSH/yamlparser"
 
-	"golang.org/x/crypto/ssh"
-
-	// "golang.org/x/crypto/ssh/knownhosts"
+	
 	"gopkg.in/yaml.v2"
 )
 
@@ -22,17 +19,37 @@ func generalError(e error) {
 	}
 }
 
-// Main function to carry out operations
-func main() {
-	var config yaml.MapSlice
+var config yaml.MapSlice
+var waittotal int
+var grouptotal int
+var serversPerGroup []int
+
+func init() {
+	fmt.Println("Parsing data...")
 	data := yamlparser.ParseServersList()
 	err := yaml.Unmarshal([]byte(data), &config)
 	generalError(err)
+	fmt.Println("Data parsed, no errors encountered...")
+	waittotal = yamlparser.TotalServercount(config)
+	serversPerGroup = yamlparser.ServersPerGroupcount(config)
+	grouptotal = len(config)
+}
+
+// Main function to carry out operations
+func main() {
 	//TODO 4 functions will be made of this in ssh-lib, each using anonymous functions and goroutines, which will be chosen via cmdline args
 	//TODO first option: run groups sequentially and servers concurrently
 	//TODO second option: run groups concurrently and servers sequentially
 	//TODO third option: run groups and servers sequentially
 	//TODO fourth option: apocalypse mode, run groups and servers concurrently, execute all in other words
+
+	fmt.Printf("Total number of servers: %d\n", waittotal)
+	fmt.Printf("Total number of servers per group: ")
+	for _, totalItem := range serversPerGroup {
+		fmt.Printf(" %d ", totalItem)
+	}
+	fmt.Printf("\n")
+	fmt.Printf("Total groups of servers: %d\n", grouptotal)
 	for groupIndex, groupItem := range config {
 		fmt.Printf("%d %s %T:\n", groupIndex, groupItem.Key, groupItem.Key)
 		groupValue, ok := groupItem.Value.(yaml.MapSlice)
@@ -45,37 +62,36 @@ func main() {
 			if !ok {
 				panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
 			}
+
 			fqdn := serverValue[0].Value
 			username := serverValue[1].Value
-			// password := serverValue[2].Value
+			password := serverValue[2].Value
 			keypath := serverValue[3].Value
-			port := strconv.Itoa(serverValue[4].Value.(int))
-			// fmt.Printf("%v %T\n", port, port)
+			port := serverValue[4].Value
 
-			key, err := ioutil.ReadFile(keypath.(string))
-			generalError(err)
-			signer, err := ssh.ParsePrivateKey(key)
-			generalError(err)
-
-			sshConfig := &ssh.ClientConfig{
-				User: username.(string),
-				Auth: []ssh.AuthMethod{
-					ssh.PublicKeys(signer),
-				},
-				// HostKeyCallback: ssh.FixedHostKey(),  //* will need to figure out how to use this for public use...
-				HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+			if username == nil {
+				username = "root"
+				fmt.Println("No username specified in config.yml, defaulting to 'root'...")
+			}
+			if password == nil {
+				password = ""
+				fmt.Println("No password specified in config.yml, defaulting to SSH key based authentication...")
+			}
+			if keypath == nil {
+				keypath = ""
+				fmt.Println("No username specified in config.yml, defaulting to password based authentication...")
+			}
+			if port == nil {
+				port = 22
+				port = strconv.Itoa(port.(int))
+				fmt.Println("No port specified in config.yml, defaulting to port 22...")
+			} else {
+				port = strconv.Itoa(serverValue[4].Value.(int))
 			}
 
-			connection, err := ssh.Dial("tcp", fqdn.(string)+":"+port, sshConfig)
-			generalError(err)
-			defer connection.Close()
-			sshlib.ExecuteCommand("/usr/bin/uptime", connection)
+			sshlib.ConnectAndRun(fqdn.(string), username.(string), password.(string), keypath.(string), port.(string))
 		}
 	}
-
 	//TODO /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	//! fmt.Printf("Result: %v\n", config)
-	//! fmt.Printf("Server22 is: %s\n", config["ServerGroup2"]["Server22"])
 
 }
