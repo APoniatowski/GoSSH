@@ -11,7 +11,6 @@ import (
 
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v2"
-
 	// "golang.org/x/crypto/ssh/knownhosts"
 	// "github.com/APoniatowski/GoSSH/yamlparser"
 )
@@ -132,8 +131,8 @@ func RunSequentially(configs *yaml.MapSlice) {
 				port = strconv.Itoa(serverValue[4].Value.(int))
 			}
 
-			connectAndRunSeq(fqdn.(string), username.(string), password.(string), keypath.(string), port.(string))
-
+			output := connectAndRunSeq(fqdn.(string), username.(string), password.(string), keypath.(string), port.(string))
+			fmt.Print(output)
 		}
 	}
 }
