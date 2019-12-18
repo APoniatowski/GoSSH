@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -50,6 +51,7 @@ func Rollcall() {
 	}
 	fmt.Printf("\n")
 	fmt.Printf("Total groups of servers: %d\n", Grouptotal)
+	fmt.Printf("Total number of logical cores: %v\n", runtime.NumCPU())
 }
 
 // ParseServersList server list parser, parses it to a map of structs in main function
