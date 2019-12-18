@@ -18,7 +18,7 @@ func generalError(e error) {
 func main() {
 	yamlparser.Rollcall()
 	newConfig := yamlparser.Config
-	// sshlib.RunSequentially(&config)
+	// sshlib.RunSequentially(&newConfig)
 	sshlib.RunServersConcurrently(&newConfig)
 	//TODO /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
