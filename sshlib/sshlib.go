@@ -11,6 +11,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v2"
+
 	// "golang.org/x/crypto/ssh/knownhosts"
 	"github.com/APoniatowski/GoSSH/yamlparser"
 )
@@ -74,7 +75,7 @@ func connectAndRun(servername string, fqdn string, username string, password str
 	generalError(err)
 	defer connection.Close()
 	defer wg.Done()
-	output <- executeCommand(servername, "hostname", connection)
+	output <- executeCommand(servername, "hostname", connection) // change second parameter to var, which will be fed in from arguments in main
 }
 
 func connectAndRunSeq(servername string, fqdn string, username string, password string, keypath string, port string) string {
@@ -203,4 +204,65 @@ func RunServersConcurrently(configs *yaml.MapSlice) {
 
 	}
 
+}
+
+// RunAllServers As the function implies, this will run all servers concurrently
+func RunAllServers(configs *yaml.MapSlice) {
+	var allServers yaml.MapSlice
+	output := make(chan string)
+	var wg sync.WaitGroup
+
+	for _, groupItem := range *configs {
+		// fmt.Printf("Processing %s:\n", groupItem.Key)
+		groupValue, ok := groupItem.Value.(yaml.MapSlice)
+		if !ok {
+			panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
+		}
+		for _, serverItem := range groupValue {
+			allServers = append(allServers, serverItem)
+		}
+	}
+	wg.Add(yamlparser.Waittotal)
+	for _, serverItem := range allServers {
+		// fmt.Printf("%s:\n", serverItem.Key)
+		servername := serverItem.Key
+		serverValue, ok := serverItem.Value.(yaml.MapSlice)
+		if !ok {
+			panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
+		}
+		fqdn := serverValue[0].Value
+		username := serverValue[1].Value
+		password := serverValue[2].Value
+		keypath := serverValue[3].Value
+		port := serverValue[4].Value
+		if username == nil {
+			username = "root"
+			// fmt.Println("No username specified in config.yml, defaulting to 'root'...")
+		}
+		if password == nil {
+			password = ""
+			// fmt.Println("No password specified in config.yml, defaulting to SSH key based authentication...")
+		}
+		if keypath == nil {
+			keypath = ""
+			// fmt.Println("No username specified in config.yml, defaulting to password based authentication...")
+		}
+		if port == nil {
+			port = 22
+			port = strconv.Itoa(port.(int))
+			// fmt.Println("No port specified in config.yml, defaulting to port 22...")
+		} else {
+			port = strconv.Itoa(serverValue[4].Value.(int))
+		}
+		if password == nil && keypath == nil {
+			panic(fmt.Sprintf("Both 'Password' and 'Key_Path' fields are empty... Aborting.\n"))
+		}
+		go connectAndRun(servername.(string), fqdn.(string), username.(string), password.(string), keypath.(string), port.(string), output, &wg)
+		}
+		// Lesson learned with go routines... when waiting for waitgroup to decrement inside the loop will wait forever
+		// when reading from the channel, defer wg.Done() inside the function run in a goroutine, as it needs to tell the waitgroup
+		// to decrement the waitgroup amount, as the channel never closes below, when calling wg.Done() in the loop
+		go channelReader(output, &wg)
+		wg.Wait()
+			
 }

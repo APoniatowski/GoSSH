@@ -19,7 +19,8 @@ func main() {
 	yamlparser.Rollcall()
 	newConfig := yamlparser.Config
 	// sshlib.RunSequentially(&newConfig)
-	sshlib.RunServersConcurrently(&newConfig)
+	// sshlib.RunServersConcurrently(&newConfig)
+	sshlib.RunAllServers(&newConfig)
 	//TODO /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }
