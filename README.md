@@ -8,7 +8,7 @@
 It is currently in an usable state, and can be used to execute commands in varied ways and performs well. :+1
 
 * Windows (laptop):
-22 production servers (across 8 different countries):
+##### 22 production servers (across 8 different countries):
 
 ```
 > real    0m7.272s
@@ -17,7 +17,7 @@ It is currently in an usable state, and can be used to execute commands in varie
 ```
 
 * Linux (production/staging server):
-Tested on 24 production servers (across 8 different countries):
+##### Tested on 24 production servers (across 8 different countries):
 
 ```
 > real    0m3.276s
