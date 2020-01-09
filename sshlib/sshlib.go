@@ -57,7 +57,7 @@ func executeCommand(servername string, cmd string, connection *ssh.Client) strin
 }
 
 // connectAndRun Establish a connection and run command(s), will add CLI args in the near future
-func connectAndRun(servername string, fqdn string, username string, password string, keypath string, port string, output chan<- string, wg *sync.WaitGroup) {
+func connectAndRun(command *string, servername string, fqdn string, username string, password string, keypath string, port string, output chan<- string, wg *sync.WaitGroup) {
 	key, err := ioutil.ReadFile(keypath)
 	generalError(err)
 	signer, err := ssh.ParsePrivateKey(key)
@@ -73,12 +73,13 @@ func connectAndRun(servername string, fqdn string, username string, password str
 	}
 	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
 	generalError(err)
+	cmd := *command
 	defer connection.Close()
 	defer wg.Done()
-	output <- executeCommand(servername, "hostname", connection) // change second parameter to var, which will be fed in from arguments in main
+	output <- executeCommand(servername, cmd, connection) // change second parameter to var, which will be fed in from arguments in main
 }
 
-func connectAndRunSeq(servername string, fqdn string, username string, password string, keypath string, port string) string {
+func connectAndRunSeq(command *string, servername string, fqdn string, username string, password string, keypath string, port string) string {
 	key, err := ioutil.ReadFile(keypath)
 	generalError(err)
 	signer, err := ssh.ParsePrivateKey(key)
@@ -94,14 +95,15 @@ func connectAndRunSeq(servername string, fqdn string, username string, password 
 	}
 	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
 	generalError(err)
+	cmd := *command
 	defer connection.Close()
-	return executeCommand(servername, "hostname", connection) // add CLI arg here
+	return executeCommand(servername, cmd, connection) // add CLI arg here
 }
 
 //=============================== sequential and concurrent functions listed below =============================
 
 // RunSequentially Function for running everything sequentially, this will be the default behaviour
-func RunSequentially(configs *yaml.MapSlice) {
+func RunSequentially(configs *yaml.MapSlice, command *string) {
 	for _, groupItem := range *configs {
 		fmt.Printf("Processing %s:\n", groupItem.Key)
 		groupValue, ok := groupItem.Value.(yaml.MapSlice)
@@ -143,14 +145,14 @@ func RunSequentially(configs *yaml.MapSlice) {
 			if password == nil && keypath == nil {
 				panic(fmt.Sprintf("Both 'Password' and 'Key_Path' fields are empty... Aborting.\n"))
 			}
-			output := connectAndRunSeq(servername.(string), fqdn.(string), username.(string), password.(string), keypath.(string), port.(string))
+			output := connectAndRunSeq(command, servername.(string), fqdn.(string), username.(string), password.(string), keypath.(string), port.(string))
 			fmt.Print(output)
 		}
 	}
 }
 
-// RunServersConcurrently As the function implies, this will run servers concurrently and groups sequentially
-func RunServersConcurrently(configs *yaml.MapSlice) {
+// RunGroups This will run servers concurrently and groups sequentially
+func RunGroups(configs *yaml.MapSlice, command *string) {
 	for groupIndex, groupItem := range *configs {
 		output := make(chan string)
 		var wg sync.WaitGroup
@@ -194,7 +196,7 @@ func RunServersConcurrently(configs *yaml.MapSlice) {
 			if password == nil && keypath == nil {
 				panic(fmt.Sprintf("Both 'Password' and 'Key_Path' fields are empty... Aborting.\n"))
 			}
-			go connectAndRun(servername.(string), fqdn.(string), username.(string), password.(string), keypath.(string), port.(string), output, &wg)
+			go connectAndRun(command, servername.(string), fqdn.(string), username.(string), password.(string), keypath.(string), port.(string), output, &wg)
 		}
 		// Lesson learned with go routines... when waiting for waitgroup to decrement inside the loop will wait forever
 		// when reading from the channel, defer wg.Done() inside the function run in a goroutine, as it needs to tell the waitgroup
@@ -207,7 +209,7 @@ func RunServersConcurrently(configs *yaml.MapSlice) {
 }
 
 // RunAllServers As the function implies, this will run all servers concurrently
-func RunAllServers(configs *yaml.MapSlice) {
+func RunAllServers(configs *yaml.MapSlice, command *string) {
 	var allServers yaml.MapSlice
 	output := make(chan string)
 	var wg sync.WaitGroup
@@ -257,12 +259,12 @@ func RunAllServers(configs *yaml.MapSlice) {
 		if password == nil && keypath == nil {
 			panic(fmt.Sprintf("Both 'Password' and 'Key_Path' fields are empty... Aborting.\n"))
 		}
-		go connectAndRun(servername.(string), fqdn.(string), username.(string), password.(string), keypath.(string), port.(string), output, &wg)
-		}
-		// Lesson learned with go routines... when waiting for waitgroup to decrement inside the loop will wait forever
-		// when reading from the channel, defer wg.Done() inside the function run in a goroutine, as it needs to tell the waitgroup
-		// to decrement the waitgroup amount, as the channel never closes below, when calling wg.Done() in the loop
-		go channelReader(output, &wg)
-		wg.Wait()
-			
+		go connectAndRun(command, servername.(string), fqdn.(string), username.(string), password.(string), keypath.(string), port.(string), output, &wg)
+	}
+	// Lesson learned with go routines... when waiting for waitgroup to decrement inside the loop will wait forever
+	// when reading from the channel, defer wg.Done() inside the function run in a goroutine, as it needs to tell the waitgroup
+	// to decrement the waitgroup amount, as the channel never closes below, when calling wg.Done() in the loop
+	go channelReader(output, &wg)
+	wg.Wait()
+
 }
