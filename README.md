@@ -5,7 +5,7 @@
 **WIP**
 
 ## Project update:
-It is currently in an usable state, and can be used to execute commands in varied ways and performs well. :+1
+It is currently in an usable state, and can be used to execute commands in varied ways and performs well. :+1:
 
 * Windows (laptop):
 ##### 22 production servers (across 8 different countries):
