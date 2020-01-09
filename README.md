@@ -11,19 +11,26 @@ It is currently in an usable state, and can be used to execute commands in varie
 22 production servers (across 8 different countries):
 
 > real    0m7.272s
+
 > user    0m0.062s
+
 > sys     0m0.046s
 
 * Linux (production/staging server):
 Tested on 24 production servers (across 8 different countries):
 
 > real    0m3.276s
+
 > user    0m0.375s
+
 > sys     0m0.062s
 
 Command run:
+
 ```> GoSSH.exe all hostname```
-    and
+
+and
+
 ```> GoSSH all hostname```
 
 
