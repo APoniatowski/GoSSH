@@ -37,9 +37,12 @@ and
 
 # Current usage for GoSSH:
 GoSSH [ option ] [ command ]
-  seq           - Run the command sequentially on all servers in your config file
-  groups        - Run the command on all servers per group concurrently in your config file
-  all           - Run the command on all servers concurrently in your config file
+
+Options:
+* seq           - Run the command sequentially on all servers in your config file
+* groups        - Run the command on all servers per group concurrently in your config file
+* all           - Run the command on all servers concurrently in your config file
 
 ## Please feel free to test/use this and leave issues and comments in the issues tab.
 ## I will be actively working on this for the foreseeable future
+ 
