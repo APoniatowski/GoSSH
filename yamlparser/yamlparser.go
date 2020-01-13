@@ -20,16 +20,12 @@ func generalError(e error) {
 }
 
 // Config global var to be able to access it in all packages
-var Config yaml.MapSlice
-
-// Waittotal needed in sshlib
-var Waittotal int
-
-// Grouptotal needed in sshlib
-var Grouptotal int
-
-// ServersPerGroup needed in sshlib
-var ServersPerGroup []int
+var (
+	Config          yaml.MapSlice
+	Waittotal       int
+	Grouptotal      int
+	ServersPerGroup []int
+)
 
 func init() {
 	fmt.Println("Parsing data...")

@@ -1,8 +1,8 @@
 package sshlib
 
 import (
-	"bytes"
 	"fmt"
+	"github.com/superhawk610/bar"
 	"io/ioutil"
 	"log"
 	"strconv"
@@ -25,10 +25,24 @@ func generalError(e error) {
 
 // channelReader Function to read channel until it is closed
 func channelReader(channel <-chan string, wg *sync.WaitGroup) {
-	defer wg.Done()
-	for message := range channel {
-		fmt.Print(message)
+	n := yamlparser.Waittotal + 1
+	successcount := 0
+	barp := bar.New(yamlparser.Waittotal + 1)
+	for i := 0; i < n; i++ {
+		for message := range channel {
+			if message == "Ok" {
+				barp.Tick()
+				successcount++
+			} else {
+				barp.Tick()
+			}
+		}
+		wg.Done()
 	}
+	defer fmt.Printf("%v/%v Succeeded\n", successcount, yamlparser.Waittotal)
+	defer fmt.Printf("\n")
+	defer barp.Done()
+	// wg.Done()
 }
 
 // executeCommand function to run a command on remote servers. Arguments will run through this function and will take strings,
@@ -46,14 +60,25 @@ func executeCommand(servername string, cmd string, connection *ssh.Client) strin
 	}
 	if err := session.RequestPty("xterm", 80, 40, modes); err != nil {
 		session.Close()
-		fmt.Errorf("PTY Request Failed: %s", err)
+		log.Fatal(err)
 	}
 
-	var stdoutBuf bytes.Buffer
-	session.Stdout = &stdoutBuf
-	session.Run(cmd)
-	terminaloutput := servername + ": " + stdoutBuf.String()
-	return terminaloutput
+	var validator string
+	// shellErr := session.Shell()
+	// if shellErr != nil {
+	// 	log.Fatal(shellErr)
+	// }
+	terminaloutput, err := session.CombinedOutput(cmd)
+	if err != nil {
+		validator = "Failed\n"
+	} else {
+		validator = "Ok\n"
+	}
+	if terminaloutput != nil {
+		fmt.Print("") // will make this write the output out to a file when an error was encountered
+	}
+	// terminaloutput = servername + ": " + stdoutBuf.String()
+	return validator
 }
 
 // connectAndRun Establish a connection and run command(s), will add CLI args in the near future
@@ -73,10 +98,10 @@ func connectAndRun(command *string, servername string, fqdn string, username str
 	}
 	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
 	generalError(err)
-	cmd := *command
+	// cmd := *command
 	defer connection.Close()
 	defer wg.Done()
-	output <- executeCommand(servername, cmd, connection) // change second parameter to var, which will be fed in from arguments in main
+	output <- executeCommand(servername, *command, connection)
 }
 
 func connectAndRunSeq(command *string, servername string, fqdn string, username string, password string, keypath string, port string) string {
@@ -95,9 +120,9 @@ func connectAndRunSeq(command *string, servername string, fqdn string, username 
 	}
 	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
 	generalError(err)
-	cmd := *command
+	// cmd := *command
 	defer connection.Close()
-	return executeCommand(servername, cmd, connection) // add CLI arg here
+	return executeCommand(servername, *command, connection)
 }
 
 //=============================== sequential and concurrent functions listed below =============================
@@ -214,8 +239,8 @@ func RunAllServers(configs *yaml.MapSlice, command *string) {
 	output := make(chan string)
 	var wg sync.WaitGroup
 
+	// Concatenates the groups to create a single group
 	for _, groupItem := range *configs {
-		// fmt.Printf("Processing %s:\n", groupItem.Key)
 		groupValue, ok := groupItem.Value.(yaml.MapSlice)
 		if !ok {
 			panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
@@ -224,9 +249,9 @@ func RunAllServers(configs *yaml.MapSlice, command *string) {
 			allServers = append(allServers, serverItem)
 		}
 	}
-	wg.Add(yamlparser.Waittotal)
+	// wg.Add(yamlparser.Waittotal)
 	for _, serverItem := range allServers {
-		// fmt.Printf("%s:\n", serverItem.Key)
+		wg.Add(1)
 		servername := serverItem.Key
 		serverValue, ok := serverItem.Value.(yaml.MapSlice)
 		if !ok {
@@ -264,6 +289,7 @@ func RunAllServers(configs *yaml.MapSlice, command *string) {
 	// Lesson learned with go routines... when waiting for waitgroup to decrement inside the loop will wait forever
 	// when reading from the channel, defer wg.Done() inside the function run in a goroutine, as it needs to tell the waitgroup
 	// to decrement the waitgroup amount, as the channel never closes below, when calling wg.Done() in the loop
+	// wg.Add(1)
 	go channelReader(output, &wg)
 	wg.Wait()
 

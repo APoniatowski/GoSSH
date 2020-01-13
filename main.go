@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/APoniatowski/GoSSH/sshlib"
@@ -27,8 +28,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	command := strings.Join(cmd, " ")
-
+	command := strconv.Quote(strings.Join(cmd, " "))
+	command = "sh -c " + command + " 2>&1"
 	yamlparser.Rollcall()
 
 	switch options := os.Args[1]; options {
