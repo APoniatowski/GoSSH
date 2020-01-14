@@ -24,3 +24,4 @@ config/config-testing-linux.yml
 /src
 /GoSSH
 /GoSSH.exe
+/READM.md
