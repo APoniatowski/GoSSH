@@ -2,12 +2,13 @@ package sshlib
 
 import (
 	"fmt"
-	"github.com/superhawk610/bar"
 	"io/ioutil"
 	"log"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/superhawk610/bar"
 
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v2"
@@ -23,26 +24,45 @@ func generalError(e error) {
 	}
 }
 
-// channelReader Function to read channel until it is closed
-func channelReader(channel <-chan string, wg *sync.WaitGroup) {
-	n := yamlparser.Waittotal + 1
+// channelReaderAll Function to read channel until it is closed (all servers only)
+func channelReaderAll(channel <-chan string, wg *sync.WaitGroup) {
 	successcount := 0
-	barp := bar.New(yamlparser.Waittotal + 1)
-	for i := 0; i < n; i++ {
+	barp := bar.New(yamlparser.Waittotal)
+	for i := 0; i < yamlparser.Waittotal; i++ {
 		for message := range channel {
-			if message == "Ok" {
+			if message == "Ok\n" {
 				barp.Tick()
 				successcount++
 			} else {
 				barp.Tick()
 			}
 		}
-		wg.Done()
 	}
-	defer fmt.Printf("%v/%v Succeeded\n", successcount, yamlparser.Waittotal)
-	defer fmt.Printf("\n")
+	defer fmt.Printf("%d/%d Succeeded\n", successcount, yamlparser.Waittotal)
 	defer barp.Done()
-	// wg.Done()
+}
+
+// channelReaderGroups Function to read channel until it is closed (groups only)
+func channelReaderGroups(channel <-chan string, wg *sync.WaitGroup) {
+	loopcountval := len(yamlparser.ServersPerGroup) - 1
+	var totalsuccesscount int
+	for i := 0; i < loopcountval; i++ {
+		successcount := 0
+		barp := bar.New(yamlparser.ServersPerGroup[i])
+		for im := 0; im < yamlparser.ServersPerGroup[i]; im++ {
+			for message := range channel {
+				if message == "Ok\n" {
+					barp.Tick()
+					successcount++
+					totalsuccesscount++
+				} else {
+					barp.Tick()
+				}
+			}
+		}
+		barp.Done()
+		fmt.Printf("%d/%d Succeeded\n", successcount, yamlparser.ServersPerGroup[i])
+	}
 }
 
 // executeCommand function to run a command on remote servers. Arguments will run through this function and will take strings,
@@ -178,7 +198,7 @@ func RunSequentially(configs *yaml.MapSlice, command *string) {
 
 // RunGroups This will run servers concurrently and groups sequentially
 func RunGroups(configs *yaml.MapSlice, command *string) {
-	for groupIndex, groupItem := range *configs {
+	for _, groupItem := range *configs {
 		output := make(chan string)
 		var wg sync.WaitGroup
 		fmt.Printf("Processing %s:\n", groupItem.Key)
@@ -186,9 +206,9 @@ func RunGroups(configs *yaml.MapSlice, command *string) {
 		if !ok {
 			panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
 		}
-		wg.Add(yamlparser.ServersPerGroup[groupIndex])
+		// wg.Add(yamlparser.ServersPerGroup[groupIndex])
 		for _, serverItem := range groupValue {
-			// fmt.Printf("%s:\n", serverItem.Key)
+			wg.Add(1)
 			servername := serverItem.Key
 			serverValue, ok := serverItem.Value.(yaml.MapSlice)
 			if !ok {
@@ -226,9 +246,11 @@ func RunGroups(configs *yaml.MapSlice, command *string) {
 		// Lesson learned with go routines... when waiting for waitgroup to decrement inside the loop will wait forever
 		// when reading from the channel, defer wg.Done() inside the function run in a goroutine, as it needs to tell the waitgroup
 		// to decrement the waitgroup amount, as the channel never closes below, when calling wg.Done() in the loop
-		go channelReader(output, &wg)
-		wg.Wait()
-
+		go func() {
+			wg.Wait()
+			close(output)
+		}()
+		channelReaderGroups(output, &wg)
 	}
 
 }
@@ -289,8 +311,11 @@ func RunAllServers(configs *yaml.MapSlice, command *string) {
 	// Lesson learned with go routines... when waiting for waitgroup to decrement inside the loop will wait forever
 	// when reading from the channel, defer wg.Done() inside the function run in a goroutine, as it needs to tell the waitgroup
 	// to decrement the waitgroup amount, as the channel never closes below, when calling wg.Done() in the loop
-	// wg.Add(1)
-	go channelReader(output, &wg)
-	wg.Wait()
 
+	// this resolved the stuck go routines. I needed to close the channel, as the channelreader gets stuck at an open and empty channel
+	go func() {
+		wg.Wait()
+		close(output)
+	}()
+	channelReaderAll(output, &wg)
 }
