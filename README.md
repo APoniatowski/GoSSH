@@ -56,6 +56,6 @@ Options:
 ## I will be actively working on this for the foreseeable future
  
 
-[^1]: Creating an client side agent, this might possibly be added for v2.0.0 release. Not guaranteed though.
+[^1]: Creating a client side agent, this might possibly be added for v2.0.0 release. Not guaranteed though.
 
 [^2]: Running a bash script with little effort. Makes things simpler, than trying to cat | gossh all, or gosh all $(cat my-script.sh), etc.
