@@ -39,7 +39,7 @@ func ErrorLogger(servername string, output []byte) {
 		}
 		defer errFile.Close()
 		logger := log.New(errFile, "[INFO: Failed] ", log.LstdFlags)
-		logger.Print(servername + ": " + string(output)
+		logger.Print(servername + ": " + string(output))
 	} else {
 		log.Println(err)
 	}
