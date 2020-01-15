@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
-	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -16,6 +14,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	// "golang.org/x/crypto/ssh/knownhosts"
+	"github.com/APoniatowski/GoSSH/loggerlib"
 	"github.com/APoniatowski/GoSSH/yamlparser"
 )
 
@@ -81,7 +80,7 @@ func executeCommand(servername string, cmd string, connection *ssh.Client) strin
 		ssh.TTY_OP_ISPEED: 14400, // input speed = 14.4kbaud
 		ssh.TTY_OP_OSPEED: 14400, // output speed = 14.4kbaud
 	}
-	if err := session.RequestPty("xterm", 100, 40, modes); err != nil {
+	if err := session.RequestPty("xterm", 50, 100, modes); err != nil {
 		session.Close()
 		log.Fatal(err)
 	}
@@ -96,34 +95,36 @@ func executeCommand(servername string, cmd string, connection *ssh.Client) strin
 	terminaloutput, err := session.CombinedOutput(cmd)
 	if err != nil {
 		validator = "Failed\n"
-		path, _ := filepath.Abs("./logs/errors/")
-		err := os.MkdirAll(path, os.ModePerm)
-		if err == nil || os.IsExist(err) {
-			errFile, err := os.OpenFile(path+"/"+dateFormatted+".log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-			if err != nil {
-				log.Println(err)
-			}
-			defer errFile.Close()
-			logger := log.New(errFile, "[Error] ", log.LstdFlags)
-			logger.Print(servername + ": " + string(terminaloutput))
-		} else {
-			log.Println(err)
-		}
+		// path, _ := filepath.Abs("./logs/errors/")
+		// err := os.MkdirAll(path, os.ModePerm)
+		// if err == nil || os.IsExist(err) {
+		// 	errFile, err := os.OpenFile(path+"/"+dateFormatted+".log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		// 	if err != nil {
+		// 		log.Println(err)
+		// 	}
+		// 	defer errFile.Close()
+		// 	logger := log.New(errFile, "[INFO: Failed] ", log.LstdFlags)
+		// 	logger.Print(servername + ": " + string(terminaloutput))
+		// } else {
+		// 	log.Println(err)
+		// }
+		loggerlib.ErrorLogger(servername, terminaloutput)
 	} else {
 		validator = "Ok\n"
-		path, _ := filepath.Abs("./logs/output/")
-		err := os.MkdirAll(path, os.ModePerm)
-		if err == nil || os.IsExist(err) {
-			okFile, err := os.OpenFile(path+"/"+dateFormatted+".log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-			if err != nil {
-				log.Println(err)
-			}
-			defer okFile.Close()
-			logger := log.New(okFile, "[Succeeded] ", log.LstdFlags)
-			logger.Print(servername + ": " + string(terminaloutput))
-		} else {
-			log.Println(err)
-		}
+		// path, _ := filepath.Abs("./logs/output/")
+		// err := os.MkdirAll(path, os.ModePerm)
+		// if err == nil || os.IsExist(err) {
+		// 	okFile, err := os.OpenFile(path+"/"+dateFormatted+".log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		// 	if err != nil {
+		// 		log.Println(err)
+		// 	}
+		// 	defer okFile.Close()
+		// 	logger := log.New(okFile, "[INFO: Succeeded] ", log.LstdFlags)
+		// 	logger.Print(servername + ": " + string(terminaloutput))
+		// } else {
+		// 	log.Println(err)
+		// }
+		loggerlib.OutputLogger(servername, terminaloutput)
 	}
 
 	return validator
