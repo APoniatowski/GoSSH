@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -20,7 +22,8 @@ import (
 // Error checking function
 func generalError(e error) {
 	if e != nil {
-		log.Fatal(e)
+		// log.Fatal(e)
+		log.Println(e)
 	}
 }
 
@@ -78,7 +81,7 @@ func executeCommand(servername string, cmd string, connection *ssh.Client) strin
 		ssh.TTY_OP_ISPEED: 14400, // input speed = 14.4kbaud
 		ssh.TTY_OP_OSPEED: 14400, // output speed = 14.4kbaud
 	}
-	if err := session.RequestPty("xterm", 80, 40, modes); err != nil {
+	if err := session.RequestPty("xterm", 100, 40, modes); err != nil {
 		session.Close()
 		log.Fatal(err)
 	}
@@ -88,16 +91,41 @@ func executeCommand(servername string, cmd string, connection *ssh.Client) strin
 	// if shellErr != nil {
 	// 	log.Fatal(shellErr)
 	// }
+	currentDate := time.Now()
+	dateFormatted := currentDate.Format("2006-01-02")
 	terminaloutput, err := session.CombinedOutput(cmd)
 	if err != nil {
 		validator = "Failed\n"
+		path, _ := filepath.Abs("./logs/errors/")
+		err := os.MkdirAll(path, os.ModePerm)
+		if err == nil || os.IsExist(err) {
+			errFile, err := os.OpenFile(path+"/"+dateFormatted+".log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
+				log.Println(err)
+			}
+			defer errFile.Close()
+			logger := log.New(errFile, "[Error] ", log.LstdFlags)
+			logger.Print(servername + ": " + string(terminaloutput))
+		} else {
+			log.Println(err)
+		}
 	} else {
 		validator = "Ok\n"
+		path, _ := filepath.Abs("./logs/output/")
+		err := os.MkdirAll(path, os.ModePerm)
+		if err == nil || os.IsExist(err) {
+			okFile, err := os.OpenFile(path+"/"+dateFormatted+".log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
+				log.Println(err)
+			}
+			defer okFile.Close()
+			logger := log.New(okFile, "[Succeeded] ", log.LstdFlags)
+			logger.Print(servername + ": " + string(terminaloutput))
+		} else {
+			log.Println(err)
+		}
 	}
-	if terminaloutput != nil {
-		fmt.Print("") // will make this write the output out to a file when an error was encountered
-	}
-	// terminaloutput = servername + ": " + stdoutBuf.String()
+
 	return validator
 }
 
@@ -142,7 +170,7 @@ func connectAndRunSeq(command *string, servername string, fqdn string, username 
 	generalError(err)
 	// cmd := *command
 	defer connection.Close()
-	return executeCommand(servername, *command, connection)
+	return servername + ": " + executeCommand(servername, *command, connection)
 }
 
 //=============================== sequential and concurrent functions listed below =============================
