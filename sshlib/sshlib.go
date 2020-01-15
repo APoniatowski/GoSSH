@@ -8,71 +8,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/superhawk610/bar"
-
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v2"
 
 	// "golang.org/x/crypto/ssh/knownhosts"
+	"github.com/APoniatowski/GoSSH/channelreaderlib"
 	"github.com/APoniatowski/GoSSH/loggerlib"
-	"github.com/APoniatowski/GoSSH/yamlparser"
 )
-
-// Error checking function
-func generalError(e error) {
-	if e != nil {
-		// log.Fatal(e)
-		log.Println(e)
-	}
-}
-
-// channelReaderAll Function to read channel until it is closed (all servers only)
-func channelReaderAll(channel <-chan string, wg *sync.WaitGroup) {
-	successcount := 0
-	barp := bar.New(yamlparser.Waittotal)
-	for i := 0; i < yamlparser.Waittotal; i++ {
-		for message := range channel {
-			if message == "Ok\n" {
-				barp.Tick()
-				successcount++
-			} else {
-				barp.Tick()
-			}
-		}
-	}
-	defer fmt.Printf("%d/%d Succeeded\n", successcount, yamlparser.Waittotal)
-	defer barp.Done()
-}
-
-// channelReaderGroups Function to read channel until it is closed (groups only)
-func channelReaderGroups(channel <-chan string, wg *sync.WaitGroup) {
-	loopcountval := len(yamlparser.ServersPerGroup) - 1
-	var totalsuccesscount int
-	for i := 0; i < loopcountval; i++ {
-		successcount := 0
-		barp := bar.New(yamlparser.ServersPerGroup[i])
-		for im := 0; im < yamlparser.ServersPerGroup[i]; im++ {
-			for message := range channel {
-				if message == "Ok\n" {
-					barp.Tick()
-					successcount++
-					totalsuccesscount++
-				} else {
-					barp.Tick()
-				}
-			}
-		}
-		barp.Done()
-		fmt.Printf("%d/%d Succeeded\n", successcount, yamlparser.ServersPerGroup[i])
-	}
-}
 
 // executeCommand function to run a command on remote servers. Arguments will run through this function and will take strings,
 func executeCommand(servername string, cmd string, connection *ssh.Client) string {
 	session, err := connection.NewSession()
-	if err != nil {
-		log.Fatal("Failed to establish a session: ", err)
-	}
+	loggerlib.GeneralError(err)
 	defer session.Close()
 
 	modes := ssh.TerminalModes{
@@ -90,40 +37,12 @@ func executeCommand(servername string, cmd string, connection *ssh.Client) strin
 	// if shellErr != nil {
 	// 	log.Fatal(shellErr)
 	// }
-	currentDate := time.Now()
-	dateFormatted := currentDate.Format("2006-01-02")
 	terminaloutput, err := session.CombinedOutput(cmd)
 	if err != nil {
 		validator = "Failed\n"
-		// path, _ := filepath.Abs("./logs/errors/")
-		// err := os.MkdirAll(path, os.ModePerm)
-		// if err == nil || os.IsExist(err) {
-		// 	errFile, err := os.OpenFile(path+"/"+dateFormatted+".log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		// 	if err != nil {
-		// 		log.Println(err)
-		// 	}
-		// 	defer errFile.Close()
-		// 	logger := log.New(errFile, "[INFO: Failed] ", log.LstdFlags)
-		// 	logger.Print(servername + ": " + string(terminaloutput))
-		// } else {
-		// 	log.Println(err)
-		// }
 		loggerlib.ErrorLogger(servername, terminaloutput)
 	} else {
 		validator = "Ok\n"
-		// path, _ := filepath.Abs("./logs/output/")
-		// err := os.MkdirAll(path, os.ModePerm)
-		// if err == nil || os.IsExist(err) {
-		// 	okFile, err := os.OpenFile(path+"/"+dateFormatted+".log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		// 	if err != nil {
-		// 		log.Println(err)
-		// 	}
-		// 	defer okFile.Close()
-		// 	logger := log.New(okFile, "[INFO: Succeeded] ", log.LstdFlags)
-		// 	logger.Print(servername + ": " + string(terminaloutput))
-		// } else {
-		// 	log.Println(err)
-		// }
 		loggerlib.OutputLogger(servername, terminaloutput)
 	}
 
@@ -133,9 +52,9 @@ func executeCommand(servername string, cmd string, connection *ssh.Client) strin
 // connectAndRun Establish a connection and run command(s), will add CLI args in the near future
 func connectAndRun(command *string, servername string, fqdn string, username string, password string, keypath string, port string, output chan<- string, wg *sync.WaitGroup) {
 	key, err := ioutil.ReadFile(keypath)
-	generalError(err)
+	loggerlib.GeneralError(err)
 	signer, err := ssh.ParsePrivateKey(key)
-	generalError(err)
+	loggerlib.GeneralError(err)
 	sshConfig := &ssh.ClientConfig{
 		User: username,
 		Auth: []ssh.AuthMethod{
@@ -146,8 +65,7 @@ func connectAndRun(command *string, servername string, fqdn string, username str
 		Timeout:         5 * time.Second,
 	}
 	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
-	generalError(err)
-	// cmd := *command
+	loggerlib.GeneralError(err)
 	defer connection.Close()
 	defer wg.Done()
 	output <- executeCommand(servername, *command, connection)
@@ -155,9 +73,9 @@ func connectAndRun(command *string, servername string, fqdn string, username str
 
 func connectAndRunSeq(command *string, servername string, fqdn string, username string, password string, keypath string, port string) string {
 	key, err := ioutil.ReadFile(keypath)
-	generalError(err)
+	loggerlib.GeneralError(err)
 	signer, err := ssh.ParsePrivateKey(key)
-	generalError(err)
+	loggerlib.GeneralError(err)
 	sshConfig := &ssh.ClientConfig{
 		User: username,
 		Auth: []ssh.AuthMethod{
@@ -168,8 +86,7 @@ func connectAndRunSeq(command *string, servername string, fqdn string, username 
 		Timeout:         5 * time.Second,
 	}
 	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
-	generalError(err)
-	// cmd := *command
+	loggerlib.GeneralError(err)
 	defer connection.Close()
 	return servername + ": " + executeCommand(servername, *command, connection)
 }
@@ -279,7 +196,7 @@ func RunGroups(configs *yaml.MapSlice, command *string) {
 			wg.Wait()
 			close(output)
 		}()
-		channelReaderGroups(output, &wg)
+		channelreaderlib.ChannelReaderGroups(output, &wg)
 	}
 
 }
@@ -346,5 +263,5 @@ func RunAllServers(configs *yaml.MapSlice, command *string) {
 		wg.Wait()
 		close(output)
 	}()
-	channelReaderAll(output, &wg)
+	channelreaderlib.ChannelReaderAll(output, &wg)
 }
