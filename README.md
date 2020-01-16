@@ -1,4 +1,4 @@
-# GoSSH  -  GoLang SSH tool
+# GoSSH  -  Open Source Go Infrastucture Automation tool
 
 ![](https://github.com/Aponiatowski/GoSSH/workflows/GoSSH/badge.svg)     [![Go Report Card](https://goreportcard.com/badge/github.com/APoniatowski/GoSSH)](https://goreportcard.com/report/github.com/APoniatowski/GoSSH)
 
@@ -10,7 +10,7 @@ written to a log file for review. If running a command was successful, why would
 The logs are also rotated by date, to avoid multiple logs, if time was added to the file name.
 The logging will be enchanced even further, as the project continues.
 
-Currently working on adding the ability to run commands as sudo, and also add some security for connecting to known hosts (see issue board for clarification [Issue #7](https://github.com/APoniatowski/GoSSH/issues/7) )
+Currently working on adding the ability to run commands as sudo, and also add some security for connecting to known hosts (see issue board for clarification ( [Issue #7](https://github.com/APoniatowski/GoSSH/issues/7) )
 
 I have also removed some possible features, that I was planning on implementing. [^1] 
 
