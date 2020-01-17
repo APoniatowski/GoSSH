@@ -1,12 +1,14 @@
 package sshlib
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,7 +17,6 @@ import (
 
 	"github.com/APoniatowski/GoSSH/channelreaderlib"
 	"github.com/APoniatowski/GoSSH/loggerlib"
-	knownhosts "golang.org/x/crypto/ssh/knownhosts"
 )
 
 // executeCommand function to run a command on remote servers. Arguments will run through this function and will take strings,
@@ -62,16 +63,25 @@ func connectAndRun(command *string, servername string, fqdn string, username str
 		loggerlib.GeneralError(err)
 		authMethodCheck = append(authMethodCheck, ssh.PublicKeys(signer))
 	}
-	filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")
-	hostKeyCallback, err := knownhosts.New(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
-	if err != nil {
+	var hostKeyCallback ssh.HostKeyCallback
+	if _, err := os.Stat(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")); err == nil {
+		hostKeyCallback = ssh.FixedHostKey(getHostKey(fqdn))
+	} else if os.IsNotExist(err) {
 		hostKeyCallback = ssh.InsecureIgnoreHostKey()
 	}
 	sshConfig := &ssh.ClientConfig{
 		User:            username,
 		Auth:            authMethodCheck,
 		HostKeyCallback: hostKeyCallback,
-		Timeout:         5 * time.Second,
+		HostKeyAlgorithms: []string{
+			ssh.KeyAlgoRSA,
+			ssh.KeyAlgoDSA,
+			ssh.KeyAlgoECDSA256,
+			ssh.KeyAlgoECDSA384,
+			ssh.KeyAlgoECDSA521,
+			ssh.KeyAlgoED25519,
+		},
+		Timeout: 5 * time.Second,
 	}
 	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
 	loggerlib.GeneralError(err)
@@ -90,21 +100,62 @@ func connectAndRunSeq(command *string, servername string, fqdn string, username 
 		loggerlib.GeneralError(err)
 		authMethodCheck = append(authMethodCheck, ssh.PublicKeys(signer))
 	}
-	filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")
-	hostKeyCallback, err := knownhosts.New(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
-	if err != nil {
+	// hostKeyCallback, err := knownhosts.New(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
+	// if err != nil {
+	// 	hostKeyCallback = ssh.InsecureIgnoreHostKey()
+	// }
+	var hostKeyCallback ssh.HostKeyCallback
+	if _, err := os.Stat(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")); err == nil {
+		hostKeyCallback = ssh.FixedHostKey(getHostKey(fqdn))
+	} else if os.IsNotExist(err) {
 		hostKeyCallback = ssh.InsecureIgnoreHostKey()
 	}
 	sshConfig := &ssh.ClientConfig{
 		User:            username,
 		Auth:            authMethodCheck,
 		HostKeyCallback: hostKeyCallback,
-		Timeout:         5 * time.Second,
+		HostKeyAlgorithms: []string{
+			ssh.KeyAlgoRSA,
+			ssh.KeyAlgoDSA,
+			ssh.KeyAlgoECDSA256,
+			ssh.KeyAlgoECDSA384,
+			ssh.KeyAlgoECDSA521,
+			ssh.KeyAlgoED25519,
+		},
+		Timeout: 5 * time.Second,
 	}
 	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
 	loggerlib.GeneralError(err)
 	defer connection.Close()
 	return servername + ": " + executeCommand(servername, *command, connection)
+}
+
+func getHostKey(server string) ssh.PublicKey {
+	khFile, err := os.Open(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer khFile.Close()
+	scanner := bufio.NewScanner(khFile)
+	var hostKey ssh.PublicKey
+	for scanner.Scan() {
+		fields := strings.Split(scanner.Text(), " ")
+		if len(fields) != 3 {
+			continue
+		}
+		if strings.Contains(fields[0], server) {
+			var err error
+			hostKey, _, _, _, err = ssh.ParseAuthorizedKey(scanner.Bytes())
+			if err != nil {
+				log.Fatalf("error parsing %q: %v", fields[2], err)
+			}
+			break
+		}
+	}
+	if hostKey == nil {
+		log.Fatalf("no hostkey found for %s", server)
+	}
+	return hostKey
 }
 
 //=============================== sequential and concurrent functions listed below =============================
