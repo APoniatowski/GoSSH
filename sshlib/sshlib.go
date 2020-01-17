@@ -1,12 +1,13 @@
 package sshlib
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
-	"os"
-	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,15 +16,13 @@ import (
 
 	"github.com/APoniatowski/GoSSH/channelreaderlib"
 	"github.com/APoniatowski/GoSSH/loggerlib"
-	knownhosts "golang.org/x/crypto/ssh/knownhosts"
 )
 
 // executeCommand function to run a command on remote servers. Arguments will run through this function and will take strings,
-func executeCommand(servername string, cmd string, connection *ssh.Client) string {
+func executeCommand(servername string, cmd string, password string, connection *ssh.Client) string {
 	session, err := connection.NewSession()
 	loggerlib.GeneralError(err)
 	defer session.Close()
-
 	modes := ssh.TerminalModes{
 		ssh.ECHO:          0,     // disable echoing
 		ssh.TTY_OP_ISPEED: 14400, // input speed = 14.4kbaud
@@ -33,21 +32,48 @@ func executeCommand(servername string, cmd string, connection *ssh.Client) strin
 		session.Close()
 		log.Fatal(err)
 	}
-
-	var validator string
-	// shellErr := session.Shell()
-	// if shellErr != nil {
-	// 	log.Fatal(shellErr)
-	// }
-	terminaloutput, err := session.CombinedOutput(cmd)
+	in, err := session.StdinPipe()
 	if err != nil {
-		validator = "Failed\n"
+		fmt.Println(err)
+	}
+	out, err := session.StdoutPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+	var validator string
+	var terminaloutput []byte
+	go func(in io.WriteCloser, out io.Reader, terminaloutput *[]byte) {
+		var (
+			line string
+			read = bufio.NewReader(out)
+		)
+		for {
+			buffer, err := read.ReadByte()
+			if err != nil {
+				break
+			}
+			*terminaloutput = append(*terminaloutput, buffer)
+			if buffer == byte('\n') {
+				line = ""
+				continue
+			}
+			line += string(buffer)
+			if strings.HasPrefix(line, "[sudo] password for ") && strings.HasSuffix(line, ": ") {
+				_, err = in.Write([]byte(password + "\n"))
+				if err != nil {
+					break
+				}
+			}
+		}
+	}(in, out, &terminaloutput)
+	_, err = session.Output(cmd)
+	if err != nil {
+		validator = "NOK\n"
 		loggerlib.ErrorLogger(servername, terminaloutput)
 	} else {
-		validator = "Ok\n"
+		validator = "OK\n"
 		loggerlib.OutputLogger(servername, terminaloutput)
 	}
-
 	return validator
 }
 
@@ -62,22 +88,29 @@ func connectAndRun(command *string, servername string, fqdn string, username str
 		loggerlib.GeneralError(err)
 		authMethodCheck = append(authMethodCheck, ssh.PublicKeys(signer))
 	}
-	filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")
-	hostKeyCallback, err := knownhosts.New(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
-	if err != nil {
-		hostKeyCallback = ssh.InsecureIgnoreHostKey()
-	}
+	// hostKeyCallback, err := knownhosts.New(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
+	// if err != nil {
+	hostKeyCallback := ssh.InsecureIgnoreHostKey()
+	// }
 	sshConfig := &ssh.ClientConfig{
 		User:            username,
 		Auth:            authMethodCheck,
 		HostKeyCallback: hostKeyCallback,
-		Timeout:         5 * time.Second,
+		HostKeyAlgorithms: []string{
+			ssh.KeyAlgoRSA,
+			ssh.KeyAlgoDSA,
+			ssh.KeyAlgoECDSA256,
+			ssh.KeyAlgoECDSA384,
+			ssh.KeyAlgoECDSA521,
+			ssh.KeyAlgoED25519,
+		},
+		Timeout: 5 * time.Second,
 	}
 	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
 	loggerlib.GeneralError(err)
 	defer connection.Close()
 	defer wg.Done()
-	output <- executeCommand(servername, *command, connection)
+	output <- executeCommand(servername, *command, password, connection)
 }
 
 func connectAndRunSeq(command *string, servername string, fqdn string, username string, password string, keypath string, port string) string {
@@ -90,21 +123,28 @@ func connectAndRunSeq(command *string, servername string, fqdn string, username 
 		loggerlib.GeneralError(err)
 		authMethodCheck = append(authMethodCheck, ssh.PublicKeys(signer))
 	}
-	filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")
-	hostKeyCallback, err := knownhosts.New(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
-	if err != nil {
-		hostKeyCallback = ssh.InsecureIgnoreHostKey()
-	}
+	// hostKeyCallback, err := knownhosts.New(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
+	// if err != nil {
+	hostKeyCallback := ssh.InsecureIgnoreHostKey()
+	// }
 	sshConfig := &ssh.ClientConfig{
 		User:            username,
 		Auth:            authMethodCheck,
 		HostKeyCallback: hostKeyCallback,
-		Timeout:         5 * time.Second,
+		HostKeyAlgorithms: []string{
+			ssh.KeyAlgoRSA,
+			ssh.KeyAlgoDSA,
+			ssh.KeyAlgoECDSA256,
+			ssh.KeyAlgoECDSA384,
+			ssh.KeyAlgoECDSA521,
+			ssh.KeyAlgoED25519,
+		},
+		Timeout: 5 * time.Second,
 	}
 	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
 	loggerlib.GeneralError(err)
 	defer connection.Close()
-	return servername + ": " + executeCommand(servername, *command, connection)
+	return servername + ": " + executeCommand(servername, *command, password, connection)
 }
 
 //=============================== sequential and concurrent functions listed below =============================

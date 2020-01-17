@@ -8,13 +8,13 @@ import (
 	"github.com/superhawk610/bar"
 )
 
-// channelReaderAll Function to read channel until it is closed (all servers only)
+// ChannelReaderAll Function to read channel until it is closed (all servers only)
 func ChannelReaderAll(channel <-chan string, wg *sync.WaitGroup) {
 	successcount := 0
 	barp := bar.New(yamlparser.Waittotal)
 	for i := 0; i < yamlparser.Waittotal; i++ {
 		for message := range channel {
-			if message == "Ok\n" {
+			if message == "OK\n" {
 				barp.Tick()
 				successcount++
 			} else {
@@ -26,7 +26,7 @@ func ChannelReaderAll(channel <-chan string, wg *sync.WaitGroup) {
 	defer barp.Done()
 }
 
-// channelReaderGroups Function to read channel until it is closed (groups only)
+// ChannelReaderGroups Function to read channel until it is closed (groups only)
 func ChannelReaderGroups(channel <-chan string, wg *sync.WaitGroup) {
 	loopcountval := len(yamlparser.ServersPerGroup) - 1
 	var totalsuccesscount int
@@ -35,7 +35,7 @@ func ChannelReaderGroups(channel <-chan string, wg *sync.WaitGroup) {
 		barp := bar.New(yamlparser.ServersPerGroup[i])
 		for im := 0; im < yamlparser.ServersPerGroup[i]; im++ {
 			for message := range channel {
-				if message == "Ok\n" {
+				if message == "OK\n" {
 					barp.Tick()
 					successcount++
 					totalsuccesscount++
