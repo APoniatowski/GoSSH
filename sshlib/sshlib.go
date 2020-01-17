@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -11,9 +13,9 @@ import (
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v2"
 
-	// "golang.org/x/crypto/ssh/knownhosts"
 	"github.com/APoniatowski/GoSSH/channelreaderlib"
 	"github.com/APoniatowski/GoSSH/loggerlib"
+	knownhosts "golang.org/x/crypto/ssh/knownhosts"
 )
 
 // executeCommand function to run a command on remote servers. Arguments will run through this function and will take strings,
@@ -51,17 +53,24 @@ func executeCommand(servername string, cmd string, connection *ssh.Client) strin
 
 // connectAndRun Establish a connection and run command(s), will add CLI args in the near future
 func connectAndRun(command *string, servername string, fqdn string, username string, password string, keypath string, port string, output chan<- string, wg *sync.WaitGroup) {
+	authMethodCheck := []ssh.AuthMethod{}
 	key, err := ioutil.ReadFile(keypath)
-	loggerlib.GeneralError(err)
-	signer, err := ssh.ParsePrivateKey(key)
-	loggerlib.GeneralError(err)
+	if err != nil {
+		authMethodCheck = append(authMethodCheck, ssh.Password(password))
+	} else {
+		signer, err := ssh.ParsePrivateKey(key)
+		loggerlib.GeneralError(err)
+		authMethodCheck = append(authMethodCheck, ssh.PublicKeys(signer))
+	}
+	filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")
+	hostKeyCallback, err := knownhosts.New(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
+	if err != nil {
+		hostKeyCallback = ssh.InsecureIgnoreHostKey()
+	}
 	sshConfig := &ssh.ClientConfig{
-		User: username,
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(signer),
-		},
-		// HostKeyCallback: ssh.FixedHostKey(),  //* will need to figure out how to use this for public use...
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		User:            username,
+		Auth:            authMethodCheck,
+		HostKeyCallback: hostKeyCallback,
 		Timeout:         5 * time.Second,
 	}
 	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
@@ -72,17 +81,24 @@ func connectAndRun(command *string, servername string, fqdn string, username str
 }
 
 func connectAndRunSeq(command *string, servername string, fqdn string, username string, password string, keypath string, port string) string {
+	authMethodCheck := []ssh.AuthMethod{}
 	key, err := ioutil.ReadFile(keypath)
-	loggerlib.GeneralError(err)
-	signer, err := ssh.ParsePrivateKey(key)
-	loggerlib.GeneralError(err)
+	if err != nil {
+		authMethodCheck = append(authMethodCheck, ssh.Password(password))
+	} else {
+		signer, err := ssh.ParsePrivateKey(key)
+		loggerlib.GeneralError(err)
+		authMethodCheck = append(authMethodCheck, ssh.PublicKeys(signer))
+	}
+	filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")
+	hostKeyCallback, err := knownhosts.New(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
+	if err != nil {
+		hostKeyCallback = ssh.InsecureIgnoreHostKey()
+	}
 	sshConfig := &ssh.ClientConfig{
-		User: username,
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(signer),
-		},
-		// HostKeyCallback: ssh.FixedHostKey(),  //* will need to figure out how to use this for public use...
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		User:            username,
+		Auth:            authMethodCheck,
+		HostKeyCallback: hostKeyCallback,
 		Timeout:         5 * time.Second,
 	}
 	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
