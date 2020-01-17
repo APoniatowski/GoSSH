@@ -16,22 +16,23 @@ I have also removed some possible features, that I was planning on implementing.
 
 But rather chose to implement another feature for this release. [^2]
 
+
 * Windows (laptop):
 ##### 22 production servers (across 8 different countries):
 
 ```
-> real    0m7.272s
-> user    0m0.062s
-> sys     0m0.046s
+real    0m5.366s
+user    0m0.062s
+sys     0m0.061s
 ```
 
 * Linux (production/staging server):
 ##### Tested on 24 production servers (across 8 different countries):
 
 ```
-> real    0m3.276s
-> user    0m0.375s
-> sys     0m0.062s
+real    0m3.410s
+user    0m0.443s
+sys     0m0.051s
 ```
 
 Command run:
