@@ -3,10 +3,9 @@ package sshlib
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -20,11 +19,10 @@ import (
 )
 
 // executeCommand function to run a command on remote servers. Arguments will run through this function and will take strings,
-func executeCommand(servername string, cmd string, connection *ssh.Client) string {
+func executeCommand(servername string, cmd string, password string, connection *ssh.Client) string {
 	session, err := connection.NewSession()
 	loggerlib.GeneralError(err)
 	defer session.Close()
-
 	modes := ssh.TerminalModes{
 		ssh.ECHO:          0,     // disable echoing
 		ssh.TTY_OP_ISPEED: 14400, // input speed = 14.4kbaud
@@ -34,21 +32,48 @@ func executeCommand(servername string, cmd string, connection *ssh.Client) strin
 		session.Close()
 		log.Fatal(err)
 	}
-
-	var validator string
-	// shellErr := session.Shell()
-	// if shellErr != nil {
-	// 	log.Fatal(shellErr)
-	// }
-	terminaloutput, err := session.CombinedOutput(cmd)
+	in, err := session.StdinPipe()
 	if err != nil {
-		validator = "Failed\n"
+		fmt.Println(err)
+	}
+	out, err := session.StdoutPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+	var validator string
+	var terminaloutput []byte
+	go func(in io.WriteCloser, out io.Reader, terminaloutput *[]byte) {
+		var (
+			line string
+			read = bufio.NewReader(out)
+		)
+		for {
+			buffer, err := read.ReadByte()
+			if err != nil {
+				break
+			}
+			*terminaloutput = append(*terminaloutput, buffer)
+			if buffer == byte('\n') {
+				line = ""
+				continue
+			}
+			line += string(buffer)
+			if strings.HasPrefix(line, "[sudo] password for ") && strings.HasSuffix(line, ": ") {
+				_, err = in.Write([]byte(password + "\n"))
+				if err != nil {
+					break
+				}
+			}
+		}
+	}(in, out, &terminaloutput)
+	_, err = session.Output(cmd)
+	if err != nil {
+		validator = "NOK\n"
 		loggerlib.ErrorLogger(servername, terminaloutput)
 	} else {
-		validator = "Ok\n"
+		validator = "OK\n"
 		loggerlib.OutputLogger(servername, terminaloutput)
 	}
-
 	return validator
 }
 
@@ -63,12 +88,10 @@ func connectAndRun(command *string, servername string, fqdn string, username str
 		loggerlib.GeneralError(err)
 		authMethodCheck = append(authMethodCheck, ssh.PublicKeys(signer))
 	}
-	var hostKeyCallback ssh.HostKeyCallback
-	if _, err := os.Stat(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")); err == nil {
-		hostKeyCallback = ssh.FixedHostKey(getHostKey(fqdn))
-	} else if os.IsNotExist(err) {
-		hostKeyCallback = ssh.InsecureIgnoreHostKey()
-	}
+	// hostKeyCallback, err := knownhosts.New(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
+	// if err != nil {
+	hostKeyCallback := ssh.InsecureIgnoreHostKey()
+	// }
 	sshConfig := &ssh.ClientConfig{
 		User:            username,
 		Auth:            authMethodCheck,
@@ -87,7 +110,7 @@ func connectAndRun(command *string, servername string, fqdn string, username str
 	loggerlib.GeneralError(err)
 	defer connection.Close()
 	defer wg.Done()
-	output <- executeCommand(servername, *command, connection)
+	output <- executeCommand(servername, *command, password, connection)
 }
 
 func connectAndRunSeq(command *string, servername string, fqdn string, username string, password string, keypath string, port string) string {
@@ -102,14 +125,8 @@ func connectAndRunSeq(command *string, servername string, fqdn string, username 
 	}
 	// hostKeyCallback, err := knownhosts.New(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
 	// if err != nil {
-	// 	hostKeyCallback = ssh.InsecureIgnoreHostKey()
+	hostKeyCallback := ssh.InsecureIgnoreHostKey()
 	// }
-	var hostKeyCallback ssh.HostKeyCallback
-	if _, err := os.Stat(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")); err == nil {
-		hostKeyCallback = ssh.FixedHostKey(getHostKey(fqdn))
-	} else if os.IsNotExist(err) {
-		hostKeyCallback = ssh.InsecureIgnoreHostKey()
-	}
 	sshConfig := &ssh.ClientConfig{
 		User:            username,
 		Auth:            authMethodCheck,
@@ -127,35 +144,7 @@ func connectAndRunSeq(command *string, servername string, fqdn string, username 
 	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
 	loggerlib.GeneralError(err)
 	defer connection.Close()
-	return servername + ": " + executeCommand(servername, *command, connection)
-}
-
-func getHostKey(server string) ssh.PublicKey {
-	khFile, err := os.Open(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer khFile.Close()
-	scanner := bufio.NewScanner(khFile)
-	var hostKey ssh.PublicKey
-	for scanner.Scan() {
-		fields := strings.Split(scanner.Text(), " ")
-		if len(fields) != 3 {
-			continue
-		}
-		if strings.Contains(fields[0], server) {
-			var err error
-			hostKey, _, _, _, err = ssh.ParseAuthorizedKey(scanner.Bytes())
-			if err != nil {
-				log.Fatalf("error parsing %q: %v", fields[2], err)
-			}
-			break
-		}
-	}
-	if hostKey == nil {
-		log.Fatalf("no hostkey found for %s", server)
-	}
-	return hostKey
+	return servername + ": " + executeCommand(servername, *command, password, connection)
 }
 
 //=============================== sequential and concurrent functions listed below =============================
