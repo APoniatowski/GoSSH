@@ -1,18 +1,16 @@
-ServerGroup1:
-  Server11:
-    FQDN: hostname11.whatever.com
-    Username: user11
-    Password: password11
-    Key_Path: /path/to/key
-    Port: 22
-    Need_Sudo: false
+ServerGroup1:     #groupe name, spacing does not matter
+  Server11:       #server name, spacing does not matter
+    FQDN: hostname11.whatever.com #
+    Username: user11              ##
+    Password: password11          ###     FQDN, is needed. Username defaults to root, 
+    Key_Path: /path/to/key        ##      password or key needed, ports default to 22
+    Port: 22                      #
   Server12:
     FQDN: hostname12.whatever.com
     Username: user12
     Password: password12
     Key_Path: /path/to/key
     Port: 223
-    Need_Sudo: true
 ServerGroup2:
   Server21:
     FQDN: hostname21.whatever.com
@@ -20,11 +18,9 @@ ServerGroup2:
     Password: password21
     Key_Path: /path/to/key
     Port: 2233
-    Need_Sudo: false
   Server22:
     FQDN: hostname22.whatever.com
     Username: user22
     Password: password22
     Key_Path: /path/to/key
     Port: 
-    Need_Sudo: true
