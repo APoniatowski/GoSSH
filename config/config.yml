@@ -1,4 +1,4 @@
-ServerGroup1:     #groupe name, spacing does not matter
+ServerGroup1:     #group name, spacing does not matter
   Server11:       #server name, spacing does not matter
     FQDN: hostname11.whatever.com #
     Username: user11              ##
