@@ -42,6 +42,9 @@ and
 
 ```> GoSSH all hostname```
 
+Logs will be written to ```./logs/*``` in their individual directories (```/errors``` and ```/output```) in the same directory as where the application is used.  
+Make sure the config.yml file is in ```./config``` and saved as ```config.yml``` 
+(please use the config file in this repo as a template)
 
 
 # Current usage for GoSSH:
