@@ -8,11 +8,11 @@ It is currently in an usable state, and can be used to execute commands in varie
 Logging has been implemented for SSH sessions (INFOs and ERRORs) and the output has been replaced with a progress bar. All outputs from now on, will be 
 written to a log file for review. If running a command was successful, why would one want to see it and clutter the terminal. 
 The logs are also rotated by date, to avoid multiple logs, if time was added to the file name.
-The logging will be enchanced even further, as the project continues.
+The logging will be enhanced even further, as the project continues.
 
 Sudo commands are possible now. Just make sure you add the username's password to the password field, and it will be used when a password prompt should appear.
 
-The known_hosts file is causing some issues (issue open for it). Trying to resolve that, before release
+The known_hosts file is causing some issues (issue open for it).
 
 
 * Windows (laptop):
@@ -48,12 +48,12 @@ and
 GoSSH [ option ] [ subcommand ] [ command ]
 
 Options:
-* sequential, s  Run the command sequentially on all servers in your config file
-* groups, g      Run the command on all servers per group concurrently in your config file
-* all, a         Run the command on all servers concurrently in your config file
+* sequential, s  --Run the command sequentially on all servers in your config file
+* groups, g      --Run the command on all servers per group concurrently in your config file
+* all, a         --Run the command on all servers concurrently in your config file
 
 Subcommand:
-* run           Run a bash script on your selected option (sequential/groups/all)
+* run           --Run a bash script on your selected option (sequential/groups/all)
 
 ## Please feel free to test/use this and leave issues and comments in the issues tab.
 ## I will be actively working on this for the foreseeable future
