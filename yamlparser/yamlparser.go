@@ -48,7 +48,7 @@ func Rollcall() {
 	fmt.Printf("\n")
 	fmt.Printf("Total groups of servers: %d\n", Grouptotal)
 	fmt.Printf("Total number of logical cores: %v\n", runtime.NumCPU())
-	fmt.Printf("=========================================\n")
+	fmt.Printf("======================================================\n")
 }
 
 // ParseServersList server list parser, parses it to a map of structs in main function

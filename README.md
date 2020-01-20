@@ -1,6 +1,6 @@
 # GoSSH  -  Open Source Go Infrastucture Automation tool
 
-![](https://github.com/Aponiatowski/GoSSH/workflows/GoSSH/badge.svg)     [![Go Report Card](https://goreportcard.com/badge/github.com/APoniatowski/GoSSH)](https://goreportcard.com/report/github.com/APoniatowski/GoSSH)
+![](https://github.com/Aponiatowski/GoSSH/workflows/GoSSH/badge.svg)     [![Go Report Card](https://goreportcard.com/badge/github.com/APoniatowski/GoSSH)](https://goreportcard.com/report/github.com/APoniatowski/GoSSH)   [![codebeat badge](https://codebeat.co/badges/e53dab58-a0df-4699-a4d6-cfe67fbd9b81)](https://codebeat.co/projects/github-com-aponiatowski-gossh-master)
 
 ## Project update:
 It is currently in an usable state, and can be used to execute commands in varied ways and performs well. :+1:
@@ -10,12 +10,11 @@ written to a log file for review. If running a command was successful, why would
 The logs are also rotated by date, to avoid multiple logs, if time was added to the file name.
 The logging will be enchanced even further, as the project continues.
 
-Currently working on adding the ability to run commands as sudo, and also add some security for connecting to known hosts (see issue board for clarification ( [Issue #7](https://github.com/APoniatowski/GoSSH/issues/7) )
+Sudo commands are possible now. Just make sure you add the username's password to the password field, and it will be used.
 
-I have also removed some possible features, that I was planning on implementing. [^1] 
+The known_hosts file is causing some issues (issue open for it). Trying to resolve that, before release
 
-But rather chose to implement another feature for this release. [^2]
-
+Also redoing the CLI, as I would like it to be more seamless and intuitive. I will also be adding bash completion later, once I finish the new CLI.
 
 * Windows (laptop):
 ##### 22 production servers (across 8 different countries):
@@ -55,8 +54,3 @@ Options:
 
 ## Please feel free to test/use this and leave issues and comments in the issues tab.
 ## I will be actively working on this for the foreseeable future
- 
-
-[^1]: Creating a client side agent, this might possibly be added for v2.0.0 release. Not guaranteed though.
-
-[^2]: Running a bash script with little effort. Makes things simpler, than trying to cat | gossh all, or gosh all $(cat my-script.sh), etc.

@@ -69,10 +69,10 @@ func executeCommand(servername string, cmd string, password string, connection *
 	_, err = session.Output(cmd)
 	if err != nil {
 		validator = "NOK\n"
-		loggerlib.ErrorLogger(servername, terminaloutput)
+		loggerlib.ErrorLogger(servername, "[INFO: Failed] ", terminaloutput)
 	} else {
 		validator = "OK\n"
-		loggerlib.OutputLogger(servername, terminaloutput)
+		loggerlib.OutputLogger(servername, "[INFO: Success] ", terminaloutput)
 	}
 	return validator
 }
@@ -104,7 +104,7 @@ func connectAndRun(command *string, servername string, fqdn string, username str
 			ssh.KeyAlgoECDSA521,
 			ssh.KeyAlgoED25519,
 		},
-		Timeout: 5 * time.Second,
+		Timeout: 15 * time.Second,
 	}
 	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
 	loggerlib.GeneralError(err)
@@ -139,7 +139,7 @@ func connectAndRunSeq(command *string, servername string, fqdn string, username 
 			ssh.KeyAlgoECDSA521,
 			ssh.KeyAlgoED25519,
 		},
-		Timeout: 5 * time.Second,
+		Timeout: 15 * time.Second,
 	}
 	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
 	loggerlib.GeneralError(err)
