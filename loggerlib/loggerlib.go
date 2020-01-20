@@ -8,7 +8,7 @@ import (
 )
 
 // OutputLogger All INFO/WARNING messages will be written in this function
-func OutputLogger(servername string, output []byte) {
+func OutputLogger(servername string, option string, output []byte) {
 	currentDate := time.Now()
 	dateFormatted := currentDate.Format("2006-01-02")
 	path, _ := filepath.Abs("./logs/output/")
@@ -19,7 +19,7 @@ func OutputLogger(servername string, output []byte) {
 			log.Println(err)
 		}
 		defer okFile.Close()
-		logger := log.New(okFile, "[INFO: Succeeded] ", log.LstdFlags)
+		logger := log.New(okFile, option, log.LstdFlags)
 		logger.Print(servername + ": " + string(output))
 	} else {
 		log.Println(err)
@@ -27,7 +27,7 @@ func OutputLogger(servername string, output []byte) {
 }
 
 // ErrorLogger All ERROR/FATAL messages will be written in this function
-func ErrorLogger(servername string, output []byte) {
+func ErrorLogger(servername string, option string, output []byte) {
 	currentDate := time.Now()
 	dateFormatted := currentDate.Format("2006-01-02")
 	path, _ := filepath.Abs("./logs/errors/")
@@ -38,7 +38,7 @@ func ErrorLogger(servername string, output []byte) {
 			log.Println(err)
 		}
 		defer errFile.Close()
-		logger := log.New(errFile, "[INFO: Failed] ", log.LstdFlags)
+		logger := log.New(errFile, option, log.LstdFlags)
 		logger.Print(servername + ": " + string(output))
 	} else {
 		log.Println(err)

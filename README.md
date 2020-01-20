@@ -1,6 +1,6 @@
 # GoSSH  -  Open Source Go Infrastucture Automation tool
 
-![](https://github.com/Aponiatowski/GoSSH/workflows/GoSSH/badge.svg)     [![Go Report Card](https://goreportcard.com/badge/github.com/APoniatowski/GoSSH)](https://goreportcard.com/report/github.com/APoniatowski/GoSSH)
+![](https://github.com/Aponiatowski/GoSSH/workflows/GoSSH/badge.svg)     [![Go Report Card](https://goreportcard.com/badge/github.com/APoniatowski/GoSSH)](https://goreportcard.com/report/github.com/APoniatowski/GoSSH)   [![codebeat badge](https://codebeat.co/badges/e53dab58-a0df-4699-a4d6-cfe67fbd9b81)](https://codebeat.co/projects/github-com-aponiatowski-gossh-master)
 
 ## Project update:
 It is currently in an usable state, and can be used to execute commands in varied ways and performs well. :+1:
@@ -13,6 +13,8 @@ The logging will be enchanced even further, as the project continues.
 Sudo commands are possible now. Just make sure you add the username's password to the password field, and it will be used.
 
 The known_hosts file is causing some issues (issue open for it). Trying to resolve that, before release
+
+Also redoing the CLI, as I would like it to be more seamless and intuitive. I will also be adding bash completion later, once I finish the new CLI.
 
 * Windows (laptop):
 ##### 22 production servers (across 8 different countries):

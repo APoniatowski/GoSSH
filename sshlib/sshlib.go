@@ -69,10 +69,10 @@ func executeCommand(servername string, cmd string, password string, connection *
 	_, err = session.Output(cmd)
 	if err != nil {
 		validator = "NOK\n"
-		loggerlib.ErrorLogger(servername, terminaloutput)
+		loggerlib.ErrorLogger(servername, "[INFO: Failed] ", terminaloutput)
 	} else {
 		validator = "OK\n"
-		loggerlib.OutputLogger(servername, terminaloutput)
+		loggerlib.OutputLogger(servername, "[INFO: Success] ", terminaloutput)
 	}
 	return validator
 }
