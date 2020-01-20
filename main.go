@@ -5,23 +5,31 @@ import (
 	"log"
 	"os"
 
+	"github.com/APoniatowski/GoSSH/clioptions"
+	"github.com/APoniatowski/GoSSH/sshlib"
+	"github.com/APoniatowski/GoSSH/yamlparser"
 	"github.com/urfave/cli"
 )
 
 // Main function to carry out operations
 func main() {
-	// var cmd []string
+	var cmd []string
 
 	app := cli.NewApp()
 	app.Name = "GoSSH"
 	app.Version = "0.9.0"
+	app.Usage = "Open Source Go Infrastucture Automation Tool"
+	app.UsageText = "gossh [global options] command [subcommand] [script or arguments...]"
 	app.Commands = []cli.Command{
 		{
-			Name:    "all",
-			Aliases: []string{"a"},
+			Name:    "sequential",
+			Aliases: []string{"s"},
 			Usage:   "Run the command sequentially on all servers in your config file",
 			Action: func(c *cli.Context) error {
-				fmt.Println("added task: ", c.Args().First())
+				yamlparser.Rollcall()
+				cmd = os.Args[2:]
+				command := clioptions.GeneralCommandParse(cmd)
+				sshlib.RunSequentially(&yamlparser.Config, &command)
 				return nil
 			},
 		},
@@ -30,20 +38,35 @@ func main() {
 			Aliases: []string{"g"},
 			Usage:   "Run the command on all servers per group concurrently in your config file",
 			Action: func(c *cli.Context) error {
-				fmt.Println("completed task: ", c.Args().First())
+				yamlparser.Rollcall()
+				cmd = os.Args[2:]
+				command := clioptions.GeneralCommandParse(cmd)
+				sshlib.RunGroups(&yamlparser.Config, &command)
 				return nil
 			},
 		},
 		{
-			Name:    "seq",
-			Aliases: []string{"s"},
+			Name:    "all",
+			Aliases: []string{"a"},
 			Usage:   "Run the command on all servers concurrently in your config file",
+			Action: func(c *cli.Context) error {
+				yamlparser.Rollcall()
+				cmd = os.Args[2:]
+				command := clioptions.GeneralCommandParse(cmd)
+				sshlib.RunAllServers(&yamlparser.Config, &command)
+				return nil
+			},
 			Subcommands: []cli.Command{
 				{
-					Name:  "add",
-					Usage: "add a new template",
+					Name:  "run",
+					Usage: "Run a bash script on the defined servers",
 					Action: func(c *cli.Context) error {
 						fmt.Println("new task template: ", c.Args().First())
+						yamlparser.Rollcall()
+						cmd := os.Args[3]
+						cmdargs := os.Args[4:]
+						command := clioptions.BashScriptParse(cmd, cmdargs)
+						sshlib.RunAllServers(&yamlparser.Config, &command)
 						return nil
 					},
 				},
@@ -59,13 +82,13 @@ func main() {
 		},
 	}
 
-	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:  "lang, l",
-			Value: "english",
-			Usage: "language for the greeting",
-		},
-	}
+	// app.Flags = []cli.Flag{
+	// 	cli.StringFlag{
+	// 		Name:  "lang, l",
+	// 		Value: "english",
+	// 		Usage: "language for the greeting",
+	// 	},
+	// }
 
 	err := app.Run(os.Args)
 	if err != nil {
@@ -73,7 +96,6 @@ func main() {
 	}
 }
 
-// yamlparser.Rollcall()
 
 // switch serveroptions := os.Args[1]; serveroptions {
 // case "seq":
