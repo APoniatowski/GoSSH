@@ -16,7 +16,7 @@ The known_hosts file is causing some issues (issue open for it).
 
 
 * Windows (laptop):
-##### 22 production servers (across 8 different countries):
+##### Tesed on 22 production servers (across 8 different countries):
 
 ```
 real    0m5.366s
