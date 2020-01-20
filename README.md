@@ -14,6 +14,7 @@ Sudo commands are possible now. Just make sure you add the username's password t
 
 The known_hosts file is causing some issues (issue open for it). Trying to resolve that, before release
 
+
 * Windows (laptop):
 ##### 22 production servers (across 8 different countries):
 
@@ -22,6 +23,7 @@ real    0m5.366s
 user    0m0.062s
 sys     0m0.061s
 ```
+
 
 * Linux (production/staging server):
 ##### Tested on 24 production servers (across 8 different countries):
