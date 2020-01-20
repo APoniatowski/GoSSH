@@ -1,4 +1,4 @@
-# GoSSH  -  Open Source Go Infrastucture Automation tool
+# GoSSH  -  Open Source Go Infrastucture Automation Tool
 
 ![](https://github.com/Aponiatowski/GoSSH/workflows/GoSSH/badge.svg)     [![Go Report Card](https://goreportcard.com/badge/github.com/APoniatowski/GoSSH)](https://goreportcard.com/report/github.com/APoniatowski/GoSSH)   [![codebeat badge](https://codebeat.co/badges/e53dab58-a0df-4699-a4d6-cfe67fbd9b81)](https://codebeat.co/projects/github-com-aponiatowski-gossh-master)
 
@@ -10,7 +10,7 @@ written to a log file for review. If running a command was successful, why would
 The logs are also rotated by date, to avoid multiple logs, if time was added to the file name.
 The logging will be enchanced even further, as the project continues.
 
-Sudo commands are possible now. Just make sure you add the username's password to the password field, and it will be used.
+Sudo commands are possible now. Just make sure you add the username's password to the password field, and it will be used when a password prompt should appear.
 
 The known_hosts file is causing some issues (issue open for it). Trying to resolve that, before release
 
@@ -43,12 +43,15 @@ and
 
 
 # Current usage for GoSSH:
-GoSSH [ option ] [ command ]
+GoSSH [ option ] [ subcommand ] [ command ]
 
 Options:
-* seq           - Run the command sequentially on all servers in your config file
-* groups        - Run the command on all servers per group concurrently in your config file
-* all           - Run the command on all servers concurrently in your config file
+* sequential, s  Run the command sequentially on all servers in your config file
+* groups, g      Run the command on all servers per group concurrently in your config file
+* all, a         Run the command on all servers concurrently in your config file
+
+Subcommand:
+* run           Run a bash script on your selected option (sequential/groups/all)
 
 ## Please feel free to test/use this and leave issues and comments in the issues tab.
 ## I will be actively working on this for the foreseeable future
