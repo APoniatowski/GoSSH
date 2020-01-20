@@ -104,7 +104,7 @@ func connectAndRun(command *string, servername string, fqdn string, username str
 			ssh.KeyAlgoECDSA521,
 			ssh.KeyAlgoED25519,
 		},
-		Timeout: 5 * time.Second,
+		Timeout: 15 * time.Second,
 	}
 	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
 	loggerlib.GeneralError(err)
@@ -139,7 +139,7 @@ func connectAndRunSeq(command *string, servername string, fqdn string, username 
 			ssh.KeyAlgoECDSA521,
 			ssh.KeyAlgoED25519,
 		},
-		Timeout: 5 * time.Second,
+		Timeout: 15 * time.Second,
 	}
 	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
 	loggerlib.GeneralError(err)
