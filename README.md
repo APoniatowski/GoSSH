@@ -14,8 +14,6 @@ Sudo commands are possible now. Just make sure you add the username's password t
 
 The known_hosts file is causing some issues (issue open for it). Trying to resolve that, before release
 
-Also redoing the CLI, as I would like it to be more seamless and intuitive. I will also be adding bash completion later, once I finish the new CLI.
-
 * Windows (laptop):
 ##### 22 production servers (across 8 different countries):
 
