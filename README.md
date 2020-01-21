@@ -34,6 +34,18 @@ user    0m0.443s
 sys     0m0.051s
 ```
 
+
+* Linux (production/staging server):
+##### Tested on 75 production servers (in the same site):
+```
+ (████████████████████) 100.0% 172.5 ops/s
+75/75 Succeeded
+
+real    0m0.455s
+user    0m0.479s
+sys     0m0.219s
+```
+
 Command run:
 
 ```> GoSSH.exe all hostname```
