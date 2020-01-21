@@ -19,9 +19,12 @@ The known_hosts file is causing some issues (issue open for it).
 ##### Tesed on 22 production servers (across 8 different countries):
 
 ```
-real    0m5.366s
-user    0m0.062s
-sys     0m0.061s
+ (████████████████████) 100.0% 6.2 ops/s
+22/22 Succeeded
+
+real    0m3.775s
+user    0m0.061s
+sys     0m0.031s
 ```
 
 
@@ -29,9 +32,12 @@ sys     0m0.061s
 ##### Tested on 24 production servers (across 8 different countries):
 
 ```
-real    0m3.410s
-user    0m0.443s
-sys     0m0.051s
+ (████████████████████) 100.0% 6.7 ops/s
+24/24 Succeeded
+
+real    0m3.468s
+user    0m0.430s
+sys     0m0.066s
 ```
 
 
