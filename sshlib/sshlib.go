@@ -18,6 +18,41 @@ import (
 	"github.com/APoniatowski/GoSSH/loggerlib"
 )
 
+//ParsedData Parsing data to struct to cleanup some code
+type ParsedData struct {
+	fqdn     interface{}
+	username interface{}
+	password interface{}
+	keypath  interface{}
+	port     interface{}
+}
+
+//defaulter defaults all empty fields in yaml file and to abort if too many values are missing, eg password and key_path
+func defaulter(pd *ParsedData) {
+	if pd.password == nil && pd.keypath == nil {
+		panic(fmt.Sprintf("Both 'Password' and 'Key_Path' fields are empty... Aborting.\n"))
+	}
+	if pd.username == nil {
+		pd.username = "root"
+		// fmt.Println("No username specified in config.yml, defaulting to 'root'...")
+	}
+	if pd.password == nil {
+		pd.password = ""
+		// fmt.Println("No password specified in config.yml, defaulting to SSH key based authentication...")
+	}
+	if pd.keypath == nil {
+		pd.keypath = ""
+		// fmt.Println("No username specified in config.yml, defaulting to password based authentication...")
+	}
+	if pd.port == nil {
+		pd.port = 22
+		pd.port = strconv.Itoa(pd.port.(int))
+		// fmt.Println("No port specified in config.yml, defaulting to port 22...")
+	} else {
+		pd.port = strconv.Itoa(pd.port.(int))
+	}
+}
+
 // executeCommand function to run a command on remote servers. Arguments will run through this function and will take strings,
 func executeCommand(servername string, cmd string, password string, connection *ssh.Client) string {
 	session, err := connection.NewSession()
@@ -42,6 +77,9 @@ func executeCommand(servername string, cmd string, password string, connection *
 	}
 	var validator string
 	var terminaloutput []byte
+	var waitoutput sync.WaitGroup
+	// it does not wait for output on some machines that are taking too long to respond
+	waitoutput.Add(1)
 	go func(in io.WriteCloser, out io.Reader, terminaloutput *[]byte) {
 		var (
 			line string
@@ -65,8 +103,10 @@ func executeCommand(servername string, cmd string, password string, connection *
 				}
 			}
 		}
+		waitoutput.Done()
 	}(in, out, &terminaloutput)
 	_, err = session.Output(cmd)
+	waitoutput.Wait()
 	if err != nil {
 		validator = "NOK\n"
 		loggerlib.ErrorLogger(servername, "[INFO: Failed] ", terminaloutput)
@@ -78,11 +118,12 @@ func executeCommand(servername string, cmd string, password string, connection *
 }
 
 // connectAndRun Establish a connection and run command(s), will add CLI args in the near future
-func connectAndRun(command *string, servername string, fqdn string, username string, password string, keypath string, port string, output chan<- string, wg *sync.WaitGroup) {
+func connectAndRun(command *string, servername string, parseddata *ParsedData, output chan<- string, wg *sync.WaitGroup) {
+	pd := *parseddata
 	authMethodCheck := []ssh.AuthMethod{}
-	key, err := ioutil.ReadFile(keypath)
+	key, err := ioutil.ReadFile(pd.keypath.(string))
 	if err != nil {
-		authMethodCheck = append(authMethodCheck, ssh.Password(password))
+		authMethodCheck = append(authMethodCheck, ssh.Password(pd.password.(string)))
 	} else {
 		signer, err := ssh.ParsePrivateKey(key)
 		loggerlib.GeneralError(err)
@@ -93,7 +134,7 @@ func connectAndRun(command *string, servername string, fqdn string, username str
 	hostKeyCallback := ssh.InsecureIgnoreHostKey()
 	// }
 	sshConfig := &ssh.ClientConfig{
-		User:            username,
+		User:            pd.username.(string),
 		Auth:            authMethodCheck,
 		HostKeyCallback: hostKeyCallback,
 		HostKeyAlgorithms: []string{
@@ -106,18 +147,19 @@ func connectAndRun(command *string, servername string, fqdn string, username str
 		},
 		Timeout: 15 * time.Second,
 	}
-	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
+	connection, err := ssh.Dial("tcp", pd.fqdn.(string)+":"+pd.port.(string), sshConfig)
 	loggerlib.GeneralError(err)
 	defer connection.Close()
 	defer wg.Done()
-	output <- executeCommand(servername, *command, password, connection)
+	output <- executeCommand(servername, *command, pd.password.(string), connection)
 }
 
-func connectAndRunSeq(command *string, servername string, fqdn string, username string, password string, keypath string, port string) string {
+func connectAndRunSeq(command *string, servername string, parseddata *ParsedData) string {
+	pd := parseddata
 	authMethodCheck := []ssh.AuthMethod{}
-	key, err := ioutil.ReadFile(keypath)
+	key, err := ioutil.ReadFile(pd.keypath.(string))
 	if err != nil {
-		authMethodCheck = append(authMethodCheck, ssh.Password(password))
+		authMethodCheck = append(authMethodCheck, ssh.Password(pd.password.(string)))
 	} else {
 		signer, err := ssh.ParsePrivateKey(key)
 		loggerlib.GeneralError(err)
@@ -128,7 +170,7 @@ func connectAndRunSeq(command *string, servername string, fqdn string, username 
 	hostKeyCallback := ssh.InsecureIgnoreHostKey()
 	// }
 	sshConfig := &ssh.ClientConfig{
-		User:            username,
+		User:            pd.username.(string),
 		Auth:            authMethodCheck,
 		HostKeyCallback: hostKeyCallback,
 		HostKeyAlgorithms: []string{
@@ -141,10 +183,10 @@ func connectAndRunSeq(command *string, servername string, fqdn string, username 
 		},
 		Timeout: 15 * time.Second,
 	}
-	connection, err := ssh.Dial("tcp", fqdn+":"+port, sshConfig)
+	connection, err := ssh.Dial("tcp", pd.fqdn.(string)+":"+pd.port.(string), sshConfig)
 	loggerlib.GeneralError(err)
 	defer connection.Close()
-	return servername + ": " + executeCommand(servername, *command, password, connection)
+	return servername + ": " + executeCommand(servername, *command, pd.password.(string), connection)
 }
 
 //=============================== sequential and concurrent functions listed below =============================
@@ -163,36 +205,14 @@ func RunSequentially(configs *yaml.MapSlice, command *string) {
 			if !ok {
 				panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
 			}
-
-			fqdn := serverValue[0].Value
-			username := serverValue[1].Value
-			password := serverValue[2].Value
-			keypath := serverValue[3].Value
-			port := serverValue[4].Value
-
-			if username == nil {
-				username = "root"
-				// fmt.Println("No username specified in config.yml, defaulting to 'root'...")
-			}
-			if password == nil {
-				password = ""
-				// fmt.Println("No password specified in config.yml, defaulting to SSH key based authentication...")
-			}
-			if keypath == nil {
-				keypath = ""
-				// fmt.Println("No username specified in config.yml, defaulting to password based authentication...")
-			}
-			if port == nil {
-				port = 22
-				port = strconv.Itoa(port.(int))
-				// fmt.Println("No port specified in config.yml, defaulting to port 22...")
-			} else {
-				port = strconv.Itoa(serverValue[4].Value.(int))
-			}
-			if password == nil && keypath == nil {
-				panic(fmt.Sprintf("Both 'Password' and 'Key_Path' fields are empty... Aborting.\n"))
-			}
-			output := connectAndRunSeq(command, servername.(string), fqdn.(string), username.(string), password.(string), keypath.(string), port.(string))
+			var pd ParsedData
+			pd.fqdn = serverValue[0].Value
+			pd.username = serverValue[1].Value
+			pd.password = serverValue[2].Value
+			pd.keypath = serverValue[3].Value
+			pd.port = serverValue[4].Value
+			defaulter(&pd)
+			output := connectAndRunSeq(command, servername.(string), &pd)
 			fmt.Print(output)
 		}
 	}
@@ -208,7 +228,6 @@ func RunGroups(configs *yaml.MapSlice, command *string) {
 		if !ok {
 			panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
 		}
-		// wg.Add(yamlparser.ServersPerGroup[groupIndex])
 		for _, serverItem := range groupValue {
 			wg.Add(1)
 			servername := serverItem.Key
@@ -216,34 +235,14 @@ func RunGroups(configs *yaml.MapSlice, command *string) {
 			if !ok {
 				panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
 			}
-			fqdn := serverValue[0].Value
-			username := serverValue[1].Value
-			password := serverValue[2].Value
-			keypath := serverValue[3].Value
-			port := serverValue[4].Value
-			if username == nil {
-				username = "root"
-				// fmt.Println("No username specified in config.yml, defaulting to 'root'...")
-			}
-			if password == nil {
-				password = ""
-				// fmt.Println("No password specified in config.yml, defaulting to SSH key based authentication...")
-			}
-			if keypath == nil {
-				keypath = ""
-				// fmt.Println("No username specified in config.yml, defaulting to password based authentication...")
-			}
-			if port == nil {
-				port = 22
-				port = strconv.Itoa(port.(int))
-				// fmt.Println("No port specified in config.yml, defaulting to port 22...")
-			} else {
-				port = strconv.Itoa(serverValue[4].Value.(int))
-			}
-			if password == nil && keypath == nil {
-				panic(fmt.Sprintf("Both 'Password' and 'Key_Path' fields are empty... Aborting.\n"))
-			}
-			go connectAndRun(command, servername.(string), fqdn.(string), username.(string), password.(string), keypath.(string), port.(string), output, &wg)
+			var pd ParsedData
+			pd.fqdn = serverValue[0].Value
+			pd.username = serverValue[1].Value
+			pd.password = serverValue[2].Value
+			pd.keypath = serverValue[3].Value
+			pd.port = serverValue[4].Value
+			defaulter(&pd)
+			go connectAndRun(command, servername.(string), &pd, output, &wg)
 		}
 		// Lesson learned with go routines... when waiting for waitgroup to decrement inside the loop will wait forever
 		// when reading from the channel, defer wg.Done() inside the function run in a goroutine, as it needs to tell the waitgroup
@@ -273,7 +272,6 @@ func RunAllServers(configs *yaml.MapSlice, command *string) {
 			allServers = append(allServers, serverItem)
 		}
 	}
-	// wg.Add(yamlparser.Waittotal)
 	for _, serverItem := range allServers {
 		wg.Add(1)
 		servername := serverItem.Key
@@ -281,34 +279,14 @@ func RunAllServers(configs *yaml.MapSlice, command *string) {
 		if !ok {
 			panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
 		}
-		fqdn := serverValue[0].Value
-		username := serverValue[1].Value
-		password := serverValue[2].Value
-		keypath := serverValue[3].Value
-		port := serverValue[4].Value
-		if username == nil {
-			username = "root"
-			// fmt.Println("No username specified in config.yml, defaulting to 'root'...")
-		}
-		if password == nil {
-			password = ""
-			// fmt.Println("No password specified in config.yml, defaulting to SSH key based authentication...")
-		}
-		if keypath == nil {
-			keypath = ""
-			// fmt.Println("No username specified in config.yml, defaulting to password based authentication...")
-		}
-		if port == nil {
-			port = 22
-			port = strconv.Itoa(port.(int))
-			// fmt.Println("No port specified in config.yml, defaulting to port 22...")
-		} else {
-			port = strconv.Itoa(serverValue[4].Value.(int))
-		}
-		if password == nil && keypath == nil {
-			panic(fmt.Sprintf("Both 'Password' and 'Key_Path' fields are empty... Aborting.\n"))
-		}
-		go connectAndRun(command, servername.(string), fqdn.(string), username.(string), password.(string), keypath.(string), port.(string), output, &wg)
+		var pd ParsedData
+		pd.fqdn = serverValue[0].Value
+		pd.username = serverValue[1].Value
+		pd.password = serverValue[2].Value
+		pd.keypath = serverValue[3].Value
+		pd.port = serverValue[4].Value
+		defaulter(&pd)
+		go connectAndRun(command, servername.(string), &pd, output, &wg)
 	}
 	// Lesson learned with go routines... when waiting for waitgroup to decrement inside the loop will wait forever
 	// when reading from the channel, defer wg.Done() inside the function run in a goroutine, as it needs to tell the waitgroup
