@@ -16,7 +16,7 @@ func main() {
 
 	app := cli.NewApp()
 	app.Name = "GoSSH"
-	app.Version = "1.0.0"
+	app.Version = "1.0.1"
 	app.Usage = "Open Source Go Infrastucture Automation Tool"
 	app.UsageText = "GoSSH [global options] command [subcommand] [script or arguments...]"
 	app.EnableBashCompletion = true
