@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"strconv"
 	"strings"
 	"sync"
@@ -34,20 +33,16 @@ func defaulter(pd *ParsedData) {
 	}
 	if pd.username == nil {
 		pd.username = "root"
-		// fmt.Println("No username specified in config.yml, defaulting to 'root'...")
 	}
 	if pd.password == nil {
 		pd.password = ""
-		// fmt.Println("No password specified in config.yml, defaulting to SSH key based authentication...")
 	}
 	if pd.keypath == nil {
 		pd.keypath = ""
-		// fmt.Println("No username specified in config.yml, defaulting to password based authentication...")
 	}
 	if pd.port == nil {
 		pd.port = 22
 		pd.port = strconv.Itoa(pd.port.(int))
-		// fmt.Println("No port specified in config.yml, defaulting to port 22...")
 	} else {
 		pd.port = strconv.Itoa(pd.port.(int))
 	}
@@ -56,7 +51,9 @@ func defaulter(pd *ParsedData) {
 // executeCommand function to run a command on remote servers. Arguments will run through this function and will take strings,
 func executeCommand(servername string, cmd string, password string, connection *ssh.Client) string {
 	session, err := connection.NewSession()
-	loggerlib.GeneralError(err)
+	if err != nil {
+		loggerlib.GeneralError(servername, "[INFO: Failed To Create Session] ", err)
+	}
 	defer session.Close()
 	modes := ssh.TerminalModes{
 		ssh.ECHO:          0,     // disable echoing
@@ -65,15 +62,15 @@ func executeCommand(servername string, cmd string, password string, connection *
 	}
 	if err := session.RequestPty("xterm", 50, 100, modes); err != nil {
 		session.Close()
-		log.Fatal(err)
+		loggerlib.GeneralError(servername, "[ERROR: Pty Request Failed] ", err)
 	}
 	in, err := session.StdinPipe()
 	if err != nil {
-		fmt.Println(err)
+		loggerlib.GeneralError(servername, "[ERROR: Stdin Error] ", err)
 	}
 	out, err := session.StdoutPipe()
 	if err != nil {
-		log.Fatal(err)
+		loggerlib.GeneralError(servername, "[ERROR: Stdout Error] ", err)
 	}
 	var validator string
 	var terminaloutput []byte
@@ -126,7 +123,9 @@ func connectAndRun(command *string, servername string, parseddata *ParsedData, o
 		authMethodCheck = append(authMethodCheck, ssh.Password(pd.password.(string)))
 	} else {
 		signer, err := ssh.ParsePrivateKey(key)
-		loggerlib.GeneralError(err)
+		if err != nil {
+			loggerlib.GeneralError(servername, "[INFO: Failed To Parse PrivKey] ", err)
+		}
 		authMethodCheck = append(authMethodCheck, ssh.PublicKeys(signer))
 	}
 	// hostKeyCallback, err := knownhosts.New(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
@@ -148,7 +147,9 @@ func connectAndRun(command *string, servername string, parseddata *ParsedData, o
 		Timeout: 15 * time.Second,
 	}
 	connection, err := ssh.Dial("tcp", pd.fqdn.(string)+":"+pd.port.(string), sshConfig)
-	loggerlib.GeneralError(err)
+	if err != nil {
+		loggerlib.GeneralError(servername, "[INFO: Connection Failed] ", err)
+	}
 	defer connection.Close()
 	defer wg.Done()
 	output <- executeCommand(servername, *command, pd.password.(string), connection)
@@ -162,7 +163,9 @@ func connectAndRunSeq(command *string, servername string, parseddata *ParsedData
 		authMethodCheck = append(authMethodCheck, ssh.Password(pd.password.(string)))
 	} else {
 		signer, err := ssh.ParsePrivateKey(key)
-		loggerlib.GeneralError(err)
+		if err != nil {
+			loggerlib.GeneralError(servername, "[INFO: Failed To Parse PrivKey] ", err)
+		}
 		authMethodCheck = append(authMethodCheck, ssh.PublicKeys(signer))
 	}
 	// hostKeyCallback, err := knownhosts.New(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
@@ -184,7 +187,9 @@ func connectAndRunSeq(command *string, servername string, parseddata *ParsedData
 		Timeout: 15 * time.Second,
 	}
 	connection, err := ssh.Dial("tcp", pd.fqdn.(string)+":"+pd.port.(string), sshConfig)
-	loggerlib.GeneralError(err)
+	if err != nil {
+		loggerlib.GeneralError(servername, "[INFO: Connection Failed] ", err)
+	}
 	defer connection.Close()
 	return servername + ": " + executeCommand(servername, *command, pd.password.(string), connection)
 }

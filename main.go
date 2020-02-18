@@ -16,7 +16,7 @@ func main() {
 
 	app := cli.NewApp()
 	app.Name = "GoSSH"
-	app.Version = "1.0.1"
+	app.Version = "1.0.2"
 	app.Usage = "Open Source Go Infrastucture Automation Tool"
 	app.UsageText = "GoSSH [global options] command [subcommand] [script or arguments...]"
 	app.EnableBashCompletion = true
@@ -41,7 +41,7 @@ func main() {
 						cmd := os.Args[3]
 						cmdargs := os.Args[4:]
 						command := clioptions.BashScriptParse(cmd, cmdargs)
-						sshlib.RunAllServers(&yamlparser.Config, &command)
+						sshlib.RunSequentially(&yamlparser.Config, &command)
 						return nil
 					},
 				},
@@ -77,7 +77,7 @@ func main() {
 						cmd := os.Args[3]
 						cmdargs := os.Args[4:]
 						command := clioptions.BashScriptParse(cmd, cmdargs)
-						sshlib.RunAllServers(&yamlparser.Config, &command)
+						sshlib.RunGroups(&yamlparser.Config, &command)
 						return nil
 					},
 				},

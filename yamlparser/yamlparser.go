@@ -53,7 +53,7 @@ func Rollcall() {
 
 // ParseServersList server list parser, parses it to a map of structs in main function
 func ParseServersList() string {
-	yamlLocation, _ := filepath.Abs("./config/config.yml") // remove -testing to revert changes, using custom server list
+	yamlLocation, _ := filepath.Abs("./config/pool.yml") // remove -testing to revert changes, using custom server list
 	bufRead, err := os.Open(yamlLocation)
 	generalError(err)
 	defer bufRead.Close()
