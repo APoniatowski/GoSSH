@@ -16,7 +16,7 @@ func main() {
 
 	app := cli.NewApp()
 	app.Name = "GoSSH"
-	app.Version = "1.0.2"
+	app.Version = "1.3.0"
 	app.Usage = "Open Source Go Infrastucture Automation Tool"
 	app.UsageText = "GoSSH [global options] command [subcommand] [script or arguments...]"
 	app.EnableBashCompletion = true
@@ -24,7 +24,7 @@ func main() {
 		{
 			Name:    "sequential",
 			Aliases: []string{"s"},
-			Usage:   "Run the command sequentially on all servers in your config file",
+			Usage:   "Run the command sequentially on all servers in your pool",
 			Action: func(c *cli.Context) error {
 				yamlparser.Rollcall()
 				cmd = os.Args[2:]
@@ -35,12 +35,38 @@ func main() {
 			Subcommands: []cli.Command{
 				{
 					Name:  "run",
-					Usage: "Run a bash script on the defined servers",
+					Usage: "Run a bash script on the servers in your pool",
 					Action: func(c *cli.Context) error {
 						yamlparser.Rollcall()
 						cmd := os.Args[3]
 						cmdargs := os.Args[4:]
 						command := clioptions.BashScriptParse(cmd, cmdargs)
+						sshlib.RunSequentially(&yamlparser.Config, &command)
+						return nil
+					},
+				},
+				{
+					Name:  "update",
+					Usage: "update all remote servers in pool",
+					Action: func(c *cli.Context) error {
+						yamlparser.Rollcall()
+						command := ""
+						cmdargs := os.Args[4]
+						if cmdargs == "os" || cmdargs == "OS" {
+							yamlparser.UpdaterFull = true
+						}
+						yamlparser.Updater = true
+						sshlib.RunSequentially(&yamlparser.Config, &command)
+						return nil
+					},
+				},
+				{
+					Name:  "install",
+					Usage: "Install packages on all remote servers in pool",
+					Action: func(c *cli.Context) error {
+						yamlparser.Rollcall()
+						command := ""
+						yamlparser.Install = true
 						sshlib.RunSequentially(&yamlparser.Config, &command)
 						return nil
 					},
@@ -60,7 +86,7 @@ func main() {
 		{
 			Name:    "groups",
 			Aliases: []string{"g"},
-			Usage:   "Run the command on all servers per group concurrently in your config file",
+			Usage:   "Run the command on all servers per group concurrently in your pool",
 			Action: func(c *cli.Context) error {
 				yamlparser.Rollcall()
 				cmd = os.Args[2:]
@@ -71,12 +97,38 @@ func main() {
 			Subcommands: []cli.Command{
 				{
 					Name:  "run",
-					Usage: "Run a bash script on the defined servers",
+					Usage: "Run a bash script on the servers in your pool",
 					Action: func(c *cli.Context) error {
 						yamlparser.Rollcall()
 						cmd := os.Args[3]
 						cmdargs := os.Args[4:]
 						command := clioptions.BashScriptParse(cmd, cmdargs)
+						sshlib.RunGroups(&yamlparser.Config, &command)
+						return nil
+					},
+				},
+				{
+					Name:  "update",
+					Usage: "update all remote servers in pool",
+					Action: func(c *cli.Context) error {
+						yamlparser.Rollcall()
+						command := ""
+						cmdargs := os.Args[4]
+						if cmdargs == "os" || cmdargs == "OS" {
+							yamlparser.UpdaterFull = true
+						}
+						yamlparser.Updater = true
+						sshlib.RunGroups(&yamlparser.Config, &command)
+						return nil
+					},
+				},
+				{
+					Name:  "install",
+					Usage: "Install packages on all remote servers in pool",
+					Action: func(c *cli.Context) error {
+						yamlparser.Rollcall()
+						command := ""
+						yamlparser.Install = true
 						sshlib.RunGroups(&yamlparser.Config, &command)
 						return nil
 					},
@@ -96,7 +148,7 @@ func main() {
 		{
 			Name:    "all",
 			Aliases: []string{"a"},
-			Usage:   "Run the command on all servers concurrently in your config file",
+			Usage:   "Run the command on all servers concurrently in your pool",
 			Action: func(c *cli.Context) error {
 				yamlparser.Rollcall()
 				cmd = os.Args[2:]
@@ -113,6 +165,32 @@ func main() {
 						cmd := os.Args[3]
 						cmdargs := os.Args[4:]
 						command := clioptions.BashScriptParse(cmd, cmdargs)
+						sshlib.RunAllServers(&yamlparser.Config, &command)
+						return nil
+					},
+				},
+				{
+					Name:  "update",
+					Usage: "Update all remote servers in pool",
+					Action: func(c *cli.Context) error {
+						yamlparser.Rollcall()
+						command := ""
+						cmdargs := os.Args[4]
+						if cmdargs == "os" || cmdargs == "OS" {
+							yamlparser.UpdaterFull = true
+						}
+						yamlparser.Updater = true
+						sshlib.RunAllServers(&yamlparser.Config, &command)
+						return nil
+					},
+				},
+				{
+					Name:  "install",
+					Usage: "Install packages on all remote servers in pool",
+					Action: func(c *cli.Context) error {
+						yamlparser.Rollcall()
+						command := ""
+						yamlparser.Install = true
 						sshlib.RunAllServers(&yamlparser.Config, &command)
 						return nil
 					},

@@ -15,6 +15,8 @@ import (
 
 	"github.com/APoniatowski/GoSSH/channelreaderlib"
 	"github.com/APoniatowski/GoSSH/loggerlib"
+	"github.com/APoniatowski/GoSSH/pkgmanlib"
+	vars "github.com/APoniatowski/GoSSH/yamlparser"
 )
 
 //ParsedData Parsing data to struct to cleanup some code
@@ -24,6 +26,7 @@ type ParsedData struct {
 	password interface{}
 	keypath  interface{}
 	port     interface{}
+	os       interface{}
 }
 
 //defaulter defaults all empty fields in yaml file and to abort if too many values are missing, eg password and key_path
@@ -52,7 +55,7 @@ func defaulter(pd *ParsedData) {
 func executeCommand(servername string, cmd string, password string, connection *ssh.Client) string {
 	session, err := connection.NewSession()
 	if err != nil {
-		loggerlib.GeneralError(servername, "[INFO: Failed To Create Session] ", err)
+		loggerlib.GeneralError(servername, "[ERROR: Failed To Create Session] ", err)
 	}
 	defer session.Close()
 	modes := ssh.TerminalModes{
@@ -148,10 +151,22 @@ func connectAndRun(command *string, servername string, parseddata *ParsedData, o
 	}
 	connection, err := ssh.Dial("tcp", pd.fqdn.(string)+":"+pd.port.(string), sshConfig)
 	if err != nil {
-		loggerlib.GeneralError(servername, "[INFO: Connection Failed] ", err)
+		loggerlib.GeneralError(servername, "[ERROR: Connection Failed] ", err)
 	}
 	defer connection.Close()
 	defer wg.Done()
+
+	if vars.Updater == true {
+		if vars.UpdaterFull == true {
+			*command = pkgmanlib.UpdateOS(pd.username.(string), pd.os.(string))
+		}
+		*command = pkgmanlib.Update(pd.username.(string), pd.os.(string))
+	}
+
+	if vars.Install == true {
+		*command = pkgmanlib.Install(pd.username.(string), pd.os.(string))
+	}
+
 	output <- executeCommand(servername, *command, pd.password.(string), connection)
 }
 
@@ -188,9 +203,21 @@ func connectAndRunSeq(command *string, servername string, parseddata *ParsedData
 	}
 	connection, err := ssh.Dial("tcp", pd.fqdn.(string)+":"+pd.port.(string), sshConfig)
 	if err != nil {
-		loggerlib.GeneralError(servername, "[INFO: Connection Failed] ", err)
+		loggerlib.GeneralError(servername, "[ERROR: Connection Failed] ", err)
 	}
 	defer connection.Close()
+
+	if vars.Updater == true {
+		if vars.UpdaterFull == true {
+			*command = pkgmanlib.UpdateOS(pd.username.(string), pd.os.(string))
+		}
+		*command = pkgmanlib.Update(pd.username.(string), pd.os.(string))
+	}
+
+	if vars.Install == true {
+		*command = pkgmanlib.Install(pd.username.(string), pd.os.(string))
+	}
+
 	return servername + ": " + executeCommand(servername, *command, pd.password.(string), connection)
 }
 
@@ -216,6 +243,7 @@ func RunSequentially(configs *yaml.MapSlice, command *string) {
 			pd.password = serverValue[2].Value
 			pd.keypath = serverValue[3].Value
 			pd.port = serverValue[4].Value
+			pd.os = serverValue[5].Value
 			defaulter(&pd)
 			output := connectAndRunSeq(command, servername.(string), &pd)
 			fmt.Print(output)
@@ -246,6 +274,7 @@ func RunGroups(configs *yaml.MapSlice, command *string) {
 			pd.password = serverValue[2].Value
 			pd.keypath = serverValue[3].Value
 			pd.port = serverValue[4].Value
+			pd.os = serverValue[5].Value
 			defaulter(&pd)
 			go connectAndRun(command, servername.(string), &pd, output, &wg)
 		}
@@ -290,6 +319,7 @@ func RunAllServers(configs *yaml.MapSlice, command *string) {
 		pd.password = serverValue[2].Value
 		pd.keypath = serverValue[3].Value
 		pd.port = serverValue[4].Value
+		pd.os = serverValue[5].Value
 		defaulter(&pd)
 		go connectAndRun(command, servername.(string), &pd, output, &wg)
 	}

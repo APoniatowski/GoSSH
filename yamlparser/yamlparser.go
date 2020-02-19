@@ -25,6 +25,9 @@ var (
 	Waittotal       int
 	Grouptotal      int
 	ServersPerGroup []int
+	Updater         bool
+	UpdaterFull     bool
+	Install         bool
 )
 
 func init() {
