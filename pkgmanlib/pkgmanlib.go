@@ -34,3 +34,14 @@ func Install(username string, os string) (installcommand string) {
 	installcommand = "test"
 	return installcommand
 }
+
+// Uninstall this will install any packages specified on the servers, creating the correct command for each major distribution and/or package manager
+func Uninstall(username string, os string) (installcommand string) {
+	if username == "root" {
+		installcommand = ""
+	} else {
+
+	}
+	installcommand = "test"
+	return installcommand
+}

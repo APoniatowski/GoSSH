@@ -1,28 +1,49 @@
 package pkgmanlib
 
-// PackageManagerUpdate map of packagemanagers with update flags for every dist. Updates take different flags and arguments
-var PackageManagerUpdate = map[string]string{
-	"debian":   "apt-get",
-	"centos":   "yum",
-	"fedora":   "dnf",
-	"opensuse": "zypper",
-	"arch":     "pacman",
+// PkgRefresh refresh/update of packages before update
+var PkgRefresh = map[string]string{
+	"debian":   "apt-get update",
+	"centos":   "yum check-update",
+	"fedora":   "dnf check-update",
+	"opensuse": "zypper refresh",
+	"arch":     "pacman -Sy",
+	"rhel": "yum update",
+	"sles": "zypper refresh",
+	"ubuntu": "apt-get update",
 }
 
-// PackageManagerUpdateOS map of packagemanagers with update flags for every dist. Updates take different flags and arguments
-var PackageManagerUpdateOS = map[string]string{
-	"debian":   "apt-get",
-	"centos":   "yum",
-	"fedora":   "dnf",
-	"opensuse": "zypper",
-	"arch":     "pacman",
+// PkgUpdate map of Pkgs with update flags for every dist. Updates take different flags and arguments
+var PkgUpdate = map[string]string{
+	"debian":   "apt-get upgrade -y",
+	"centos":   "yum update -y",
+	"fedora":   "dnf upgrade -y",
+	"opensuse": "zypper update -y",
+	"arch":     "pacman -Syu",
+	"rhel": "yum update -y",
+	"sles": "zypper update -y",
+	"ubuntu": "apt-get upgrade -y",
 }
 
-// PackageManagerInstall map of packagemanagers for every OS. Installation flags differ from dist
-var PackageManagerInstall = map[string]string{
-	"debian":   "apt-get",
-	"centos":   "yum",
-	"fedora":   "dnf",
-	"opensuse": "zypper",
-	"arch":     "pacman",
+// PkgUpdateOS map of Pkgs with update flags for every dist. Updates take different flags and arguments
+var PkgUpdateOS = map[string]string{
+	"debian":   "apt-get dist-upgrade -y",
+	"centos":   "yum update -y",
+	"fedora":   "dnf system-upgrade download --refresh --releasever=$(awk -v s=1 '{print $3+s}' /etc/fedora-release) -y",
+	"opensuse": "zypper dup -y",
+	"arch":     "pacman -Syyu",
+	"rhel": "yum update -y",
+	"sles": "zypper dup -y",
+	"ubuntu": "apt-get dist-upgrade -y",
+}
+
+// PkgInstall map of Pkgs for every OS. Installation flags differ from dist
+var PkgInstall = map[string]string{
+	"debian":   "apt-get install",
+	"centos":   "yum install",
+	"fedora":   "dnf install",
+	"opensuse": "zypper install",
+	"arch":     "pacman -S",
+	"rhel": "yum install",
+	"sles": "zypper install",
+	"ubuntu": "apt-get install",
 }
