@@ -1,6 +1,6 @@
 # GoSSH  -  Open Source Go Infrastucture Automation Tool
 
-![](https://github.com/Aponiatowski/GoSSH/workflows/GoSSH/badge.svg)     [![Go Report Card](https://goreportcard.com/badge/github.com/APoniatowski/GoSSH)](https://goreportcard.com/report/github.com/APoniatowski/GoSSH)   [![codebeat badge](https://codebeat.co/badges/e53dab58-a0df-4699-a4d6-cfe67fbd9b81)](https://codebeat.co/projects/github-com-aponiatowski-gossh-master)   [![codecov](https://codecov.io/gh/APoniatowski/GoSSH/branch/master/graph/badge.svg)](https://codecov.io/gh/APoniatowski/GoSSH)
+![](https://github.com/Aponiatowski/GoSSH/workflows/GoSSH/badge.svg)     [![Go Report Card](https://goreportcard.com/badge/github.com/APoniatowski/GoSSH)](https://goreportcard.com/report/github.com/APoniatowski/GoSSH)   [![codebeat badge](https://codebeat.co/badges/e53dab58-a0df-4699-a4d6-cfe67fbd9b81)](https://codebeat.co/projects/github-com-aponiatowski-gossh-master)
 
 ## Project update:
 It is currently in an usable state, and can be used to execute commands in varied ways and performs well. :+1:
