@@ -6,8 +6,9 @@ func Update(username string, os string) (updatecommand string) {
 	if username == "root" {
 		updatecommand = ""
 	} else {
-
+		updatecommand = "sudo"
 	}
+	updatecommand = updatecommand + PkgRefresh[os] + ";" + PkgUpdate[os] + "2>&1"
 	return updatecommand
 }
 
@@ -18,30 +19,30 @@ func UpdateOS(username string, os string) (updatecommand string) {
 	if username == "root" {
 		updatecommand = ""
 	} else {
-
+		updatecommand = "sudo"
 	}
-	updatecommand = "test"
+	updatecommand = updatecommand + PkgRefresh[os] + ";" + PkgUpdateOS[os] + "2>&1"
 	return updatecommand
 }
 
 // Install this will install any packages specified on the servers, creating the correct command for each major distribution and/or package manager
-func Install(username string, os string) (installcommand string) {
+func Install(username string, os string, cmdargs string) (installcommand string) {
 	if username == "root" {
 		installcommand = ""
 	} else {
-
+		installcommand = "sudo"
 	}
-	installcommand = "test"
+	installcommand = installcommand + PkgRefresh[os] + ";" + PkgInstall[os] + cmdargs + "2>&1"
 	return installcommand
 }
 
 // Uninstall this will install any packages specified on the servers, creating the correct command for each major distribution and/or package manager
-func Uninstall(username string, os string) (installcommand string) {
+func Uninstall(username string, os string, cmdargs string) (uninstallcommand string) {
 	if username == "root" {
-		installcommand = ""
+		uninstallcommand = ""
 	} else {
-
+		uninstallcommand = "sudo"
 	}
-	installcommand = "test"
-	return installcommand
+	uninstallcommand = uninstallcommand + PkgRefresh[os] + ";" + PkgInstall[os] + cmdargs + "2>&1"
+	return uninstallcommand
 }
