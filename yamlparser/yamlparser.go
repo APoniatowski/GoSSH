@@ -28,6 +28,7 @@ var (
 	Updater         bool
 	UpdaterFull     bool
 	Install         bool
+	Uninstall       bool
 )
 
 func init() {

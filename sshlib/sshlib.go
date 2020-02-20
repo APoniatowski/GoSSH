@@ -164,7 +164,10 @@ func connectAndRun(command *string, servername string, parseddata *ParsedData, o
 	}
 
 	if vars.Install == true {
-		*command = pkgmanlib.Install(pd.username.(string), pd.os.(string))
+		*command = pkgmanlib.Install(pd.username.(string), pd.os.(string), *command)
+	}
+	if vars.Uninstall == true {
+		*command = pkgmanlib.Uninstall(pd.username.(string), pd.os.(string), *command)
 	}
 
 	output <- executeCommand(servername, *command, pd.password.(string), connection)
@@ -215,7 +218,10 @@ func connectAndRunSeq(command *string, servername string, parseddata *ParsedData
 	}
 
 	if vars.Install == true {
-		*command = pkgmanlib.Install(pd.username.(string), pd.os.(string))
+		*command = pkgmanlib.Install(pd.username.(string), pd.os.(string), *command)
+	}
+	if vars.Uninstall == true {
+		*command = pkgmanlib.Uninstall(pd.username.(string), pd.os.(string), *command)
 	}
 
 	return servername + ": " + executeCommand(servername, *command, pd.password.(string), connection)
