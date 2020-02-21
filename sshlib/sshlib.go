@@ -16,16 +16,35 @@ import (
 	"github.com/APoniatowski/GoSSH/channelreaderlib"
 	"github.com/APoniatowski/GoSSH/loggerlib"
 	"github.com/APoniatowski/GoSSH/pkgmanlib"
-	// "github.com/APoniatowski/GoSSH/yamlparser"
 )
 
 // Switches For checking what CLI option was used and run the appropriate functions
 type Switches struct {
-	Updater     *bool
-	UpdaterFull *bool
-	Install     *bool
-	Uninstall   *bool
+	Updater, UpdaterFull, Install, Uninstall *bool
 }
+
+//Switcher Method to check the switches set for each respective action
+func (S *Switches) Switcher(pd ParsedData, command string) string {
+	rtncommand := ""
+
+	if *S.Updater {
+		rtncommand = pkgmanlib.Update(pd.username.(string), pd.os.(string))
+	}
+	if *S.UpdaterFull {
+		rtncommand = pkgmanlib.UpdateOS(pd.username.(string), pd.os.(string))
+	}
+	if *S.Install {
+		rtncommand = pkgmanlib.Install(pd.username.(string), pd.os.(string)) + command + " -y 2>&1"
+	}
+	if *S.Uninstall {
+		rtncommand = pkgmanlib.Uninstall(pd.username.(string), pd.os.(string)) + command + " -y 2>&1"
+	}
+
+	return rtncommand
+}
+
+// OSSwitcher a much needed var between main and sshlib
+var OSSwitcher Switches
 
 //ParsedData Parsing data to struct to cleanup some code
 type ParsedData struct {
@@ -36,9 +55,6 @@ type ParsedData struct {
 	port     interface{}
 	os       interface{}
 }
-
-// OSSwitch testing
-var OSSwitch Switches
 
 //defaulter defaults all empty fields in yaml file and to abort if too many values are missing, eg password and key_path
 func defaulter(pd *ParsedData) {
@@ -89,9 +105,8 @@ func executeCommand(servername string, cmd string, password string, connection *
 	var validator string
 	var terminaloutput []byte
 	var waitoutput sync.WaitGroup
-	// it does not wait for output on some machines that are taking too long to respond
+	// it does not wait for output on some machines that are taking too long to respond. I'd like to avoid using Rlocks/Runlocks for this
 	waitoutput.Add(1)
-	fmt.Println(cmd)
 	go func(in io.WriteCloser, out io.Reader, terminaloutput *[]byte) {
 		var (
 			line string
@@ -131,7 +146,7 @@ func executeCommand(servername string, cmd string, password string, connection *
 
 // connectAndRun Establish a connection and run command(s), will add CLI args in the near future
 func connectAndRun(command *string, servername string, parseddata *ParsedData, output chan<- string, wg *sync.WaitGroup) {
-	pd := *parseddata
+	pd := parseddata
 	authMethodCheck := []ssh.AuthMethod{}
 	key, err := ioutil.ReadFile(pd.keypath.(string))
 	if err != nil {
@@ -167,22 +182,9 @@ func connectAndRun(command *string, servername string, parseddata *ParsedData, o
 	}
 	defer connection.Close()
 	defer wg.Done()
-
-	// if OSSwitch.Updater == true {
-	// 	if OSSwitch.UpdaterFull == true {
-	// 		*command = pkgmanlib.UpdateOS(pd.username.(string), pd.os.(string))
-	// 	}
-	// 	*command = pkgmanlib.Update(pd.username.(string), pd.os.(string))
-	// }
-
-	// if OSSwitch.Install == true {
-	// 	*command = pkgmanlib.Install(pd.username.(string), pd.os.(string), *command)
-	// }
-	// if OSSwitch.Uninstall == true {
-	// 	*command = pkgmanlib.Uninstall(pd.username.(string), pd.os.(string), *command)
-	// }
-
-	output <- executeCommand(servername, *command, pd.password.(string), connection)
+	derefcmd := *command
+	derefcmd = OSSwitcher.Switcher(*pd, derefcmd)
+	output <- executeCommand(servername, derefcmd, pd.password.(string), connection)
 }
 
 func connectAndRunSeq(command *string, servername string, parseddata *ParsedData) string {
@@ -221,22 +223,10 @@ func connectAndRunSeq(command *string, servername string, parseddata *ParsedData
 		loggerlib.GeneralError(servername, "[ERROR: Connection Failed] ", err)
 	}
 	defer connection.Close()
-
-	// if OSSwitch.Updater == true {
-	// 	if OSSwitch.UpdaterFull == true {
-	// 		*command = pkgmanlib.UpdateOS(pd.username.(string), pd.os.(string))
-	// 	}
-	// 	*command = pkgmanlib.Update(pd.username.(string), pd.os.(string))
-	// }
-
-	// if OSSwitch.Install == true {
-	// 	*command = pkgmanlib.Install(pd.username.(string), pd.os.(string), *command)
-	// }
-	// if OSSwitch.Uninstall == true {
-	// 	*command = pkgmanlib.Uninstall(pd.username.(string), pd.os.(string), *command)
-	// }
-
-	return servername + ": " + executeCommand(servername, *command, pd.password.(string), connection)
+	derefcmd := *command
+	derefcmd = OSSwitcher.Switcher(*pd, derefcmd)
+	fmt.Printf("%v: ", servername)
+	return executeCommand(servername, derefcmd, pd.password.(string), connection)
 }
 
 //=============================== sequential and concurrent functions listed below =============================
@@ -297,9 +287,6 @@ func RunGroups(configs *yaml.MapSlice, command *string) {
 			defaulter(&pd)
 			go connectAndRun(command, servername.(string), &pd, output, &wg)
 		}
-		// Lesson learned with go routines... when waiting for waitgroup to decrement inside the loop will wait forever
-		// when reading from the channel, defer wg.Done() inside the function run in a goroutine, as it needs to tell the waitgroup
-		// to decrement the waitgroup amount, as the channel never closes below, when calling wg.Done() in the loop
 		go func() {
 			wg.Wait()
 			close(output)
@@ -340,42 +327,9 @@ func RunAllServers(configs *yaml.MapSlice, command *string) {
 		pd.port = serverValue[4].Value
 		pd.os = serverValue[5].Value
 		defaulter(&pd)
-		fmt.Printf("Updater: %v\n", OSSwitch.Updater)
-		fmt.Printf("UpdaterOS: %v\n", OSSwitch.Updater)
-		fmt.Printf("Install: %v\n", OSSwitch.Updater)
-		fmt.Printf("Uninstall: %v\n", OSSwitch.Updater)
-		if *OSSwitch.Updater {
-			if *OSSwitch.UpdaterFull {
-				*command = pkgmanlib.UpdateOS(pd.username.(string), pd.os.(string))
-			}
-			*command = pkgmanlib.Update(pd.username.(string), pd.os.(string))
-		}
 
-		if *OSSwitch.Install {
-			*command = pkgmanlib.Install(pd.username.(string), pd.os.(string), *command)
-		}
-		if *OSSwitch.Uninstall {
-			*command = pkgmanlib.Uninstall(pd.username.(string), pd.os.(string), *command)
-		}
-		// switch OSSwitch {
-		// case OSSwitch.Updater:
-		// 		*command = pkgmanlib.Update(pd.username.(string), pd.os.(string))
-		// case OSSwitch.UpdaterFull:
-		// 		*command = pkgmanlib.UpdateOS(pd.username.(string), pd.os.(string))
-		// case OSSwitch.Install:
-		// 		*command = pkgmanlib.Install(pd.username.(string), pd.os.(string), *command)
-		// case OSSwitch.Uninstall:
-		// 		*command = pkgmanlib.Uninstall(pd.username.(string), pd.os.(string), *command)
-		// default:
-		// 	continue
-		// }
 		go connectAndRun(command, servername.(string), &pd, output, &wg)
 	}
-	// Lesson learned with go routines... when waiting for waitgroup to decrement inside the loop will wait forever
-	// when reading from the channel, defer wg.Done() inside the function run in a goroutine, as it needs to tell the waitgroup
-	// to decrement the waitgroup amount, as the channel never closes below, when calling wg.Done() in the loop
-
-	// this resolved the stuck go routines. I needed to close the channel, as the channelreader gets stuck at an open and empty channel
 	go func() {
 		wg.Wait()
 		close(output)

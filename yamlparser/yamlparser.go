@@ -33,10 +33,6 @@ func init() {
 	err := yaml.Unmarshal([]byte(data), &Config)
 	generalError(err)
 	fmt.Println("Data parsed, no errors encountered...")
-	// &OSSwitch.Updater = false
-	// OSSwitch.UpdaterFull = false
-	// OSSwitch.Install = false
-	// OSSwitch.Uninstall = false
 }
 
 // Rollcall Tally up the number of servers and groups and servers in groups
@@ -57,7 +53,7 @@ func Rollcall() {
 
 // ParseServersList server list parser, parses it to a map of structs in main function
 func ParseServersList() string {
-	yamlLocation, _ := filepath.Abs("./config/pool-testing1.yml") // remove -testing to revert changes, using custom server list
+	yamlLocation, _ := filepath.Abs("./config/pool.yml") // remove -testing to revert changes, using custom server list
 	bufRead, err := os.Open(yamlLocation)
 	generalError(err)
 	defer bufRead.Close()

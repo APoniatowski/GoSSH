@@ -26,23 +26,25 @@ func UpdateOS(username string, os string) (updatecommand string) {
 }
 
 // Install this will install any packages specified on the servers, creating the correct command for each major distribution and/or package manager
-func Install(username string, os string, cmdargs string) (installcommand string) {
+func Install(username string, os string) (installcommand string) {
+	installcommand = ""
 	if username == "root" {
 		installcommand = ""
 	} else {
 		installcommand = "sudo "
 	}
-	installcommand = installcommand + PkgRefresh[os] + ";" + installcommand + PkgInstall[os] + cmdargs + " -y 2>&1"
+	installcommand = installcommand + PkgRefresh[os] + ";" + installcommand + PkgInstall[os]
 	return installcommand
 }
 
 // Uninstall this will install any packages specified on the servers, creating the correct command for each major distribution and/or package manager
-func Uninstall(username string, os string, cmdargs string) (uninstallcommand string) {
+func Uninstall(username string, os string) (uninstallcommand string) {
+	uninstallcommand = ""
 	if username == "root" {
 		uninstallcommand = ""
 	} else {
 		uninstallcommand = "sudo "
 	}
-	uninstallcommand = uninstallcommand + PkgUninstall[os] + cmdargs + " -y 2>&1"
+	uninstallcommand = uninstallcommand + PkgUninstall[os]
 	return uninstallcommand
 }
