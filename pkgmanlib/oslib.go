@@ -38,24 +38,24 @@ var PkgUpdateOS = map[string]string{
 
 // PkgInstall map of Pkgs for every OS. Installation flags differ from dist
 var PkgInstall = map[string]string{
-	"debian":   "apt-get install",
-	"centos":   "yum install",
-	"fedora":   "dnf install",
-	"opensuse": "zypper install",
-	"arch":     "pacman -S",
-	"rhel":     "yum install",
-	"sles":     "zypper install",
-	"ubuntu":   "apt-get install",
+	"debian":   "apt-get install ",
+	"centos":   "yum install ",
+	"fedora":   "dnf install ",
+	"opensuse": "zypper install ",
+	"arch":     "pacman -S ",
+	"rhel":     "yum install ",
+	"sles":     "zypper install ",
+	"ubuntu":   "apt-get install ",
 }
 
 // PkgUninstall map of Pkgs for every OS. Installation flags differ from dist
 var PkgUninstall = map[string]string{
-	"debian":   "apt-get remove",
-	"centos":   "yum remove",
-	"fedora":   "dnf remove",
-	"opensuse": "zypper remove",
-	"arch":     "pacman -R",
-	"rhel":     "yum remove",
-	"sles":     "zypper remove",
-	"ubuntu":   "apt-get remove",
+	"debian":   "apt-get remove ",
+	"centos":   "yum remove ",
+	"fedora":   "dnf remove ",
+	"opensuse": "zypper remove ",
+	"arch":     "pacman -R ",
+	"rhel":     "yum remove ",
+	"sles":     "zypper remove ",
+	"ubuntu":   "apt-get remove ",
 }

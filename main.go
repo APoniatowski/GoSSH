@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -15,10 +16,11 @@ import (
 // Main function to carry out operations
 func main() {
 	var cmd []string
-
+	Switcher := &sshlib.OSSwitch
+	tswitch := true
 	app := cli.NewApp()
 	app.Name = "GoSSH"
-	app.Version = "1.3.0"
+	app.Version = "1.4.0"
 	app.Usage = "Open Source Go Infrastucture Automation Tool"
 	app.UsageText = "GoSSH [global options] command [subcommand] [script or arguments...]"
 	app.EnableBashCompletion = true
@@ -31,9 +33,9 @@ func main() {
 				yamlparser.Rollcall()
 				cmd = os.Args[2:]
 				command := clioptions.GeneralCommandParse(cmd)
-				yamlparser.Updater = false
-				yamlparser.Install = false
-				yamlparser.Uninstall = false
+				// Switcher.Updater = false
+				// Switcher.Install = false
+				// Switcher.Uninstall = false
 				sshlib.RunSequentially(&yamlparser.Config, &command)
 				return nil
 			},
@@ -46,9 +48,9 @@ func main() {
 						cmd := os.Args[3]
 						cmdargs := os.Args[4:]
 						command := clioptions.BashScriptParse(cmd, cmdargs)
-						yamlparser.Updater = false
-						yamlparser.Install = false
-						yamlparser.Uninstall = false
+						// Switcher.Updater = false
+						// Switcher.Install = false
+						// Switcher.Uninstall = false
 						sshlib.RunSequentially(&yamlparser.Config, &command)
 						return nil
 					},
@@ -59,13 +61,13 @@ func main() {
 					Action: func(c *cli.Context) error {
 						yamlparser.Rollcall()
 						command := ""
-						cmdargs := os.Args[4]
-						if cmdargs == "os" || cmdargs == "OS" {
-							yamlparser.UpdaterFull = true
+						osSwitch := strconv.Quote(strings.Join(os.Args[3:], " "))
+						if osSwitch == "os" || osSwitch == "OS" {
+							Switcher.UpdaterFull = &tswitch
 						}
-						yamlparser.Updater = true
-						yamlparser.Install = false
-						yamlparser.Uninstall = false
+						Switcher.Updater = &tswitch
+						// Switcher.Install = false
+						// Switcher.Uninstall = false
 						sshlib.RunSequentially(&yamlparser.Config, &command)
 						return nil
 					},
@@ -78,9 +80,9 @@ func main() {
 						command := ""
 						cmdargs := os.Args[3:]
 						command = strconv.Quote(strings.Join(cmdargs, " "))
-						yamlparser.Updater = false
-						yamlparser.Install = true
-						yamlparser.Uninstall = false
+						// Switcher.Updater = false
+						Switcher.Install = &tswitch
+						// Switcher.Uninstall = false
 						sshlib.RunSequentially(&yamlparser.Config, &command)
 						return nil
 					},
@@ -93,9 +95,9 @@ func main() {
 						command := ""
 						cmdargs := os.Args[3:]
 						command = strconv.Quote(strings.Join(cmdargs, " "))
-						yamlparser.Updater = false
-						yamlparser.Install = false
-						yamlparser.Uninstall = true
+						// Switcher.Updater = false
+						// Switcher.Install = false
+						Switcher.Uninstall = &tswitch
 						sshlib.RunSequentially(&yamlparser.Config, &command)
 						return nil
 					},
@@ -120,9 +122,9 @@ func main() {
 				yamlparser.Rollcall()
 				cmd = os.Args[2:]
 				command := clioptions.GeneralCommandParse(cmd)
-				yamlparser.Updater = false
-				yamlparser.Install = false
-				yamlparser.Uninstall = false
+				// Switcher.Updater = false
+				// Switcher.Install = false
+				// Switcher.Uninstall = false
 				sshlib.RunGroups(&yamlparser.Config, &command)
 				return nil
 			},
@@ -135,9 +137,9 @@ func main() {
 						cmd := os.Args[3]
 						cmdargs := os.Args[4:]
 						command := clioptions.BashScriptParse(cmd, cmdargs)
-						yamlparser.Updater = false
-						yamlparser.Install = false
-						yamlparser.Uninstall = false
+						// Switcher.Updater = false
+						// Switcher.Install = false
+						// Switcher.Uninstall = false
 						sshlib.RunGroups(&yamlparser.Config, &command)
 						return nil
 					},
@@ -148,13 +150,13 @@ func main() {
 					Action: func(c *cli.Context) error {
 						yamlparser.Rollcall()
 						command := ""
-						cmdargs := os.Args[4]
-						if cmdargs == "os" || cmdargs == "OS" {
-							yamlparser.UpdaterFull = true
+						osSwitch := strconv.Quote(strings.Join(os.Args[3:], " "))
+						if osSwitch == "os" || osSwitch == "OS" {
+							Switcher.UpdaterFull = &tswitch
 						}
-						yamlparser.Updater = true
-						yamlparser.Install = false
-						yamlparser.Uninstall = false
+						Switcher.Updater = &tswitch
+						// Switcher.Install = false
+						// Switcher.Uninstall = false
 						sshlib.RunGroups(&yamlparser.Config, &command)
 						return nil
 					},
@@ -167,9 +169,9 @@ func main() {
 						command := ""
 						cmdargs := os.Args[3:]
 						command = strconv.Quote(strings.Join(cmdargs, " "))
-						yamlparser.Updater = false
-						yamlparser.Install = true
-						yamlparser.Uninstall = false
+						// Switcher.Updater = false
+						Switcher.Install = &tswitch
+						// Switcher.Uninstall = false
 						sshlib.RunGroups(&yamlparser.Config, &command)
 						return nil
 					},
@@ -182,9 +184,9 @@ func main() {
 						command := ""
 						cmdargs := os.Args[3:]
 						command = strconv.Quote(strings.Join(cmdargs, " "))
-						yamlparser.Updater = false
-						yamlparser.Install = false
-						yamlparser.Uninstall = true
+						// Switcher.Updater = false
+						// Switcher.Install = false
+						Switcher.Uninstall = &tswitch
 						sshlib.RunGroups(&yamlparser.Config, &command)
 						return nil
 					},
@@ -209,9 +211,9 @@ func main() {
 				yamlparser.Rollcall()
 				cmd = os.Args[2:]
 				command := clioptions.GeneralCommandParse(cmd)
-				yamlparser.Updater = false
-				yamlparser.Install = false
-				yamlparser.Uninstall = false
+				// Switcher.Updater = false
+				// Switcher.Install = false
+				// Switcher.Uninstall = false
 				sshlib.RunAllServers(&yamlparser.Config, &command)
 				return nil
 			},
@@ -224,9 +226,9 @@ func main() {
 						cmd := os.Args[3]
 						cmdargs := os.Args[4:]
 						command := clioptions.BashScriptParse(cmd, cmdargs)
-						yamlparser.Updater = false
-						yamlparser.Install = false
-						yamlparser.Uninstall = false
+						// Switcher.Updater = false
+						// Switcher.Install = false
+						// Switcher.Uninstall = false
 						sshlib.RunAllServers(&yamlparser.Config, &command)
 						return nil
 					},
@@ -237,13 +239,13 @@ func main() {
 					Action: func(c *cli.Context) error {
 						yamlparser.Rollcall()
 						command := ""
-						cmdargs := os.Args[4]
-						if cmdargs == "os" || cmdargs == "OS" {
-							yamlparser.UpdaterFull = true
+						osSwitch := strconv.Quote(strings.Join(os.Args[3:], " "))
+						if osSwitch == "os" || osSwitch == "OS" {
+							Switcher.UpdaterFull = &tswitch
 						}
-						yamlparser.Updater = true
-						yamlparser.Install = false
-						yamlparser.Uninstall = false
+						Switcher.Updater = &tswitch
+						// Switcher.Install = false
+						// Switcher.Uninstall = false
 						sshlib.RunAllServers(&yamlparser.Config, &command)
 						return nil
 					},
@@ -256,9 +258,12 @@ func main() {
 						command := ""
 						cmdargs := os.Args[3:]
 						command = strconv.Quote(strings.Join(cmdargs, " "))
-						yamlparser.Updater = false
-						yamlparser.Install = true
-						yamlparser.Uninstall = false
+						// Switcher.Updater = false
+						// Switcher.Uninstall = false
+						fmt.Printf("Updater: %v\n", Switcher.Updater)
+						fmt.Printf("UpdaterOS: %v\n", Switcher.Updater)
+						fmt.Printf("Install: %v\n", Switcher.Updater)
+						fmt.Printf("Uninstall: %v\n", Switcher.Updater)
 						sshlib.RunAllServers(&yamlparser.Config, &command)
 						return nil
 					},
@@ -271,9 +276,9 @@ func main() {
 						command := ""
 						cmdargs := os.Args[3:]
 						command = strconv.Quote(strings.Join(cmdargs, " "))
-						yamlparser.Updater = false
-						yamlparser.Install = false
-						yamlparser.Uninstall = true
+						// Switcher.Updater = false
+						// Switcher.Install = false
+						Switcher.Uninstall = &tswitch
 						sshlib.RunAllServers(&yamlparser.Config, &command)
 						return nil
 					},

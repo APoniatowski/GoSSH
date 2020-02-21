@@ -6,9 +6,9 @@ func Update(username string, os string) (updatecommand string) {
 	if username == "root" {
 		updatecommand = ""
 	} else {
-		updatecommand = "sudo"
+		updatecommand = "sudo "
 	}
-	updatecommand = updatecommand + PkgRefresh[os] + ";" + PkgUpdate[os] + "2>&1"
+	updatecommand = updatecommand + PkgRefresh[os] + ";" + updatecommand + PkgUpdate[os] + " 2>&1"
 	return updatecommand
 }
 
@@ -19,9 +19,9 @@ func UpdateOS(username string, os string) (updatecommand string) {
 	if username == "root" {
 		updatecommand = ""
 	} else {
-		updatecommand = "sudo"
+		updatecommand = "sudo "
 	}
-	updatecommand = updatecommand + PkgRefresh[os] + ";" + PkgUpdateOS[os] + "2>&1"
+	updatecommand = updatecommand + PkgRefresh[os] + ";" + updatecommand + PkgUpdateOS[os] + " 2>&1"
 	return updatecommand
 }
 
@@ -30,9 +30,9 @@ func Install(username string, os string, cmdargs string) (installcommand string)
 	if username == "root" {
 		installcommand = ""
 	} else {
-		installcommand = "sudo"
+		installcommand = "sudo "
 	}
-	installcommand = installcommand + PkgRefresh[os] + ";" + PkgInstall[os] + cmdargs + " -y 2>&1"
+	installcommand = installcommand + PkgRefresh[os] + ";" + installcommand + PkgInstall[os] + cmdargs + " -y 2>&1"
 	return installcommand
 }
 
@@ -41,8 +41,8 @@ func Uninstall(username string, os string, cmdargs string) (uninstallcommand str
 	if username == "root" {
 		uninstallcommand = ""
 	} else {
-		uninstallcommand = "sudo"
+		uninstallcommand = "sudo "
 	}
-	uninstallcommand = uninstallcommand + PkgRefresh[os] + ";" + PkgUninstall[os] + cmdargs + " -y 2>&1"
+	uninstallcommand = uninstallcommand + PkgUninstall[os] + cmdargs + " -y 2>&1"
 	return uninstallcommand
 }
