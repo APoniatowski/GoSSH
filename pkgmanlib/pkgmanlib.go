@@ -32,7 +32,7 @@ func Install(username string, os string, cmdargs string) (installcommand string)
 	} else {
 		installcommand = "sudo"
 	}
-	installcommand = installcommand + PkgRefresh[os] + ";" + PkgInstall[os] + cmdargs + "2>&1"
+	installcommand = installcommand + PkgRefresh[os] + ";" + PkgInstall[os] + cmdargs + " -y 2>&1"
 	return installcommand
 }
 
@@ -43,6 +43,6 @@ func Uninstall(username string, os string, cmdargs string) (uninstallcommand str
 	} else {
 		uninstallcommand = "sudo"
 	}
-	uninstallcommand = uninstallcommand + PkgRefresh[os] + ";" + PkgInstall[os] + cmdargs + "2>&1"
+	uninstallcommand = uninstallcommand + PkgRefresh[os] + ";" + PkgUninstall[os] + cmdargs + " -y 2>&1"
 	return uninstallcommand
 }

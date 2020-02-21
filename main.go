@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/APoniatowski/GoSSH/clioptions"
 	"github.com/APoniatowski/GoSSH/sshlib"
@@ -29,6 +31,9 @@ func main() {
 				yamlparser.Rollcall()
 				cmd = os.Args[2:]
 				command := clioptions.GeneralCommandParse(cmd)
+				yamlparser.Updater = false
+				yamlparser.Install = false
+				yamlparser.Uninstall = false
 				sshlib.RunSequentially(&yamlparser.Config, &command)
 				return nil
 			},
@@ -41,6 +46,9 @@ func main() {
 						cmd := os.Args[3]
 						cmdargs := os.Args[4:]
 						command := clioptions.BashScriptParse(cmd, cmdargs)
+						yamlparser.Updater = false
+						yamlparser.Install = false
+						yamlparser.Uninstall = false
 						sshlib.RunSequentially(&yamlparser.Config, &command)
 						return nil
 					},
@@ -56,6 +64,8 @@ func main() {
 							yamlparser.UpdaterFull = true
 						}
 						yamlparser.Updater = true
+						yamlparser.Install = false
+						yamlparser.Uninstall = false
 						sshlib.RunSequentially(&yamlparser.Config, &command)
 						return nil
 					},
@@ -66,7 +76,26 @@ func main() {
 					Action: func(c *cli.Context) error {
 						yamlparser.Rollcall()
 						command := ""
+						cmdargs := os.Args[3:]
+						command = strconv.Quote(strings.Join(cmdargs, " "))
+						yamlparser.Updater = false
 						yamlparser.Install = true
+						yamlparser.Uninstall = false
+						sshlib.RunSequentially(&yamlparser.Config, &command)
+						return nil
+					},
+				},
+				{
+					Name:  "uninstall",
+					Usage: "Uninstall packages on all remote servers in pool",
+					Action: func(c *cli.Context) error {
+						yamlparser.Rollcall()
+						command := ""
+						cmdargs := os.Args[3:]
+						command = strconv.Quote(strings.Join(cmdargs, " "))
+						yamlparser.Updater = false
+						yamlparser.Install = false
+						yamlparser.Uninstall = true
 						sshlib.RunSequentially(&yamlparser.Config, &command)
 						return nil
 					},
@@ -91,6 +120,9 @@ func main() {
 				yamlparser.Rollcall()
 				cmd = os.Args[2:]
 				command := clioptions.GeneralCommandParse(cmd)
+				yamlparser.Updater = false
+				yamlparser.Install = false
+				yamlparser.Uninstall = false
 				sshlib.RunGroups(&yamlparser.Config, &command)
 				return nil
 			},
@@ -103,6 +135,9 @@ func main() {
 						cmd := os.Args[3]
 						cmdargs := os.Args[4:]
 						command := clioptions.BashScriptParse(cmd, cmdargs)
+						yamlparser.Updater = false
+						yamlparser.Install = false
+						yamlparser.Uninstall = false
 						sshlib.RunGroups(&yamlparser.Config, &command)
 						return nil
 					},
@@ -118,6 +153,8 @@ func main() {
 							yamlparser.UpdaterFull = true
 						}
 						yamlparser.Updater = true
+						yamlparser.Install = false
+						yamlparser.Uninstall = false
 						sshlib.RunGroups(&yamlparser.Config, &command)
 						return nil
 					},
@@ -128,7 +165,26 @@ func main() {
 					Action: func(c *cli.Context) error {
 						yamlparser.Rollcall()
 						command := ""
+						cmdargs := os.Args[3:]
+						command = strconv.Quote(strings.Join(cmdargs, " "))
+						yamlparser.Updater = false
 						yamlparser.Install = true
+						yamlparser.Uninstall = false
+						sshlib.RunGroups(&yamlparser.Config, &command)
+						return nil
+					},
+				},
+				{
+					Name:  "uninstall",
+					Usage: "Uninstall packages on all remote servers in pool",
+					Action: func(c *cli.Context) error {
+						yamlparser.Rollcall()
+						command := ""
+						cmdargs := os.Args[3:]
+						command = strconv.Quote(strings.Join(cmdargs, " "))
+						yamlparser.Updater = false
+						yamlparser.Install = false
+						yamlparser.Uninstall = true
 						sshlib.RunGroups(&yamlparser.Config, &command)
 						return nil
 					},
@@ -153,6 +209,9 @@ func main() {
 				yamlparser.Rollcall()
 				cmd = os.Args[2:]
 				command := clioptions.GeneralCommandParse(cmd)
+				yamlparser.Updater = false
+				yamlparser.Install = false
+				yamlparser.Uninstall = false
 				sshlib.RunAllServers(&yamlparser.Config, &command)
 				return nil
 			},
@@ -165,6 +224,9 @@ func main() {
 						cmd := os.Args[3]
 						cmdargs := os.Args[4:]
 						command := clioptions.BashScriptParse(cmd, cmdargs)
+						yamlparser.Updater = false
+						yamlparser.Install = false
+						yamlparser.Uninstall = false
 						sshlib.RunAllServers(&yamlparser.Config, &command)
 						return nil
 					},
@@ -180,6 +242,8 @@ func main() {
 							yamlparser.UpdaterFull = true
 						}
 						yamlparser.Updater = true
+						yamlparser.Install = false
+						yamlparser.Uninstall = false
 						sshlib.RunAllServers(&yamlparser.Config, &command)
 						return nil
 					},
@@ -190,7 +254,26 @@ func main() {
 					Action: func(c *cli.Context) error {
 						yamlparser.Rollcall()
 						command := ""
+						cmdargs := os.Args[3:]
+						command = strconv.Quote(strings.Join(cmdargs, " "))
+						yamlparser.Updater = false
 						yamlparser.Install = true
+						yamlparser.Uninstall = false
+						sshlib.RunAllServers(&yamlparser.Config, &command)
+						return nil
+					},
+				},
+				{
+					Name:  "uninstall",
+					Usage: "Uninstall packages on all remote servers in pool",
+					Action: func(c *cli.Context) error {
+						yamlparser.Rollcall()
+						command := ""
+						cmdargs := os.Args[3:]
+						command = strconv.Quote(strings.Join(cmdargs, " "))
+						yamlparser.Updater = false
+						yamlparser.Install = false
+						yamlparser.Uninstall = true
 						sshlib.RunAllServers(&yamlparser.Config, &command)
 						return nil
 					},

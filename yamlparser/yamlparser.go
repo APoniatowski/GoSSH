@@ -37,6 +37,10 @@ func init() {
 	err := yaml.Unmarshal([]byte(data), &Config)
 	generalError(err)
 	fmt.Println("Data parsed, no errors encountered...")
+	Updater = false
+	UpdaterFull = false
+	Install = false
+	Uninstall = false
 }
 
 // Rollcall Tally up the number of servers and groups and servers in groups
