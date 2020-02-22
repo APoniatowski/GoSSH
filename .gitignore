@@ -16,10 +16,9 @@
 /bin
 /.vscode
 /pkg
-/.circleci
-config/config.yml
-config/config-testing.yml
-config/config-testing-linux.yml
+config/pool.yml
+config/pool-testing.yml
+config/pool-testing-linux.yml
 /.github
 /src
 /GoSSH

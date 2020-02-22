@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"strconv"
 	"strings"
 	"sync"
@@ -16,7 +15,36 @@ import (
 
 	"github.com/APoniatowski/GoSSH/channelreaderlib"
 	"github.com/APoniatowski/GoSSH/loggerlib"
+	"github.com/APoniatowski/GoSSH/pkgmanlib"
 )
+
+// Switches For checking what CLI option was used and run the appropriate functions
+type Switches struct {
+	Updater, UpdaterFull, Install, Uninstall *bool
+}
+
+//Switcher Method to check the switches set for each respective action
+func (S *Switches) Switcher(pd ParsedData, command string) string {
+	rtncommand := ""
+
+	if *S.Updater {
+		rtncommand = pkgmanlib.Update(pd.username.(string), pd.os.(string))
+	}
+	if *S.UpdaterFull {
+		rtncommand = pkgmanlib.UpdateOS(pd.username.(string), pd.os.(string))
+	}
+	if *S.Install {
+		rtncommand = pkgmanlib.Install(pd.username.(string), pd.os.(string)) + command + " -y 2>&1"
+	}
+	if *S.Uninstall {
+		rtncommand = pkgmanlib.Uninstall(pd.username.(string), pd.os.(string)) + command + " -y 2>&1"
+	}
+
+	return rtncommand
+}
+
+// OSSwitcher a much needed var between main and sshlib
+var OSSwitcher Switches
 
 //ParsedData Parsing data to struct to cleanup some code
 type ParsedData struct {
@@ -25,6 +53,7 @@ type ParsedData struct {
 	password interface{}
 	keypath  interface{}
 	port     interface{}
+	os       interface{}
 }
 
 //defaulter defaults all empty fields in yaml file and to abort if too many values are missing, eg password and key_path
@@ -34,20 +63,16 @@ func defaulter(pd *ParsedData) {
 	}
 	if pd.username == nil {
 		pd.username = "root"
-		// fmt.Println("No username specified in config.yml, defaulting to 'root'...")
 	}
 	if pd.password == nil {
 		pd.password = ""
-		// fmt.Println("No password specified in config.yml, defaulting to SSH key based authentication...")
 	}
 	if pd.keypath == nil {
 		pd.keypath = ""
-		// fmt.Println("No username specified in config.yml, defaulting to password based authentication...")
 	}
 	if pd.port == nil {
 		pd.port = 22
 		pd.port = strconv.Itoa(pd.port.(int))
-		// fmt.Println("No port specified in config.yml, defaulting to port 22...")
 	} else {
 		pd.port = strconv.Itoa(pd.port.(int))
 	}
@@ -56,7 +81,9 @@ func defaulter(pd *ParsedData) {
 // executeCommand function to run a command on remote servers. Arguments will run through this function and will take strings,
 func executeCommand(servername string, cmd string, password string, connection *ssh.Client) string {
 	session, err := connection.NewSession()
-	loggerlib.GeneralError(err)
+	if err != nil {
+		loggerlib.GeneralError(servername, "[ERROR: Failed To Create Session] ", err)
+	}
 	defer session.Close()
 	modes := ssh.TerminalModes{
 		ssh.ECHO:          0,     // disable echoing
@@ -65,20 +92,20 @@ func executeCommand(servername string, cmd string, password string, connection *
 	}
 	if err := session.RequestPty("xterm", 50, 100, modes); err != nil {
 		session.Close()
-		log.Fatal(err)
+		loggerlib.GeneralError(servername, "[ERROR: Pty Request Failed] ", err)
 	}
 	in, err := session.StdinPipe()
 	if err != nil {
-		fmt.Println(err)
+		loggerlib.GeneralError(servername, "[ERROR: Stdin Error] ", err)
 	}
 	out, err := session.StdoutPipe()
 	if err != nil {
-		log.Fatal(err)
+		loggerlib.GeneralError(servername, "[ERROR: Stdout Error] ", err)
 	}
 	var validator string
 	var terminaloutput []byte
 	var waitoutput sync.WaitGroup
-	// it does not wait for output on some machines that are taking too long to respond
+	// it does not wait for output on some machines that are taking too long to respond. I'd like to avoid using Rlocks/Runlocks for this
 	waitoutput.Add(1)
 	go func(in io.WriteCloser, out io.Reader, terminaloutput *[]byte) {
 		var (
@@ -119,14 +146,16 @@ func executeCommand(servername string, cmd string, password string, connection *
 
 // connectAndRun Establish a connection and run command(s), will add CLI args in the near future
 func connectAndRun(command *string, servername string, parseddata *ParsedData, output chan<- string, wg *sync.WaitGroup) {
-	pd := *parseddata
+	pd := parseddata
 	authMethodCheck := []ssh.AuthMethod{}
 	key, err := ioutil.ReadFile(pd.keypath.(string))
 	if err != nil {
 		authMethodCheck = append(authMethodCheck, ssh.Password(pd.password.(string)))
 	} else {
 		signer, err := ssh.ParsePrivateKey(key)
-		loggerlib.GeneralError(err)
+		if err != nil {
+			loggerlib.GeneralError(servername, "[INFO: Failed To Parse PrivKey] ", err)
+		}
 		authMethodCheck = append(authMethodCheck, ssh.PublicKeys(signer))
 	}
 	// hostKeyCallback, err := knownhosts.New(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
@@ -148,10 +177,14 @@ func connectAndRun(command *string, servername string, parseddata *ParsedData, o
 		Timeout: 15 * time.Second,
 	}
 	connection, err := ssh.Dial("tcp", pd.fqdn.(string)+":"+pd.port.(string), sshConfig)
-	loggerlib.GeneralError(err)
+	if err != nil {
+		loggerlib.GeneralError(servername, "[ERROR: Connection Failed] ", err)
+	}
 	defer connection.Close()
 	defer wg.Done()
-	output <- executeCommand(servername, *command, pd.password.(string), connection)
+	derefcmd := *command
+	derefcmd = OSSwitcher.Switcher(*pd, derefcmd)
+	output <- executeCommand(servername, derefcmd, pd.password.(string), connection)
 }
 
 func connectAndRunSeq(command *string, servername string, parseddata *ParsedData) string {
@@ -162,7 +195,9 @@ func connectAndRunSeq(command *string, servername string, parseddata *ParsedData
 		authMethodCheck = append(authMethodCheck, ssh.Password(pd.password.(string)))
 	} else {
 		signer, err := ssh.ParsePrivateKey(key)
-		loggerlib.GeneralError(err)
+		if err != nil {
+			loggerlib.GeneralError(servername, "[INFO: Failed To Parse PrivKey] ", err)
+		}
 		authMethodCheck = append(authMethodCheck, ssh.PublicKeys(signer))
 	}
 	// hostKeyCallback, err := knownhosts.New(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
@@ -184,9 +219,14 @@ func connectAndRunSeq(command *string, servername string, parseddata *ParsedData
 		Timeout: 15 * time.Second,
 	}
 	connection, err := ssh.Dial("tcp", pd.fqdn.(string)+":"+pd.port.(string), sshConfig)
-	loggerlib.GeneralError(err)
+	if err != nil {
+		loggerlib.GeneralError(servername, "[ERROR: Connection Failed] ", err)
+	}
 	defer connection.Close()
-	return servername + ": " + executeCommand(servername, *command, pd.password.(string), connection)
+	derefcmd := *command
+	derefcmd = OSSwitcher.Switcher(*pd, derefcmd)
+	fmt.Printf("%v: ", servername)
+	return executeCommand(servername, derefcmd, pd.password.(string), connection)
 }
 
 //=============================== sequential and concurrent functions listed below =============================
@@ -211,7 +251,9 @@ func RunSequentially(configs *yaml.MapSlice, command *string) {
 			pd.password = serverValue[2].Value
 			pd.keypath = serverValue[3].Value
 			pd.port = serverValue[4].Value
+			pd.os = serverValue[5].Value
 			defaulter(&pd)
+
 			output := connectAndRunSeq(command, servername.(string), &pd)
 			fmt.Print(output)
 		}
@@ -241,12 +283,10 @@ func RunGroups(configs *yaml.MapSlice, command *string) {
 			pd.password = serverValue[2].Value
 			pd.keypath = serverValue[3].Value
 			pd.port = serverValue[4].Value
+			pd.os = serverValue[5].Value
 			defaulter(&pd)
 			go connectAndRun(command, servername.(string), &pd, output, &wg)
 		}
-		// Lesson learned with go routines... when waiting for waitgroup to decrement inside the loop will wait forever
-		// when reading from the channel, defer wg.Done() inside the function run in a goroutine, as it needs to tell the waitgroup
-		// to decrement the waitgroup amount, as the channel never closes below, when calling wg.Done() in the loop
 		go func() {
 			wg.Wait()
 			close(output)
@@ -285,14 +325,11 @@ func RunAllServers(configs *yaml.MapSlice, command *string) {
 		pd.password = serverValue[2].Value
 		pd.keypath = serverValue[3].Value
 		pd.port = serverValue[4].Value
+		pd.os = serverValue[5].Value
 		defaulter(&pd)
+
 		go connectAndRun(command, servername.(string), &pd, output, &wg)
 	}
-	// Lesson learned with go routines... when waiting for waitgroup to decrement inside the loop will wait forever
-	// when reading from the channel, defer wg.Done() inside the function run in a goroutine, as it needs to tell the waitgroup
-	// to decrement the waitgroup amount, as the channel never closes below, when calling wg.Done() in the loop
-
-	// this resolved the stuck go routines. I needed to close the channel, as the channelreader gets stuck at an open and empty channel
 	go func() {
 		wg.Wait()
 		close(output)
