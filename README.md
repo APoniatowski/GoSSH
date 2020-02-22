@@ -2,17 +2,16 @@
 
 ![](https://github.com/Aponiatowski/GoSSH/workflows/GoSSH/badge.svg)     [![Go Report Card](https://goreportcard.com/badge/github.com/APoniatowski/GoSSH)](https://goreportcard.com/report/github.com/APoniatowski/GoSSH)   [![codebeat badge](https://codebeat.co/badges/e53dab58-a0df-4699-a4d6-cfe67fbd9b81)](https://codebeat.co/projects/github-com-aponiatowski-gossh-master)
 
-## Project update:
-It is currently in an usable state, and can be used to execute commands in varied ways and performs well. :+1:
 
-Logging has been implemented for SSH sessions (INFOs and ERRORs) and the output has been replaced with a progress bar. All outputs from now on, will be 
-written to a log file for review. If running a command was successful, why would one want to see it and clutter the terminal. 
-The logs are also rotated by date, to avoid multiple logs, if time was added to the file name.
-The logging will be enhanced even further, as the project continues.
+### Current version -> **v1.4.0**
 
-Sudo commands are possible now. Just make sure you add the username's password to the password field, and it will be used when a password prompt should appear.
+### Goal with this project:
+I've seen so many times that other tools like ansible, saltstack, etc, perform really well and give in-depth information. To any engineer (devops, IT, software)
+would be extremely useful. But the common complaints I have heard (and seen it for myself), was the speed at which it does its job. I took it upon myself to learn Go
+and create an useful tool to (*hopefully*) replace those others, as there are only 4 commonly used tools out there (Ansible, Saltstack, Chef and Puppet) and got tired
+of the vendor lock-in, with a slow performing tool. Or one that is rediculously complex to configure.
 
-The known_hosts file is causing some issues (issue open for it).
+So I went with the K.I.S.S. method, and keep the complexity in the code, not the tool. And boost the performance with a modern language.
 
 
 * Windows (laptop):
@@ -42,7 +41,7 @@ sys     0m0.066s
 
 
 * Linux (production/staging server):
-##### Tested on 75 production servers (in the same site):
+##### Tested on 75 pre-production servers (in the same site):
 ```
  (████████████████████) 100.0% 172.5 ops/s
 75/75 Succeeded
@@ -60,8 +59,15 @@ and
 
 ```> GoSSH all hostname```
 
+
+And to my surprise, this tool outperformed saltstack (probably Ansible too). I would love to get benchmarks for the other tools. Saltstack took around 3.4 seconds 
+to execute the same command (`hostname`) on the same set of servers.  I wish I could test this in a bigger environment, as the one I tested it on, was the 
+pre-production servers I was allowed to test it on.
+
+
+##### Note:
 Logs will be written to ```./logs/*``` in their individual directories (```/errors``` and ```/output```) in the same directory as where the application is used.  
-Make sure the config.yml file is in ```./config``` and saved as ```config.yml``` 
+Make sure the pool.yml file is in ```./config``` and saved as ```pool.yml``` 
 (please use the config file in this repo as a template)
 
 
@@ -69,12 +75,15 @@ Make sure the config.yml file is in ```./config``` and saved as ```config.yml```
 GoSSH [ option ] [ subcommand ] [ command ]
 
 Options:
-* sequential, s  --Run the command sequentially on all servers in your config file
-* groups, g      --Run the command on all servers per group concurrently in your config file
-* all, a         --Run the command on all servers concurrently in your config file
+* sequential, s  --Run the command sequentially on all servers in your pool
+* groups, g      --Run the command on all servers per group concurrently in your pool
+* all, a         --Run the command on all servers concurrently in your pool
 
 Subcommand:
 * run           --Run a bash script on your selected option (sequential/groups/all)
+* update        --Update all packages on servers in your pool (optional os or OS flag will do a system upgrade)
+* install       --Install packages on servers in your pool
+* uninstall     --Uninstall packages on servers in your pool
 
-## Please feel free to test/use this and leave issues and comments in the issues tab.
-## I will be actively working on this for the foreseeable future
+### Outstanding issues
+*The known_hosts file is causing some issues (issue open for it). Ignoring known_hosts for now.
