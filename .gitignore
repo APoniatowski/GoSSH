@@ -22,5 +22,7 @@ config/pool-testing-linux.yml
 /.github
 /src
 /GoSSH
+/gossh
+/gossh.exe
 /GoSSH.exe
 /READM.md
