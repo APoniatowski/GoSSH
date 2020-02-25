@@ -26,3 +26,4 @@ config/pool-testing-linux.yml
 /gossh.exe
 /GoSSH.exe
 /READM.md
+__debug_bin

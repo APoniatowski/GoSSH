@@ -1,13 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/APoniatowski/GoSSH/clioptions"
+	"github.com/APoniatowski/GoSSH/examplegenerator"
 	"github.com/APoniatowski/GoSSH/sshlib"
 	"github.com/APoniatowski/GoSSH/yamlparser"
+	"github.com/logrusorgru/aurora"
 	"github.com/urfave/cli"
 )
 
@@ -26,7 +29,7 @@ func main() {
 	// instead of 4.
 	app := cli.NewApp()
 	app.Name = "GoSSH"
-	app.Version = "1.4.0"
+	app.Version = "1.5.0"
 	app.Usage = "Open Source Go Infrastucture Automation Tool"
 	app.UsageText = "GoSSH [global options] command [subcommand] [script or arguments...]"
 	app.EnableBashCompletion = true
@@ -112,12 +115,18 @@ func main() {
 		{
 			Name:    "groups",
 			Aliases: []string{"g"},
-			Usage:   "Run the command on all servers per group concurrently in your pool",
+			Usage:   "Run the command on all servers, per group concurrently in your pool",
 			Action: func(c *cli.Context) error {
 				yamlparser.Rollcall()
 				cmd = os.Args[2:]
 				command := clioptions.GeneralCommandParse(cmd)
-				sshlib.RunGroups(&yamlparser.Config, &command)
+				if yamlparser.Grouptotal == 1 {
+					fmt.Println("There is only 1 group in the pool, consider segmenting them")
+					fmt.Println("or alternatively use 'all' instead")
+					sshlib.RunAllServers(&yamlparser.Config, &command)
+				} else {
+					sshlib.RunGroups(&yamlparser.Config, &command)
+				}
 				return nil
 			},
 			Subcommands: []cli.Command{
@@ -129,7 +138,13 @@ func main() {
 						cmd := os.Args[3]
 						cmdargs := os.Args[4:]
 						command := clioptions.BashScriptParse(cmd, cmdargs)
-						sshlib.RunGroups(&yamlparser.Config, &command)
+						if yamlparser.Grouptotal == 1 {
+							fmt.Println("There is only 1 group in the pool, consider segmenting them")
+							fmt.Println("or alternatively use 'all' instead")
+							sshlib.RunAllServers(&yamlparser.Config, &command)
+						} else {
+							sshlib.RunGroups(&yamlparser.Config, &command)
+						}
 						return nil
 					},
 				},
@@ -145,7 +160,13 @@ func main() {
 						} else {
 							switches.Updater = &toggleswitchtrue
 						}
-						sshlib.RunGroups(&yamlparser.Config, &command)
+						if yamlparser.Grouptotal == 1 {
+							fmt.Println("There is only 1 group in the pool, consider segmenting them")
+							fmt.Println("or alternatively use 'all' instead")
+							sshlib.RunAllServers(&yamlparser.Config, &command)
+						} else {
+							sshlib.RunGroups(&yamlparser.Config, &command)
+						}
 						return nil
 					},
 				},
@@ -158,7 +179,13 @@ func main() {
 						cmdargs := os.Args[3:]
 						command = strings.Join(cmdargs, " ")
 						switches.Install = &toggleswitchtrue
-						sshlib.RunGroups(&yamlparser.Config, &command)
+						if yamlparser.Grouptotal == 1 {
+							fmt.Println("There is only 1 group in the pool, consider segmenting them")
+							fmt.Println("or alternatively use 'all' instead")
+							sshlib.RunAllServers(&yamlparser.Config, &command)
+						} else {
+							sshlib.RunGroups(&yamlparser.Config, &command)
+						}
 						return nil
 					},
 				},
@@ -171,7 +198,13 @@ func main() {
 						cmdargs := os.Args[3:]
 						command = strings.Join(cmdargs, " ")
 						switches.Uninstall = &toggleswitchtrue
-						sshlib.RunGroups(&yamlparser.Config, &command)
+						if yamlparser.Grouptotal == 1 {
+							fmt.Println("There is only 1 group in the pool, consider segmenting them")
+							fmt.Println("or alternatively use 'all' instead")
+							sshlib.RunAllServers(&yamlparser.Config, &command)
+						} else {
+							sshlib.RunGroups(&yamlparser.Config, &command)
+						}
 						return nil
 					},
 				},
@@ -263,6 +296,42 @@ func main() {
 				// 	},
 				// },
 				//-----------------placeholder--------------------
+			},
+		},
+		{
+			Name:    "generate",
+			Aliases: []string{"gen"},
+			Usage:   "Generate a template file or print an example, if there are none",
+			Action: func(c *cli.Context) error {
+				fmt.Println("If you would like to specify 'pool' as your option")
+				fmt.Println("more options will be available, as development continues.")
+				return nil
+			},
+			Subcommands: []cli.Command{
+				{
+					Name:  "pool",
+					Usage: "Generate or print an example of a pool.yml file. Use 'template' or 'example' as arguments",
+					Action: func(c *cli.Context) error {
+						cmd = os.Args[3:]
+						command := strings.Join(cmd, " ")
+						if command == "template" {
+							err := examplegenerator.GeneratePool()
+							if err != nil {
+								fmt.Println("./config/pool.yml already exists. ")
+								fmt.Println("If you would like to recreate this file,")
+								fmt.Println("delete the existing pool.yml file and try again")
+							} else {
+								fmt.Println("Template has now been created")
+							}
+						} else if command == "example" {
+							examplegenerator.PrintPoolExample()
+						} else {
+							fmt.Println("Please choose ", aurora.Bold(aurora.White("template")), " or ", aurora.Bold(aurora.White("example")))
+							fmt.Println("to generate, or display a template")
+						}
+						return nil
+					},
+				},
 			},
 		},
 	}

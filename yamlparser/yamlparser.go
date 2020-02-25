@@ -27,16 +27,17 @@ var (
 	ServersPerGroup []int
 )
 
-func init() {
+// func init() {
+// }
+
+// Rollcall Tally up the number of servers and groups and servers in groups
+func Rollcall() {
 	fmt.Println("Parsing data...")
 	data := ParseServersList()
 	err := yaml.Unmarshal([]byte(data), &Config)
 	generalError(err)
-	fmt.Println("Data parsed, no errors encountered...")
-}
 
-// Rollcall Tally up the number of servers and groups and servers in groups
-func Rollcall() {
+	fmt.Println("Data parsed, no errors encountered...")
 	Waittotal = TotalServercount(Config)
 	ServersPerGroup = ServersPerGroupcount(Config)
 	Grouptotal = len(Config)

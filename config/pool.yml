@@ -2,10 +2,10 @@ ServerGroup1:     #group name, spacing does not matter
   Server11:       #server name, spacing does not matter
     FQDN: hostname11.whatever.com #
     Username: user11              ##
-    Password: password11          ###     FQDN, is needed. Username defaults to root, 
-    Key_Path: /path/to/key        ##      password or key needed, ports default to 22
-    Port: 22                      #       and OS will include all package managers per OS
-    OS: debian
+    Password: password11          ###     FQDN, is needed. Username defaults to root,
+    Key_Path: /path/to/key        ###      password or key needed, ports default to 22
+    Port: 22                      ##       and OS will include all package managers per OS
+    OS: debian                    #
   Server12:
     FQDN: hostname12.whatever.com
     Username: user12
@@ -26,5 +26,5 @@ ServerGroup2:
     Username: user22
     Password: password22
     Key_Path: /path/to/key
-    Port: 
-    OS: opensuse
+    Port:
+    OS: opensuse  # or sles

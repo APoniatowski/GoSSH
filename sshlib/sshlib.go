@@ -16,6 +16,9 @@ import (
 	"github.com/APoniatowski/GoSSH/channelreaderlib"
 	"github.com/APoniatowski/GoSSH/loggerlib"
 	"github.com/APoniatowski/GoSSH/pkgmanlib"
+
+	"github.com/BTBurke/clt"
+	"github.com/logrusorgru/aurora"
 )
 
 // Switches For checking what CLI option was used and run the appropriate functions
@@ -147,6 +150,7 @@ func executeCommand(servername string, cmd string, password string, connection *
 // connectAndRun Establish a connection and run command(s), will add CLI args in the near future
 func connectAndRun(command *string, servername string, parseddata *ParsedData, output chan<- string, wg *sync.WaitGroup) {
 	pd := parseddata
+	derefcmd := *command
 	authMethodCheck := []ssh.AuthMethod{}
 	key, err := ioutil.ReadFile(pd.keypath.(string))
 	if err != nil {
@@ -182,13 +186,13 @@ func connectAndRun(command *string, servername string, parseddata *ParsedData, o
 	}
 	defer connection.Close()
 	defer wg.Done()
-	derefcmd := *command
 	derefcmd = OSSwitcher.Switcher(*pd, derefcmd)
 	output <- executeCommand(servername, derefcmd, pd.password.(string), connection)
 }
 
 func connectAndRunSeq(command *string, servername string, parseddata *ParsedData) string {
 	pd := parseddata
+	derefcmd := *command
 	authMethodCheck := []ssh.AuthMethod{}
 	key, err := ioutil.ReadFile(pd.keypath.(string))
 	if err != nil {
@@ -223,7 +227,6 @@ func connectAndRunSeq(command *string, servername string, parseddata *ParsedData
 		loggerlib.GeneralError(servername, "[ERROR: Connection Failed] ", err)
 	}
 	defer connection.Close()
-	derefcmd := *command
 	derefcmd = OSSwitcher.Switcher(*pd, derefcmd)
 	fmt.Printf("%v: ", servername)
 	return executeCommand(servername, derefcmd, pd.password.(string), connection)
@@ -253,9 +256,15 @@ func RunSequentially(configs *yaml.MapSlice, command *string) {
 			pd.port = serverValue[4].Value
 			pd.os = serverValue[5].Value
 			defaulter(&pd)
-
+			spinny := clt.NewProgressSpinner("Testing a successful result")
+			//https://github.com/BTBurke/clt/blob/master/examples/progress_example.go
+			//continuing later
 			output := connectAndRunSeq(command, servername.(string), &pd)
-			fmt.Print(output)
+			if output == "OK\n" {
+				fmt.Print(aurora.Green(output))
+			} else {
+				fmt.Print(aurora.Red(output))
+			}
 		}
 	}
 }
@@ -301,7 +310,6 @@ func RunAllServers(configs *yaml.MapSlice, command *string) {
 	var allServers yaml.MapSlice
 	output := make(chan string)
 	var wg sync.WaitGroup
-
 	// Concatenates the groups to create a single group
 	for _, groupItem := range *configs {
 		groupValue, ok := groupItem.Value.(yaml.MapSlice)
