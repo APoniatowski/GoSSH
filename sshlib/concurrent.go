@@ -42,12 +42,20 @@ func connectAndRun(command *string, servername string, parseddata *ParsedData, o
 		},
 		Timeout: 15 * time.Second,
 	}
+	defer func() {
+		if recv := recover(); recv != nil {
+		}
+	}()
 	connection, err := ssh.Dial("tcp", pd.fqdn.(string)+":"+pd.port.(string), sshConfig)
 	if err != nil {
 		loggerlib.GeneralError(servername, "[ERROR: Connection Failed] ", err)
+		validator = "NOK\n"
+		output <- validator
+		wg.Done()
+	} else {
+		defer connection.Close()
+		defer wg.Done()
+		derefcmd = OSSwitcher.Switcher(*pd, derefcmd)
+		output <- executeCommand(servername, derefcmd, pd.password.(string), connection)
 	}
-	defer connection.Close()
-	defer wg.Done()
-	derefcmd = OSSwitcher.Switcher(*pd, derefcmd)
-	output <- executeCommand(servername, derefcmd, pd.password.(string), connection)
 }

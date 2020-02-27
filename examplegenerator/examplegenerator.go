@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/logrusorgru/aurora"
+	"github.com/gookit/color"
 )
 
 const pool string = `ServerGroup1:     #group name, spacing does not matter
@@ -70,7 +70,7 @@ func PrintPoolExample() {
 	fmt.Println("This is an example, of how the pool.yml should be structured.")
 	fmt.Println("For now, make sure this file is in the same directory as your")
 	fmt.Println("binary (or executable), in:")
-	fmt.Println(aurora.Bold(aurora.Cyan(" Linux:")), "./config/pool.yml")
-	fmt.Println(aurora.Bold(aurora.Cyan(" Windows:")), " .\\config\\pool.yml")
-	fmt.Println(aurora.Yellow("This is subject to change in the near future"))
+	fmt.Println(color.Cyan.Sprint(" Linux:"), "./config/pool.yml")
+	fmt.Println(color.Cyan.Sprint(" Windows:"), " .\\config\\pool.yml")
+	fmt.Println(color.Yellow.Sprint("This is subject to change in the near future"))
 }

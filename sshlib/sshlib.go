@@ -42,6 +42,9 @@ func (S *Switches) Switcher(pd ParsedData, command string) string {
 // OSSwitcher a much needed var between main and sshlib
 var OSSwitcher Switches
 
+// validator This needs to be outside of the function for better error handling
+var validator string
+
 //ParsedData Parsing data to struct to cleanup some code
 type ParsedData struct {
 	fqdn     interface{}
@@ -76,6 +79,12 @@ func defaulter(pd *ParsedData) {
 
 // executeCommand function to run a command on remote servers. Arguments will run through this function and will take strings,
 func executeCommand(servername string, cmd string, password string, connection *ssh.Client) string {
+	// adding recover to avoid panics during a run. Logs are written, so no need to panic when it its one of
+	//the errors below.
+	defer func() {
+		if recv := recover(); recv != nil {
+		}
+	}()
 	session, err := connection.NewSession()
 	if err != nil {
 		loggerlib.GeneralError(servername, "[ERROR: Failed To Create Session] ", err)
@@ -98,7 +107,6 @@ func executeCommand(servername string, cmd string, password string, connection *
 	if err != nil {
 		loggerlib.GeneralError(servername, "[ERROR: Stdout Error] ", err)
 	}
-	var validator string
 	var terminaloutput []byte
 	var waitoutput sync.WaitGroup
 	// it does not wait for output on some machines that are taking too long to respond. I'd like to avoid using Rlocks/Runlocks for this

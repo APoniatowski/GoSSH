@@ -40,9 +40,15 @@ func connectAndRunSeq(command *string, servername string, parseddata *ParsedData
 		},
 		Timeout: 15 * time.Second,
 	}
+	defer func() {
+		if recv := recover(); recv != nil {
+		}
+	}()
 	connection, err := ssh.Dial("tcp", pd.fqdn.(string)+":"+pd.port.(string), sshConfig)
 	if err != nil {
 		loggerlib.GeneralError(servername, "[ERROR: Connection Failed] ", err)
+		validator = "NOK\n"
+		return validator
 	}
 	defer connection.Close()
 	derefcmd = OSSwitcher.Switcher(*pd, derefcmd)

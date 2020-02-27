@@ -8,7 +8,7 @@ import (
 	"github.com/APoniatowski/GoSSH/channelreaderlib"
 
 	"github.com/briandowns/spinner"
-	"github.com/logrusorgru/aurora"
+	"github.com/gookit/color"
 	"gopkg.in/yaml.v2"
 )
 
@@ -117,11 +117,11 @@ func RunSequentially(configs *yaml.MapSlice, command *string) {
 			if output == "OK\n" {
 				s.Stop()
 				fmt.Printf("%v: ", servername)
-				fmt.Print(aurora.Green(output))
+				fmt.Print(color.Green.Sprint(output))
 			} else {
 				s.Stop()
 				fmt.Printf("%v: ", servername)
-				fmt.Print(aurora.Red(output))
+				fmt.Print(color.Red.Sprint(output))
 			}
 		}
 	}
