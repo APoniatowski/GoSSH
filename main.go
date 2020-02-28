@@ -10,7 +10,7 @@ import (
 	"github.com/APoniatowski/GoSSH/examplegenerator"
 	"github.com/APoniatowski/GoSSH/sshlib"
 	"github.com/APoniatowski/GoSSH/yamlparser"
-	"github.com/logrusorgru/aurora"
+	"github.com/gookit/color"
 	"github.com/urfave/cli"
 )
 
@@ -18,6 +18,7 @@ import (
 func main() {
 	var cmd []string
 	var switches *sshlib.Switches = &sshlib.OSSwitcher
+	cyan := color.Cyan.Render
 	// had issues with pointers and booleans, so I found a article which gave this as a solution:
 	toggleswitchtrue := true
 	toggleswitchfalse := false
@@ -326,7 +327,7 @@ func main() {
 						} else if command == "example" {
 							examplegenerator.PrintPoolExample()
 						} else {
-							fmt.Println("Please choose ", aurora.Bold(aurora.White("template")), " or ", aurora.Bold(aurora.White("example")))
+							fmt.Println("Please choose ", cyan("template"), " or ", cyan("example"))
 							fmt.Println("to generate, or display a template")
 						}
 						return nil
