@@ -8,13 +8,13 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func connectAndRunSeq(command *string, servername string, parseddata *ParsedData) string {
-	pd := parseddata
+func connectAndRunSeq(command *string, servername string, parseddata *ParsedPool) string {
+	pp := parseddata
 	derefcmd := *command
 	authMethodCheck := []ssh.AuthMethod{}
-	key, err := ioutil.ReadFile(pd.keypath.(string))
+	key, err := ioutil.ReadFile(pp.keypath.(string))
 	if err != nil {
-		authMethodCheck = append(authMethodCheck, ssh.Password(pd.password.(string)))
+		authMethodCheck = append(authMethodCheck, ssh.Password(pp.password.(string)))
 	} else {
 		signer, err := ssh.ParsePrivateKey(key)
 		if err != nil {
@@ -27,7 +27,7 @@ func connectAndRunSeq(command *string, servername string, parseddata *ParsedData
 	hostKeyCallback := ssh.InsecureIgnoreHostKey()
 	// }
 	sshConfig := &ssh.ClientConfig{
-		User:            pd.username.(string),
+		User:            pp.username.(string),
 		Auth:            authMethodCheck,
 		HostKeyCallback: hostKeyCallback,
 		HostKeyAlgorithms: []string{
@@ -42,16 +42,17 @@ func connectAndRunSeq(command *string, servername string, parseddata *ParsedData
 	}
 	defer func() {
 		if recv := recover(); recv != nil {
+			recoveries = recv
 		}
 	}()
-	connection, err := ssh.Dial("tcp", pd.fqdn.(string)+":"+pd.port.(string), sshConfig)
+	connection, err := ssh.Dial("tcp", pp.fqdn.(string)+":"+pp.port.(string), sshConfig)
 	if err != nil {
 		loggerlib.GeneralError(servername, "[ERROR: Connection Failed] ", err)
 		validator = "NOK\n"
 		return validator
 	}
 	defer connection.Close()
-	derefcmd = OSSwitcher.Switcher(*pd, derefcmd)
+	derefcmd = OSSwitcher.Switcher(*pp, derefcmd)
 	// fmt.Printf("%v: ", servername)
-	return executeCommand(servername, derefcmd, pd.password.(string), connection)
+	return executeCommand(servername, derefcmd, pp.password.(string), connection)
 }

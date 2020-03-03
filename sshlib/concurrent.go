@@ -10,13 +10,13 @@ import (
 )
 
 // connectAndRun Establish a connection and run command(s), will add CLI args in the near future
-func connectAndRun(command *string, servername string, parseddata *ParsedData, output chan<- string, wg *sync.WaitGroup) {
-	pd := parseddata
+func connectAndRun(command *string, servername string, parseddata *ParsedPool, output chan<- string, wg *sync.WaitGroup) {
+	pp := parseddata
 	derefcmd := *command
 	authMethodCheck := []ssh.AuthMethod{}
-	key, err := ioutil.ReadFile(pd.keypath.(string))
+	key, err := ioutil.ReadFile(pp.keypath.(string))
 	if err != nil {
-		authMethodCheck = append(authMethodCheck, ssh.Password(pd.password.(string)))
+		authMethodCheck = append(authMethodCheck, ssh.Password(pp.password.(string)))
 	} else {
 		signer, err := ssh.ParsePrivateKey(key)
 		if err != nil {
@@ -29,7 +29,7 @@ func connectAndRun(command *string, servername string, parseddata *ParsedData, o
 	hostKeyCallback := ssh.InsecureIgnoreHostKey()
 	// }
 	sshConfig := &ssh.ClientConfig{
-		User:            pd.username.(string),
+		User:            pp.username.(string),
 		Auth:            authMethodCheck,
 		HostKeyCallback: hostKeyCallback,
 		HostKeyAlgorithms: []string{
@@ -44,9 +44,10 @@ func connectAndRun(command *string, servername string, parseddata *ParsedData, o
 	}
 	defer func() {
 		if recv := recover(); recv != nil {
+			recoveries = recv
 		}
 	}()
-	connection, err := ssh.Dial("tcp", pd.fqdn.(string)+":"+pd.port.(string), sshConfig)
+	connection, err := ssh.Dial("tcp", pp.fqdn.(string)+":"+pp.port.(string), sshConfig)
 	if err != nil {
 		loggerlib.GeneralError(servername, "[ERROR: Connection Failed] ", err)
 		validator = "NOK\n"
@@ -55,7 +56,7 @@ func connectAndRun(command *string, servername string, parseddata *ParsedData, o
 	} else {
 		defer connection.Close()
 		defer wg.Done()
-		derefcmd = OSSwitcher.Switcher(*pd, derefcmd)
-		output <- executeCommand(servername, derefcmd, pd.password.(string), connection)
+		derefcmd = OSSwitcher.Switcher(*pp, derefcmd)
+		output <- executeCommand(servername, derefcmd, pp.password.(string), connection)
 	}
 }
