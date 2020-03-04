@@ -1,6 +1,6 @@
 package sshlib
 
-// top level struct
+// ParsedBaseline - top level struct
 type ParsedBaseline struct {
 	exclude     exclusion
 	prereq      prereqs
@@ -17,9 +17,11 @@ type exclusion struct {
 
 // prerequisite struct
 type prereqs struct {
-	tools []string
-	files prereqsfiles
-	vcs   prereqvcs
+	tools   []string
+	files   prereqsfiles
+	vcs     prereqvcs
+	script  string
+	cleanup bool
 }
 
 type prereqsfiles struct {
@@ -45,8 +47,6 @@ type filesremote struct {
 type prereqvcs struct {
 	urls    []string
 	execute []string
-	script  string
-	cleanup bool
 }
 
 // musthaves struct
