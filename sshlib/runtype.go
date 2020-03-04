@@ -181,6 +181,7 @@ func CheckBaselines(baselineyaml *yaml.MapSlice) {
 						// If excludes/prereqs/etc are missing or empty, create empty/blank data dor structs
 						// skipping those steps. An extra error will be created if too many fields are missing
 					}
+					//check OS
 					if thirdStep.Key == "OS" {
 						exclOS := make([]string, len(thirdStep.Value.([]interface{})))
 						OSslice := thirdStep.Value.([]interface{})
@@ -191,6 +192,7 @@ func CheckBaselines(baselineyaml *yaml.MapSlice) {
 						fmt.Println("OS stored")
 						time.Sleep(1 * time.Second)
 					}
+					//check servers
 					if thirdStep.Key == "Servers" {
 						exclServers := make([]string, len(thirdStep.Value.([]interface{})))
 						// var test []interface{}
