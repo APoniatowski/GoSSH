@@ -12,12 +12,13 @@ type Switches struct {
 // OSSwitcher a much needed var between main and sshlib
 var OSSwitcher Switches
 
-// validator This needs to be outside of the function for better error handling
+// validator This needs to be outside of the function for extra error handling
 var validator string
 
+// recoveries keeping count of recoveries. Might be useful later
 var recoveries interface{}
 
-//Switcher Method to check the switches set for each respective action
+//Switcher Method to check the switches set for each respective action (update/install/uninstall)
 func (S *Switches) Switcher(pp ParsedPool, command string) string {
 	rtncommand := ""
 

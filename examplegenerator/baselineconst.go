@@ -42,7 +42,7 @@ Server Group 1:                   # this is the group that it will be applied to
 	  - httpd
 	  - firewalld
 	  - openssh
-	  - policycoreutils-python    # *SElinux 
+	  - policycoreutils-python    
 	  - git
 	Enabled:                      # list of tools and services that need to have been started and enabled
 	  - httpd

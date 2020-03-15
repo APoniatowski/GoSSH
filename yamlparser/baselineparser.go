@@ -53,7 +53,7 @@ func BaselineParse(bl string) {
 		fmt.Println(yellow("or display a example with:"))
 		fmt.Println(cyan("gossh generate baseline example"))
 	} else {
-		fmt.Println(yellow("Baseline parsed, "), green("no errors encountered..."))
+		fmt.Println(yellow("Baseline read, "), green("no errors encountered..."))
 		fmt.Println("=====================================================")
 	}
 }

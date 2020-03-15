@@ -2,6 +2,7 @@ package sshlib
 
 // ParsedBaseline - top level struct
 type ParsedBaseline struct {
+	// servergroups []string
 	exclude     exclusion
 	prereq      prereqs
 	musthave    musthaves
@@ -42,6 +43,7 @@ type filesremote struct {
 	pwd       string
 	src       string
 	dest      string
+	files     []string
 }
 
 type prereqvcs struct {
@@ -62,25 +64,48 @@ type musthaves struct {
 }
 
 type musthaveconfigured struct {
-	services interface{} // map[string]string - string values
+	services map[string]musthaveconfiguredservices
 }
+
+type musthaveconfiguredservices struct {
+	source      []string
+	destination []string
+}
+
 type musthaveusers struct {
-	users interface{} // map[string]string - string values
+	users map[string]musthaveusersstruct
 }
+
+type musthaveusersstruct struct {
+	groups []string
+	shell  string
+	home   string
+	sudoer bool
+}
+
 type musthavepolicies struct {
 	polstatus string
 	polimport string
 	polreboot bool
 }
 type musthaverules struct {
-	fwtype   string
-	fwimport string
-	fwopen   []string
-	fwclose  []string
+	fwopen   musthaverulesopen
+	fwclosed musthaverulesclosed
 	fwzones  []string
 }
+
+type musthaverulesopen struct {
+	ports     []string
+	protocols []string
+}
+
+type musthaverulesclosed struct {
+	ports     []string
+	protocols []string
+}
+
 type musthavemounts struct {
-	mountname mountdetails
+	mountname map[string]mountdetails
 }
 
 type mountdetails struct {
@@ -103,16 +128,37 @@ type mustnothaves struct {
 }
 
 type mustnothaverules struct {
-	fwtype  string
-	fwopen  []string
-	fwclose []string
-	fwzones []string
+	fwopen   mustnothaverulesopen
+	fwclosed mustnothaverulesclosed
+	fwzones  []string
+}
+
+type mustnothaverulesopen struct {
+	ports     []string
+	protocols []string
+}
+
+type mustnothaverulesclosed struct {
+	ports     []string
+	protocols []string
 }
 
 // finals struct
 type finals struct {
 	scripts  []string
 	commands []string
-	collect  []string
-	restart  bool
+	collect  collections
+	restart  restarts
+}
+
+type collections struct {
+	logs  []string
+	stats []string
+	files []string
+	users bool
+}
+
+type restarts struct {
+	services bool
+	servers  bool
 }

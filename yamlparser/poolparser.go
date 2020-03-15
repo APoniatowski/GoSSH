@@ -28,7 +28,7 @@ func ParsePool() {
 		fmt.Println(yellow("or display a example with:"))
 		fmt.Println(cyan("gossh generate pool example"))
 	} else {
-		fmt.Println(yellow("Data parsed, "), green("no errors encountered..."))
+		fmt.Println(yellow("Data read, "), green("no errors encountered..."))
 	}
 	Waittotal = TotalServercount(Pool)
 	ServersPerGroup = ServersPerGroupcount(Pool)
@@ -41,7 +41,7 @@ func ParsePool() {
 	fmt.Printf("\n")
 	fmt.Printf(yellow("Total groups of servers: %d\n"), Grouptotal)
 	fmt.Printf(yellow("Total number of logical cores: %d\n"), runtime.NumCPU())
-	fmt.Printf(yellow("======================================================\n"))
+	fmt.Println(yellow("======================================================"))
 }
 
 // ParseServersList server list parser, parses it to a map of structs in main function
