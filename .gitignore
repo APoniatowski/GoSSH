@@ -4,6 +4,10 @@
 *.dll
 *.so
 *.dylib
+/gossh
+/gossh.exe
+/GoSSH
+/GoSSH.exe
 
 # Test binary, build with `go test -c`
 *.test
@@ -14,16 +18,13 @@
 # Other files I will not need to include
 /logs
 /bin
+/.idea
 /.vscode
+/.github
+/src
 /pkg
+#README.md
 config/pool.yml
 config/pool-testing.yml
 config/pool-testing-linux.yml
-/.github
-/src
-/GoSSH
-/gossh
-/gossh.exe
-/GoSSH.exe
-/READM.md
 __debug_bin

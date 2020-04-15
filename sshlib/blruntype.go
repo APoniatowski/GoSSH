@@ -923,7 +923,7 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice) {
 	}
 }
 
-// CheckBaselines Baseline compliancy check. Provides info of if servers meet baseline compliancy as defined in the chosen baseline file
+// CheckBaselines Baseline compliancy check. Provides info of if servers meet baseline compliance as defined in the chosen baseline file
 func CheckBaselines(baselineyaml *yaml.MapSlice) {
 	var warnings int
 	var maincategorywarnings int
@@ -1849,7 +1849,7 @@ func VerifyBaselines(baselineyaml *yaml.MapSlice) {
 		fmt.Printf("%s:\n", blItem.Key)
 		groupValues, ok := blItem.Value.(yaml.MapSlice)
 		if !ok {
-			panic(fmt.Sprintf("\nCheck your baseline for issues\nAlternatively generate a template to see what is missing/wrong\n"))
+			panic(fmt.Sprintf("\nError:\nCheck your baseline for issues\nAlternatively generate a template to see what is missing/wrong\n"))
 		}
 		// Server groups
 		for _, groupItem := range groupValues {

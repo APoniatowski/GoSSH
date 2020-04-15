@@ -15,7 +15,7 @@ So I went with the K.I.S.S. method, and keep the complexity in the code, not the
 
 
 * Windows (laptop):
-##### Tesed on 22 production servers (across 8 different countries):
+##### Tested on 22 production servers (across 8 different countries):
 
 ```
  (████████████████████) 100.0% 6.2 ops/s
