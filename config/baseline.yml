@@ -15,10 +15,10 @@ Example - Setup webserver:            # this will be the name of a baseline that
         - nfs-utils
       Files:                          # download files/scripts/etc, via different methods
         URLs:                         # it will run wget/curl for this, make sure the tools are available in Tools or Must-Have
-          - http://where/file/is  
-        Local:                        # the machine you are running it from.
-          Source: /path/to/file       # your machine you are running it from
-          Destination: /path/to/file  # Remote servers' directory you would like to store it in
+          - http://where/file/is
+        Local:                        # local transfer via scp.
+          Source: /path/to/file       # the directory you are transferring it from
+          Destination: /path/to/file  # the directory you are transferring it to
         Remote:                       # copy a file from a mount specified here.
           Type: nfs                   # or other mounting method, a temporary mount will be created and removed when done
           Address: 1.2.3.4
@@ -26,11 +26,11 @@ Example - Setup webserver:            # this will be the name of a baseline that
           Password: nfspassword       # leave blank if not needed
           Source: /path/from/         # as this is only a temporary mount, it will create a temp dir to mount it in, eg. /temp/path/from/
           Destination: /path/to/      # This is the directory it should copy the contents of the mount, before unmounting
-          Files:                      # files you would like to copy from the mount, specify '- All' to copy everything from the mount 
+          Files:                      # files you would like to copy from the mount, specify '- All' to copy everything from the mount
             - script.sh
             - some.tar.gz
-      VCS:                            # this will be git, as svn and the others are losing popularity and marketshare. 
-        URLs:                         # Unless enough requests were made to implement it, I will add another level here, 
+      VCS:                            # this will be git, as svn and the others are losing popularity and marketshare.
+        URLs:                         # Unless enough requests were made to implement it, I will add another level here,
           - https://blablabla         # to specify what should be used.
           - https://blabla
         Execute:                      # if compilation is required, one can run the commands below,
@@ -61,13 +61,13 @@ Example - Setup webserver:            # this will be the name of a baseline that
             - /path/to/config/filedst  # 1
             - /another/filedst         # 2
         openssh:
-          Source: 
+          Source:
             - /path/to/config/filesrc
-          Destination: 
+          Destination:
             - /path/to/config/filedst
       Users:                        # Create users here
         webmaster:                # the name that will be created
-          Groups: 
+          Groups:
             - www
           Shell: nologin          # one can create a service account
           Home-Dir:               # no home dir will be created
@@ -91,36 +91,36 @@ Example - Setup webserver:            # this will be the name of a baseline that
           Protocols:
             - tcp
             - tcp udp               # a space between them will add both
-        Closed:                     
+        Closed:
           Ports:
             - 8080
           Protocols:
             - tcp
-        Zones: 
-          - public    
+        Zones:
+          - public
       Mounts:                       # needed mounts
         Mount 1:                    # name your mount in this config
-          Type: nfs                 
+          Type: nfs
           Address: 1.2.3.4
           Username: nfsuser         # leave blank if or remove, not needed
           Password: nfspassword     # leave blank if or remove, not needed
           Source: /path/from/
           Destination: /path/to/
         Mount 2:                    # name your mount in this config
-          Type: smb                 
+          Type: smb
           Address: 2.3.4.5
           Username:                 # leave blank or remove, if not needed
           Password:                 # leave blank or remove, if not needed
           Source: /path/from/
-          Destination: /path/to/  
+          Destination: /path/to/
     Must-Not-Have:                  # Must-Not-Have will be a lot shorter than Must-Have, as removing is a lot faster/easier than configuring
-      Installed: 
+      Installed:
         - nmap
-      Enabled: 
+      Enabled:
         - a-service
       Disabled:                     # Beware of conflicts in Must-Have and Enabled.
-        - httpd               
-      Users:                        
+        - httpd
+      Users:
         - bob
         - jane
       Rules:                        # Firewall rules, that should not be there. One can leave these blank, it is just and extra check
@@ -130,9 +130,9 @@ Example - Setup webserver:            # this will be the name of a baseline that
             - 8443
           Protocols:
             - tcp udp
-            - tcp                   
-        Closed:                      
-          Ports: 
+            - tcp
+        Closed:
+          Ports:
             - 80
             - 443
           Protocols:
@@ -150,7 +150,7 @@ Example - Setup webserver:            # this will be the name of a baseline that
       Commands:
         - command 1
         - command 2
-      Collect:                      # Collect/log information before finishing, eg logs/statistics/user(s) info/file(s) info 
+      Collect:                      # Collect/log information before finishing, eg logs/statistics/user(s) info/file(s) info
         Logs:
           - httpd
           - sshd
@@ -158,7 +158,7 @@ Example - Setup webserver:            # this will be the name of a baseline that
           - cpu
           - storage
           - memory
-        Files: 
+        Files:
           - /path/to/file
           - /path/to/another
         Users: true                 # collect details of currently logged in users

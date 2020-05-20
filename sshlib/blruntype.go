@@ -1969,7 +1969,7 @@ func VerifyBaselines(baselineyaml *yaml.MapSlice) {
 											} else {
 												extrablValues, ok := blItem.Value.(yaml.MapSlice)
 												if !ok {
-													fmt.Println("3 Error parsing baseline. Please check the baseline you specified or generate a template")
+													fmt.Println("Error parsing baseline. Please check the baseline you specified or generate a template")
 												}
 												var nextblStep yaml.MapItem
 												for _, nextblStep = range extrablValues {
@@ -2771,109 +2771,117 @@ func VerifyBaselines(baselineyaml *yaml.MapSlice) {
 				}
 			}
 			fmt.Println("Verifying server group's prerequisites list:")
-			if len(blstruct.prereq.vcs.execute) == 0 && // done
-				len(blstruct.prereq.vcs.urls) == 0 && // done
-				len(blstruct.prereq.files.local.dest) == 0 && // done
-				len(blstruct.prereq.files.local.src) == 0 && // done
-				len(blstruct.prereq.files.remote.address) == 0 &&
-				len(blstruct.prereq.files.remote.dest) == 0 &&
+			if len(blstruct.prereq.vcs.execute) == 0 &&
+				len(blstruct.prereq.vcs.urls) == 0 &&
+				blstruct.prereq.files.local.dest == "" &&
+				blstruct.prereq.files.local.src == "" &&
+				blstruct.prereq.files.remote.address == "" &&
+				blstruct.prereq.files.remote.dest == "" &&
+				blstruct.prereq.files.remote.mounttype == "" &&
+				blstruct.prereq.files.remote.pwd == "" &&
+				blstruct.prereq.files.remote.src == "" &&
+				blstruct.prereq.files.remote.username == "" &&
 				len(blstruct.prereq.files.remote.files) == 0 &&
-				len(blstruct.prereq.files.remote.mounttype) == 0 &&
-				len(blstruct.prereq.files.remote.pwd) == 0 &&
-				len(blstruct.prereq.files.remote.src) == 0 &&
-				len(blstruct.prereq.files.remote.username) == 0 &&
-				len(blstruct.prereq.files.urls) == 0 && // done
-				len(blstruct.prereq.tools) == 0 && // done
-				len(blstruct.prereq.script) == 0 &&
+				len(blstruct.prereq.files.urls) == 0 &&
+				len(blstruct.prereq.tools) == 0 &&
+				blstruct.prereq.script == "" &&
 				blstruct.prereq.cleanup == false {
 				fmt.Println("No prerequisites have been specified  -- Please check your baseline, if you believe this to be incorrect")
 			} else {
 				// prerequisite tools
 				if len(blstruct.prereq.tools) == 0 {
 					fmt.Println("No prerequisite tools specified")
-					} else {
-						fmt.Println("The following prerequisite tools will be installed via the package manager:")
-						for _, ve := range blstruct.prereq.tools {
-							fmt.Println(ve)
-						}
+				} else {
+					fmt.Println("The following prerequisite tools will be installed via the package manager:")
+					for _, ve := range blstruct.prereq.tools {
+						fmt.Println(ve)
+					}
 				}
 				// prerequisite files URLs
 				if len(blstruct.prereq.files.urls) == 0 {
 					fmt.Println("No prerequisite files URLs' specified")
-					} else {
-						fmt.Println("The following prerequisite files URLs' will be downloaded via curl/wget:")
-						for _, ve := range blstruct.prereq.tools {
-							fmt.Println(ve)
-						}
+				} else {
+					fmt.Println("The following prerequisite files URLs' will be downloaded via curl/wget:")
+					for _, ve := range blstruct.prereq.files.urls {
+						fmt.Println(ve)
+					}
 				}
 				// prerequisite files local
-				if len(blstruct.prereq.files.local.dest) == 0 &&
-				len(blstruct.prereq.files.local.src) == 0 {
+				if blstruct.prereq.files.local.dest != "" &&
+					blstruct.prereq.files.local.src != "" {
 					fmt.Println("No prerequisite files (local) specified")
 				} else {
 					fmt.Println("The following files will be transferred locally via scp")
-					if len(blstruct.prereq.files.local.src) > 0 {
+					if blstruct.prereq.files.local.src != "" {
 						fmt.Println("Source (locally):")
-						for _, ve := range blstruct.prereq.files.local.src {
-							fmt.Println(ve)
-						}
+						fmt.Println(blstruct.prereq.files.local.src)
 					} else {
 						fmt.Println("No source/local file or directory specified")
 					}
-					if len(blstruct.prereq.files.local.dest) > 0 {
+					if blstruct.prereq.files.local.dest != "" {
 						fmt.Println("Destination (remote):")
-						for _, ve := range blstruct.prereq.files.local.dest {
-							fmt.Println(ve)
-						}
+						fmt.Println(blstruct.prereq.files.local.dest)
 					} else {
 						fmt.Println("No destination/remote paths specified")
 					}
 					fmt.Println("Please review your baseline if either of these are empty")
 				}
 				// prerequisite files remote
-				if len(blstruct.prereq.files.remote.address) == 0 &&
-				len(blstruct.prereq.files.remote.dest) == 0 &&
-				len(blstruct.prereq.files.remote.files) == 0 &&
-				len(blstruct.prereq.files.remote.mounttype) == 0 &&
-				len(blstruct.prereq.files.remote.pwd) == 0 &&
-				len(blstruct.prereq.files.remote.src) == 0 &&
-				len(blstruct.prereq.files.remote.username) == 0 {
+				if blstruct.prereq.files.remote.address == "" &&
+					blstruct.prereq.files.remote.dest == "" &&
+					blstruct.prereq.files.remote.mounttype == "" &&
+					blstruct.prereq.files.remote.pwd == "" &&
+					blstruct.prereq.files.remote.src == "" &&
+					blstruct.prereq.files.remote.username == "" &&
+					len(blstruct.prereq.files.remote.files) == 0 {
 					fmt.Println("No prerequisite files (remote) specified")
 				} else {
 					fmt.Println("The following files will be transferred via the mount details specified:")
 					if blstruct.prereq.files.remote.mounttype == "" {
 						fmt.Println("Mount type:")
-						for _, ve := range blstruct.prereq.files.remote.mounttype {
-							fmt.Println(ve)
-						}
+						fmt.Println(blstruct.prereq.files.remote.mounttype)
 					} else {
 						fmt.Println("No mount type specified")
 					}
-					if blstruct.prereq.files.remote.address == "" {
+					if blstruct.prereq.files.remote.address != "" {
 						fmt.Println("Address:")
-						for _, ve := range blstruct.prereq.files.remote.address {
-							fmt.Println(ve)
-						}
+						fmt.Println(blstruct.prereq.files.remote.address)
 					} else {
 						fmt.Println("No address specified")
 					}
-					if blstruct.prereq.files.remote.username == "" {
+					if blstruct.prereq.files.remote.username != "" {
 						fmt.Println("Username:")
-						for _, ve := range blstruct.prereq.files.remote.username {
-							fmt.Println(ve)
-						}
+						fmt.Println(blstruct.prereq.files.remote.username)
+
 					} else {
 						fmt.Println("No username specified")
 					}
-					if blstruct.prereq.files.remote.pwd == "" {
+					if blstruct.prereq.files.remote.pwd != "" {
 						fmt.Println("Password:")
-						for _, ve := range blstruct.prereq.files.remote.pwd {
-							fmt.Println(ve)
-						}
+						fmt.Println(blstruct.prereq.files.remote.pwd)
 					} else {
 						fmt.Println("No password specified")
 					}
-					// will continue later damnit
+					if blstruct.prereq.files.remote.src != "" {
+						fmt.Println("Source (remote):")
+						fmt.Println(blstruct.prereq.files.remote.src)
+					} else {
+						fmt.Println("No mount source specified")
+					}
+					if blstruct.prereq.files.remote.dest != "" {
+						fmt.Println("Destination (remote):")
+						fmt.Println(blstruct.prereq.files.remote.dest)
+					} else {
+						fmt.Println("No mount destination specified")
+					}
+					if len(blstruct.prereq.files.remote.files) == 0 {
+						fmt.Println("No prerequisite tools specified")
+					} else {
+						fmt.Println("Files to be transferred:")
+						for _, ve := range blstruct.prereq.files.remote.files {
+							fmt.Println(ve)
+						}
+					}
 				}
 				// prerequisite VCS instructions
 				if len(blstruct.prereq.vcs.execute) == 0 &&
@@ -2890,7 +2898,7 @@ func VerifyBaselines(baselineyaml *yaml.MapSlice) {
 					}
 					if len(blstruct.prereq.vcs.execute) > 0 {
 						fmt.Println("VCS related commands to be executed:")
-						for _, ve := range blstruct.prereq.vcs.urls {
+						for _, ve := range blstruct.prereq.vcs.execute {
 							fmt.Println(ve)
 						}
 					} else {
@@ -2898,8 +2906,41 @@ func VerifyBaselines(baselineyaml *yaml.MapSlice) {
 					}
 					fmt.Println("Please review your baseline if either of these are empty")
 				}
+				// prerequisite script
+				if blstruct.prereq.script == "" {
+					fmt.Println("No prerequisite script information specified  -- Please check your baseline, if you believe this to be incorrect")
+				} else {
+					fmt.Println("Script:")
+					fmt.Println(blstruct.prereq.script)
+				}
+				// prerequisite cleanup
+				if blstruct.prereq.cleanup == false {
+					fmt.Println("Prerequisite cleanup is set to false.")
+				} else {
+					fmt.Println("Prerequisite cleanup is set to true.")
+				}
 
 			}
+			fmt.Println("Verifying server group's must-have list:")
+			if len(blstruct.musthave.installed) == 0 &&
+				len(blstruct.musthave.enabled) == 0 &&
+				len(blstruct.musthave.disabled) == 0 &&
+				len(blstruct.musthave.configured.services) == 0 &&
+				len(blstruct.musthave.users.users) == 0 &&
+				blstruct.musthave.policies.polimport == "" &&
+				blstruct.musthave.policies.polreboot == false &&
+				blstruct.musthave.policies.polstatus == "" &&
+				len(blstruct.musthave.rules.fwopen.ports) == 0 &&
+				len(blstruct.musthave.rules.fwopen.protocols) == 0 &&
+				len(blstruct.musthave.rules.fwclosed.ports) == 0 &&
+				len(blstruct.musthave.rules.fwclosed.protocols) == 0 &&
+				len(blstruct.musthave.rules.fwzones) == 0 &&
+				len(blstruct.musthave.mounts.mountname) == 0 {
+				fmt.Println("No must-haves have been specified  -- Please check your baseline, if you believe this to be incorrect")
+			} else {
+				//will continue from here later
+			}
+
 			// Start operations here, to run jobs per group
 			// or in case if it is 'all', then it needs to run through all servers
 
