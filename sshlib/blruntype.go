@@ -19,7 +19,7 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice) {
 		fmt.Printf("%s:\n", blItem.Key)
 		groupValues, ok := blItem.Value.(yaml.MapSlice)
 		if !ok {
-			panic(fmt.Sprintf("\nCheck your baseline for issues\nAlternatively generate a template to see what is missing/wrong\n"))
+			panic("\nCheck your baseline for issues\nAlternatively generate a template to see what is missing/wrong\n")
 		}
 		// Server groups
 		for _, groupItem := range groupValues {
@@ -29,12 +29,10 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice) {
 			blstruct.musthave.configured.services = make(map[string]musthaveconfiguredservices)
 			blstruct.musthave.users.users = make(map[string]musthaveusersstruct)
 			blstruct.musthave.mounts.mountname = make(map[string]mountdetails)
-			//
-			// fmt.Printf("%s:\n", groupItem.Key)
 			blstepsValue, ok := groupItem.Value.(yaml.MapSlice)
 			if !ok {
 				blerrors++
-				panic(fmt.Sprintf("\nError parsing server groups.\nAborting...\n"))
+				panic("\nError parsing server groups.\nAborting...\n")
 			}
 			if strings.ToLower(servergroupname) == "all" {
 				fmt.Println("Checking baseline on all servers:")
@@ -161,7 +159,6 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice) {
 													}
 												}
 											}
-
 										case "Remote":
 											if blItem.Value == nil {
 												datawarnings++
@@ -281,7 +278,6 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice) {
 								} else {
 									blstruct.prereq.script = thirdStep.Value.(string)
 								}
-
 							case "Clean-up":
 								if thirdStep.Value == nil {
 									datawarnings++
@@ -426,7 +422,6 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice) {
 												home:   mhUserhome,
 												sudoer: mhUsersudo,
 											}
-
 										}
 									}
 								}
@@ -477,7 +472,6 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice) {
 										if !ok {
 											warnings++
 										}
-
 										switch blItem.Key {
 										case "Open":
 											for _, rulesItems := range rulesValues {
@@ -625,7 +619,6 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice) {
 													mhMountDest = mountItems.Value.(string)
 												}
 											}
-
 										}
 										blstruct.musthave.mounts.mountname[mhMounts] = mountdetails{
 											mounttype: mhMountType,
@@ -702,7 +695,6 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice) {
 										if !ok {
 											warnings++
 										}
-
 										switch blItem.Key {
 										case "Open":
 											for _, rulesItems := range rulesValues {
@@ -871,7 +863,6 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice) {
 											}
 										}
 									}
-
 								}
 							case "Restart":
 								if thirdStep.Value == nil {
@@ -901,7 +892,7 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice) {
 							}
 						default:
 							blerrors++
-							panic(fmt.Sprintf("\nError parsing baseline.\n Please check your baseline.\nAborting...\n"))
+							panic("\nError parsing baseline.\n Please check your baseline.\nAborting...\n")
 						}
 					}
 				}
@@ -934,7 +925,7 @@ func CheckBaselines(baselineyaml *yaml.MapSlice) {
 		fmt.Printf("%s:\n", blItem.Key)
 		groupValues, ok := blItem.Value.(yaml.MapSlice)
 		if !ok {
-			panic(fmt.Sprintf("\nCheck your baseline for issues\nAlternatively generate a template to see what is missing/wrong\n"))
+			panic("\nCheck your baseline for issues\nAlternatively generate a template to see what is missing/wrong\n")
 		}
 		// Server groups
 		for _, groupItem := range groupValues {
@@ -949,7 +940,7 @@ func CheckBaselines(baselineyaml *yaml.MapSlice) {
 			blstepsValue, ok := groupItem.Value.(yaml.MapSlice)
 			if !ok {
 				blerrors++
-				panic(fmt.Sprintf("\nError parsing server groups.\nAborting...\n"))
+				panic("\nError parsing server groups.\nAborting...\n")
 			}
 			if strings.ToLower(servergroupname) == "all" {
 				fmt.Println("Checking baseline on all servers:")
@@ -1816,7 +1807,7 @@ func CheckBaselines(baselineyaml *yaml.MapSlice) {
 							}
 						default:
 							blerrors++
-							panic(fmt.Sprintf("\nError parsing baseline.\n Please check your baseline.\nAborting...\n"))
+							panic("\nError parsing baseline.\n Please check your baseline.\nAborting...\n")
 						}
 					}
 				}
@@ -1849,7 +1840,7 @@ func VerifyBaselines(baselineyaml *yaml.MapSlice) {
 		fmt.Printf("%s:\n", blItem.Key)
 		groupValues, ok := blItem.Value.(yaml.MapSlice)
 		if !ok {
-			panic(fmt.Sprintf("\nError:\nCheck your baseline for issues\nAlternatively generate a template to see what is missing/wrong\n"))
+			panic("\nError:\nCheck your baseline for issues\nAlternatively generate a template to see what is missing/wrong\n")
 		}
 		// Server groups
 		for _, groupItem := range groupValues {
@@ -1864,7 +1855,7 @@ func VerifyBaselines(baselineyaml *yaml.MapSlice) {
 			blstepsValue, ok := groupItem.Value.(yaml.MapSlice)
 			if !ok {
 				blerrors++
-				panic(fmt.Sprintf("\nError parsing server groups.\nAborting...\n"))
+				panic("\nError parsing server groups.\nAborting...\n")
 			}
 			if strings.ToLower(servergroupname) == "all" {
 				fmt.Println("Checking baseline on all servers:")
@@ -2731,26 +2722,12 @@ func VerifyBaselines(baselineyaml *yaml.MapSlice) {
 							}
 						default:
 							blerrors++
-							panic(fmt.Sprintf("\nError parsing baseline.\n Please check your baseline.\nAborting...\n"))
+							panic("\nError parsing baseline.\n Please check your baseline.\nAborting...\n")
 						}
 					}
 				}
 			}
-
 			blstruct.verification(servergroupname)
-
-			// Start operations here, to run jobs per group
-			// or in case if it is 'all', then it needs to run through all servers
-
-			// for ke, ve := range blstruct.musthave.mounts.mountname {
-			// 	fmt.Println(ke, ve)
-			// }
-			// for ke, ve := range blstruct.musthave.users.users {
-			// 	fmt.Println(ke, ve)
-			// }
-			// for ke, ve := range blstruct.musthave.configured.services {
-			// 	fmt.Println(ke, ve)
-			// }
 		}
 	}
 }

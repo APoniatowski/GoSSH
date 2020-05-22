@@ -1,9 +1,16 @@
 package sshlib
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func (blstruct *ParsedBaseline) verification(servergroupname string) {
-	fmt.Printf("%s has been parsed.\n", servergroupname)
+	if strings.ToLower(servergroupname) == "all" {
+		fmt.Println("All servers for this baseline, has been parsed.")
+	} else {
+		fmt.Printf("%s has been parsed.\n", servergroupname)
+	}
 	fmt.Println("Proceeding with baseline verification:")
 	fmt.Println("Verifying server group's exclusion list:")
 	if len(blstruct.exclude.osExcl) == 0 &&
@@ -52,7 +59,7 @@ func (blstruct *ParsedBaseline) verification(servergroupname string) {
 		len(blstruct.prereq.files.urls) == 0 &&
 		len(blstruct.prereq.tools) == 0 &&
 		blstruct.prereq.script == "" &&
-		blstruct.prereq.cleanup == false {
+		!blstruct.prereq.cleanup {
 		fmt.Println("No prerequisites have been specified  -- Please check your baseline, if you believe this to be incorrect")
 	} else {
 		// prerequisite tools
@@ -181,7 +188,7 @@ func (blstruct *ParsedBaseline) verification(servergroupname string) {
 			fmt.Println(blstruct.prereq.script)
 		}
 		// prerequisite cleanup
-		if blstruct.prereq.cleanup == false {
+		if !blstruct.prereq.cleanup {
 			fmt.Println("Prerequisite cleanup is set to false.")
 		} else {
 			fmt.Println("Prerequisite cleanup is set to true.")
@@ -195,7 +202,7 @@ func (blstruct *ParsedBaseline) verification(servergroupname string) {
 		len(blstruct.musthave.configured.services) == 0 &&
 		len(blstruct.musthave.users.users) == 0 &&
 		blstruct.musthave.policies.polimport == "" &&
-		blstruct.musthave.policies.polreboot == false &&
+		!blstruct.musthave.policies.polreboot &&
 		blstruct.musthave.policies.polstatus == "" &&
 		len(blstruct.musthave.rules.fwopen.ports) == 0 &&
 		len(blstruct.musthave.rules.fwopen.protocols) == 0 &&
@@ -277,7 +284,7 @@ func (blstruct *ParsedBaseline) verification(servergroupname string) {
 		// MH Policies
 		if blstruct.musthave.policies.polstatus == "" &&
 			blstruct.musthave.policies.polimport == "" &&
-			blstruct.musthave.policies.polreboot == false {
+			!blstruct.musthave.policies.polreboot {
 			fmt.Println("No must-have policies specified  -- Please check your baseline, if you believe this to be incorrect")
 		} else {
 			if blstruct.musthave.policies.polstatus != "" {
@@ -290,7 +297,7 @@ func (blstruct *ParsedBaseline) verification(servergroupname string) {
 			} else {
 				fmt.Println("No must-have policy to import  -- Please check your baseline, if you believe this to be incorrect")
 			}
-			if blstruct.musthave.policies.polreboot != false {
+			if blstruct.musthave.policies.polreboot {
 				fmt.Printf("Reboot: %v\n", blstruct.musthave.policies.polreboot)
 			} else {
 				fmt.Println("Reboot set to false, or not in baseline  -- Please check your baseline, if you believe this to be incorrect")
@@ -495,9 +502,9 @@ func (blstruct *ParsedBaseline) verification(servergroupname string) {
 		len(blstruct.final.collect.logs) == 0 &&
 		len(blstruct.final.collect.stats) == 0 &&
 		len(blstruct.final.collect.files) == 0 &&
-		blstruct.final.collect.users == false &&
-		blstruct.final.restart.services == false &&
-		blstruct.final.restart.servers == false {
+		!blstruct.final.collect.users &&
+		!blstruct.final.restart.services &&
+		!blstruct.final.restart.servers {
 		fmt.Println("No final steps have been specified  -- Please check your baseline, if you believe this to be incorrect")
 	} else {
 		// final scripts
@@ -522,7 +529,7 @@ func (blstruct *ParsedBaseline) verification(servergroupname string) {
 		if len(blstruct.final.collect.logs) > 0 &&
 			len(blstruct.final.collect.stats) > 0 &&
 			len(blstruct.final.collect.files) > 0 &&
-			blstruct.final.collect.users != false {
+			blstruct.final.collect.users {
 			fmt.Println("Collect:")
 			if len(blstruct.final.collect.logs) > 0 {
 				fmt.Println("Logs:")
@@ -552,14 +559,14 @@ func (blstruct *ParsedBaseline) verification(servergroupname string) {
 			fmt.Println("No collections specified  -- Please check your baseline, if you believe this to be incorrect")
 		}
 		// final restarts
-		if blstruct.final.restart.services != false &&
-			blstruct.final.restart.servers != false {
-			if blstruct.final.restart.services != false {
+		if blstruct.final.restart.services &&
+			blstruct.final.restart.servers {
+			if blstruct.final.restart.services {
 				fmt.Printf("Reboot Services: %v\n", blstruct.final.restart.services)
 			} else {
 				fmt.Println("Services reboot set to false, or not in baseline  -- Please check your baseline, if you believe this to be incorrect")
 			}
-			if blstruct.final.restart.servers != false {
+			if blstruct.final.restart.servers {
 				fmt.Printf("Reboot Servers: %v\n", blstruct.final.restart.servers)
 			} else {
 				fmt.Println("Servers reboot set to false, or not in baseline  -- Please check your baseline, if you believe this to be incorrect")
