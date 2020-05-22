@@ -526,10 +526,12 @@ func (blstruct *ParsedBaseline) verification(servergroupname string) {
 			fmt.Println("No commands specified  -- Please check your baseline, if you believe this to be incorrect")
 		}
 		// final collections
-		if len(blstruct.final.collect.logs) > 0 &&
-			len(blstruct.final.collect.stats) > 0 &&
-			len(blstruct.final.collect.files) > 0 &&
-			blstruct.final.collect.users {
+		if len(blstruct.final.collect.logs) == 0 &&
+			len(blstruct.final.collect.stats) == 0 &&
+			len(blstruct.final.collect.files) == 0 &&
+			!blstruct.final.collect.users {
+			fmt.Println("No collections specified  -- Please check your baseline, if you believe this to be incorrect")
+		} else {
 			fmt.Println("Collect:")
 			if len(blstruct.final.collect.logs) > 0 {
 				fmt.Println("Logs:")
@@ -555,24 +557,23 @@ func (blstruct *ParsedBaseline) verification(servergroupname string) {
 			} else {
 				fmt.Println("No files specified  -- Please check your baseline, if you believe this to be incorrect")
 			}
-		} else {
-			fmt.Println("No collections specified  -- Please check your baseline, if you believe this to be incorrect")
 		}
 		// final restarts
-		if blstruct.final.restart.services &&
-			blstruct.final.restart.servers {
+		if !blstruct.final.restart.services &&
+			!blstruct.final.restart.servers {
+			fmt.Println("No restart options specified  -- Please check your baseline, if you believe this to be incorrect")
+		} else {
+			fmt.Println("Reboot:")
 			if blstruct.final.restart.services {
-				fmt.Printf("Reboot Services: %v\n", blstruct.final.restart.services)
+				fmt.Printf("Services: %v\n", blstruct.final.restart.services)
 			} else {
 				fmt.Println("Services reboot set to false, or not in baseline  -- Please check your baseline, if you believe this to be incorrect")
 			}
 			if blstruct.final.restart.servers {
-				fmt.Printf("Reboot Servers: %v\n", blstruct.final.restart.servers)
+				fmt.Printf("Servers: %v\n", blstruct.final.restart.servers)
 			} else {
 				fmt.Println("Servers reboot set to false, or not in baseline  -- Please check your baseline, if you believe this to be incorrect")
 			}
-		} else {
-			fmt.Println("No restart options specified  -- Please check your baseline, if you believe this to be incorrect")
 		}
 	}
 }
