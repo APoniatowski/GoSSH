@@ -347,10 +347,19 @@ func (blstruct *ParsedBaseline) verification(servergroupname string) {
 			}
 		}
 		// MH mounts
-		if len(blstruct.musthave.mounts.mountname) == 0 {
-			fmt.Println("No must-have mount details specified  -- Please check your baseline, if you believe this to be incorrect")
-		} else {
-			// 							handle ifs here
+		for ke, ve := range blstruct.musthave.mounts.mountname {
+			if ke == "" {
+				fmt.Println("No must-have mounts specified  -- Please check your baseline, if you believe this to be incorrect")
+				break
+			} else {
+				fmt.Printf("%s:\n", ke)
+				fmt.Printf("Mount Type: %v\n", ve.mounttype)
+				fmt.Printf("Address: %v\n", ve.address)
+				fmt.Printf("Username: %v\n", ve.username)
+				fmt.Printf("Password: %v\n", ve.pwd)
+				fmt.Printf("Source: %v\n", ve.src)
+				fmt.Printf("Destination: %v\n", ve.dest)
+			}
 		}
 	}
 	//MNH list
@@ -367,7 +376,117 @@ func (blstruct *ParsedBaseline) verification(servergroupname string) {
 		len(blstruct.mustnothave.mounts) == 0 {
 		fmt.Println("No must-not-haves have been specified  -- Please check your baseline, if you believe this to be incorrect")
 	} else {
-		// 							handle ifs here
+		// MNH installed
+		if len(blstruct.mustnothave.installed) == 0 {
+			fmt.Println("No must-not-have installed information specified  -- Please check your baseline, if you believe this to be incorrect")
+		} else {
+			if len(blstruct.mustnothave.installed) > 0 {
+				fmt.Println("The following must-not-have tools/software will be removed, if they haven't been removed previously:")
+				for _, ve := range blstruct.mustnothave.installed {
+					fmt.Println(ve)
+				}
+			} else {
+				fmt.Println("No must-not-have installed specified")
+			}
+		}
+		// MNH enabled
+		if len(blstruct.mustnothave.enabled) == 0 {
+			fmt.Println("No must-not-have enabled information specified  -- Please check your baseline, if you believe this to be incorrect")
+		} else {
+			if len(blstruct.mustnothave.enabled) > 0 {
+				fmt.Println("The following tools/software will be disabled, if they haven't been disabled previously:")
+				for _, ve := range blstruct.mustnothave.enabled {
+					fmt.Println(ve)
+				}
+			} else {
+				fmt.Println("No must-not-have enabled specified")
+			}
+		}
+		// MNH disabled
+		if len(blstruct.mustnothave.disabled) == 0 {
+			fmt.Println("No must-not-have disabled information specified  -- Please check your baseline, if you believe this to be incorrect")
+		} else {
+			if len(blstruct.mustnothave.disabled) > 0 {
+				fmt.Println("The following tools/software will be enabled, if they haven't been enabled previously:")
+				for _, ve := range blstruct.mustnothave.disabled {
+					fmt.Println(ve)
+				}
+			} else {
+				fmt.Println("No must-not-have disabled specified")
+			}
+		}
+		// MNH Users
+		if len(blstruct.mustnothave.users) == 0 {
+			fmt.Println("No must-not-have users information specified  -- Please check your baseline, if you believe this to be incorrect")
+		} else {
+			if len(blstruct.mustnothave.users) > 0 {
+				fmt.Println("The following users will be removed, if they haven't been removed previously:")
+				for _, ve := range blstruct.mustnothave.users {
+					fmt.Println(ve)
+				}
+			} else {
+				fmt.Println("No must-not-have users specified")
+			}
+		}
+		// MNH Firewall rules
+		if len(blstruct.mustnothave.rules.fwopen.ports) == 0 &&
+			len(blstruct.mustnothave.rules.fwopen.protocols) == 0 &&
+			len(blstruct.mustnothave.rules.fwclosed.ports) == 0 &&
+			len(blstruct.mustnothave.rules.fwclosed.protocols) == 0 &&
+			len(blstruct.mustnothave.rules.fwzones) == 0 {
+			fmt.Println("No must-not-have firewall rules specified  -- Please check your baseline, if you believe this to be incorrect")
+		} else {
+			fmt.Println("Firewall rules:")
+			if len(blstruct.mustnothave.rules.fwopen.ports) > 0 {
+				fmt.Println("Open ports:")
+				for _, ve := range blstruct.mustnothave.rules.fwopen.ports {
+					fmt.Println(ve)
+				}
+			} else {
+				fmt.Println("No open ports specified  -- Please check your baseline, if you believe this to be incorrect")
+			}
+			if len(blstruct.mustnothave.rules.fwopen.protocols) > 0 {
+				fmt.Println("Open protocols:")
+				for _, ve := range blstruct.mustnothave.rules.fwopen.protocols {
+					fmt.Println(ve)
+				}
+			} else {
+				fmt.Println("No open protocols specified  -- Please check your baseline, if you believe this to be incorrect")
+			}
+			if len(blstruct.mustnothave.rules.fwclosed.ports) > 0 {
+				fmt.Println("Closed ports:")
+				for _, ve := range blstruct.mustnothave.rules.fwclosed.ports {
+					fmt.Println(ve)
+				}
+			} else {
+				fmt.Println("No closed ports specified  -- Please check your baseline, if you believe this to be incorrect")
+			}
+			if len(blstruct.mustnothave.rules.fwclosed.protocols) > 0 {
+				fmt.Println("Closed protocols:")
+				for _, ve := range blstruct.mustnothave.rules.fwclosed.protocols {
+					fmt.Println(ve)
+				}
+			} else {
+				fmt.Println("No closed protocols specified  -- Please check your baseline, if you believe this to be incorrect")
+			}
+			if len(blstruct.mustnothave.rules.fwzones) > 0 {
+				fmt.Println("Firewall zones:")
+				for _, ve := range blstruct.mustnothave.rules.fwzones {
+					fmt.Println(ve)
+				}
+			} else {
+				fmt.Println("No firewall zones specified  -- Please check your baseline, if you believe this to be incorrect")
+			}
+		}
+		// MNH mounts
+		if len(blstruct.mustnothave.mounts) > 0 {
+			fmt.Println("Mounts:")
+			for _, ve := range blstruct.mustnothave.mounts {
+				fmt.Println(ve)
+			}
+		} else {
+			fmt.Println("No mounts specified  -- Please check your baseline, if you believe this to be incorrect")
+		}
 	}
 	// Final steps list
 	fmt.Println("Verifying server group's final steps list:")
@@ -381,6 +500,72 @@ func (blstruct *ParsedBaseline) verification(servergroupname string) {
 		blstruct.final.restart.servers == false {
 		fmt.Println("No final steps have been specified  -- Please check your baseline, if you believe this to be incorrect")
 	} else {
-		// 							handle ifs here
+		// final scripts
+		if len(blstruct.final.scripts) > 0 {
+			fmt.Println("Scripts:")
+			for _, ve := range blstruct.final.scripts {
+				fmt.Println(ve)
+			}
+		} else {
+			fmt.Println("No scripts specified  -- Please check your baseline, if you believe this to be incorrect")
+		}
+		// final commands
+		if len(blstruct.final.commands) > 0 {
+			fmt.Println("Commands:")
+			for _, ve := range blstruct.final.commands {
+				fmt.Println(ve)
+			}
+		} else {
+			fmt.Println("No commands specified  -- Please check your baseline, if you believe this to be incorrect")
+		}
+		// final collections
+		if len(blstruct.final.collect.logs) > 0 &&
+			len(blstruct.final.collect.stats) > 0 &&
+			len(blstruct.final.collect.files) > 0 &&
+			blstruct.final.collect.users != false {
+			fmt.Println("Collect:")
+			if len(blstruct.final.collect.logs) > 0 {
+				fmt.Println("Logs:")
+				for _, ve := range blstruct.final.collect.logs {
+					fmt.Println(ve)
+				}
+			} else {
+				fmt.Println("No logs specified  -- Please check your baseline, if you believe this to be incorrect")
+			}
+			if len(blstruct.final.collect.stats) > 0 {
+				fmt.Println("Stats:")
+				for _, ve := range blstruct.final.collect.stats {
+					fmt.Println(ve)
+				}
+			} else {
+				fmt.Println("No stats specified  -- Please check your baseline, if you believe this to be incorrect")
+			}
+			if len(blstruct.final.collect.files) > 0 {
+				fmt.Println("Files:")
+				for _, ve := range blstruct.final.collect.files {
+					fmt.Println(ve)
+				}
+			} else {
+				fmt.Println("No files specified  -- Please check your baseline, if you believe this to be incorrect")
+			}
+		} else {
+			fmt.Println("No collections specified  -- Please check your baseline, if you believe this to be incorrect")
+		}
+		// final restarts
+		if blstruct.final.restart.services != false &&
+			blstruct.final.restart.servers != false {
+			if blstruct.final.restart.services != false {
+				fmt.Printf("Reboot Services: %v\n", blstruct.final.restart.services)
+			} else {
+				fmt.Println("Services reboot set to false, or not in baseline  -- Please check your baseline, if you believe this to be incorrect")
+			}
+			if blstruct.final.restart.servers != false {
+				fmt.Printf("Reboot Servers: %v\n", blstruct.final.restart.servers)
+			} else {
+				fmt.Println("Servers reboot set to false, or not in baseline  -- Please check your baseline, if you believe this to be incorrect")
+			}
+		} else {
+			fmt.Println("No restart options specified  -- Please check your baseline, if you believe this to be incorrect")
+		}
 	}
 }

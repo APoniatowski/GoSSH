@@ -2504,7 +2504,7 @@ func VerifyBaselines(baselineyaml *yaml.MapSlice) {
 									for i, v := range mnhDisabledSlice {
 										mnhDisabled[i] = v.(string)
 									}
-									blstruct.mustnothave.enabled = mnhDisabled
+									blstruct.mustnothave.disabled = mnhDisabled
 								}
 							case "Users":
 								if thirdStep.Value == nil {
