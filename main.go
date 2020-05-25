@@ -493,7 +493,7 @@ func main() {
 				{
 					Name:    "verify",
 					Aliases: []string{"v"},
-					Usage:   "Check a baseline that you have configured, to verify what will be changed and/or done. No changes will be made with this option.",
+					Usage:   "Verify a baseline, to see if there are no issues. No changes will be made with this option.",
 					Action: func(c *cli.Context) error {
 						cmd = os.Args[3:]
 						baselinepath := "./config/" + strings.Join(cmd, " ") + ".yml"

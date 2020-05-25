@@ -897,19 +897,20 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice) {
 					}
 				}
 			}
-			fmt.Println()
-			// Start operations here, to run jobs per group
-			// or in case if it is 'all', then it needs to run through all servers
+			serverlist := blstruct.checkOSExcludes(servergroupname)
+			// establish ssh connections to servers via goroutines and maintain sessions
 
-			// for ke, ve := range blstruct.musthave.mounts.mountname {
-			// 	fmt.Println(ke, ve)
-			// }
-			// for ke, ve := range blstruct.musthave.users.users {
-			// 	fmt.Println(ke, ve)
-			// }
-			// for ke, ve := range blstruct.musthave.configured.services {
-			// 	fmt.Println(ke, ve)
-			// }
+			var commandset []string
+			commandset = blstruct.checkPrereq(serverlist)
+			// commandset via channel to servers and wait for it to complete
+			commandset = blstruct.checkMustHaves(serverlist)
+			// commandset via channel to servers and wait for it to complete
+			commandset = blstruct.checkMustNotHaves(serverlist)
+			// commandset via channel to servers and wait for it to complete
+			commandset = blstruct.checkFinals(serverlist)
+			// commandset via channel to servers and wait for it to complete
+
+			// once all checks are completed pass disconnect via channels to open sessions
 		}
 	}
 }
@@ -1812,19 +1813,20 @@ func CheckBaselines(baselineyaml *yaml.MapSlice) {
 					}
 				}
 			}
-			fmt.Println()
-			// Start operations here, to run jobs per group
-			// or in case if it is 'all', then it needs to run through all servers
+			serverlist := blstruct.checkOSExcludes(servergroupname)
+			// establish ssh connections to servers via goroutines and maintain sessions
 
-			// for ke, ve := range blstruct.musthave.mounts.mountname {
-			// 	fmt.Println(ke, ve)
-			// }
-			// for ke, ve := range blstruct.musthave.users.users {
-			// 	fmt.Println(ke, ve)
-			// }
-			// for ke, ve := range blstruct.musthave.configured.services {
-			// 	fmt.Println(ke, ve)
-			// }
+			var commandset []string
+			commandset = blstruct.checkPrereq(serverlist)
+			// commandset via channel to servers and wait for it to complete
+			commandset = blstruct.checkMustHaves(serverlist)
+			// commandset via channel to servers and wait for it to complete
+			commandset = blstruct.checkMustNotHaves(serverlist)
+			// commandset via channel to servers and wait for it to complete
+			commandset = blstruct.checkFinals(serverlist)
+			// commandset via channel to servers and wait for it to complete
+
+			// once all checks are completed pass disconnect via channels to open sessions
 		}
 	}
 }
