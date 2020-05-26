@@ -897,17 +897,21 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice) {
 					}
 				}
 			}
-			serverlist := blstruct.checkOSExcludes(servergroupname)
+			// serverlist := blstruct.checkOSExcludes(servergroupname)
 			// establish ssh connections to servers via goroutines and maintain sessions
 
-			var commandset []string
-			commandset = blstruct.checkPrereq(serverlist)
+			// var commandset []string
+			// commandset = blstruct.checkPrereq(serverlist)
+			// fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
-			commandset = blstruct.checkMustHaves(serverlist)
+			// commandset = blstruct.checkMustHaves(serverlist)
+			// fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
-			commandset = blstruct.checkMustNotHaves(serverlist)
+			// commandset = blstruct.checkMustNotHaves(serverlist)
+			// fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
-			commandset = blstruct.checkFinals(serverlist)
+			// commandset = blstruct.checkFinals(serverlist)
+			// fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
 
 			// once all checks are completed pass disconnect via channels to open sessions
@@ -916,7 +920,7 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice) {
 }
 
 // CheckBaselines Baseline compliancy check. Provides info of if servers meet baseline compliance as defined in the chosen baseline file
-func CheckBaselines(baselineyaml *yaml.MapSlice) {
+func CheckBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 	var warnings int
 	var maincategorywarnings int
 	var datawarnings int
@@ -1813,17 +1817,24 @@ func CheckBaselines(baselineyaml *yaml.MapSlice) {
 					}
 				}
 			}
-			serverlist := blstruct.checkOSExcludes(servergroupname)
+			serverlist, servernames, oslist := blstruct.checkOSExcludes(servergroupname, configs)
+			fmt.Println(serverlist)
+			fmt.Println(servernames)
+			fmt.Println(oslist)
 			// establish ssh connections to servers via goroutines and maintain sessions
 
 			var commandset []string
 			commandset = blstruct.checkPrereq(serverlist)
+			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
 			commandset = blstruct.checkMustHaves(serverlist)
+			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
 			commandset = blstruct.checkMustNotHaves(serverlist)
+			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
 			commandset = blstruct.checkFinals(serverlist)
+			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
 
 			// once all checks are completed pass disconnect via channels to open sessions

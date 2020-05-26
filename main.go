@@ -486,7 +486,7 @@ func main() {
 						cmd = os.Args[3:]
 						baselinepath := "./config/" + strings.Join(cmd, " ") + ".yml"
 						yamlparser.BaselineParse(baselinepath)
-						sshlib.CheckBaselines(&yamlparser.Baseline)
+						sshlib.CheckBaselines(&yamlparser.Baseline, &yamlparser.Pool)
 						return nil
 					},
 				},
