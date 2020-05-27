@@ -11,108 +11,88 @@ func (blstruct *ParsedBaseline) checkOSExcludes(servergroupname string, configs 
 	if strings.ToLower(servergroupname) == "all" {
 		if len(blstruct.exclude.osExcl) == 0 &&
 			len(blstruct.exclude.serversExcl) == 0 {
-			goto allServers
-			// } else {
-			// 	if len(blstruct.exclude.osExcl) > 0 {
-			// 		for _, ve := range blstruct.exclude.osExcl {
-			// 			// oslist = append(oslist, ve)
-			// 		}
-			// 	} else {
+var allServers yaml.MapSlice
+	// Concatenates the groups to create a single group
+	for _, groupItem := range *configs {
+		groupValue, ok := groupItem.Value.(yaml.MapSlice)
+		if !ok {
+			panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
+		}
 
-			// 	}
-			// 	if len(blstruct.exclude.serversExcl) > 0 {
-			// 		fmt.Println("Servers to be exluded:")
-			// 		for _, ve := range blstruct.exclude.serversExcl {
-			// 			// serverlist = append(serverlist,ve)
-			// 		}
-			// 	}
-			// }
-		} else {
-			if len(blstruct.exclude.osExcl) == 0 &&
-				len(blstruct.exclude.serversExcl) == 0 {
-				for _, groupItem := range *configs {
-					groupValue, ok := groupItem.Value.(yaml.MapSlice)
-					if !ok {
-						panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
+		allServers = append(allServers, groupValue...)
+	}
+	for _, serverItem := range allServers {
+		servernames = append(servernames, serverItem.Key.(string))
+		serverValue, ok := serverItem.Value.(yaml.MapSlice)
+		if !ok {
+			panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
+		}
+		serverlist = append(serverlist, serverValue[0].Value.(string))
+		oslist = append(oslist, serverValue[5].Value.(string))
+	}
+	return serverlist, servernames, oslist
+	} else {
+		if len(blstruct.exclude.osExcl) == 0 &&
+			len(blstruct.exclude.serversExcl) == 0 {
+			for _, groupItem := range *configs {
+				groupValue, ok := groupItem.Value.(yaml.MapSlice)
+				if !ok {
+					panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
+				}
+				if groupItem.Key == servergroupname {
+					for _, serverItem := range groupValue {
+						serverValue, ok := serverItem.Value.(yaml.MapSlice)
+						if !ok {
+							panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
+						}
+						servernames = append(servernames, serverItem.Key.(string))
+						serverlist = append(serverlist, serverValue[0].Value.(string))
+						oslist = append(oslist, serverValue[5].Value.(string))
 					}
-					if groupItem.Key == servergroupname {
-						for _, serverItem := range groupValue {
-							servernames = append(servernames, serverItem.Key.(string))
-							serverValue, ok := serverItem.Value.(yaml.MapSlice)
-							if !ok {
-								panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
+				}
+			}
+		} else {
+			for _, groupItem := range *configs {
+				groupValue, ok := groupItem.Value.(yaml.MapSlice)
+				if !ok {
+					panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
+				}
+				if groupItem.Key == servergroupname {
+					for _, serverItem := range groupValue {
+						serverValue, ok := serverItem.Value.(yaml.MapSlice)
+						if !ok {
+							panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
+						}
+						if len(blstruct.exclude.osExcl) > 0 {
+							for _, ve := range blstruct.exclude.osExcl {
+								if serverValue[5].Value.(string) != ve {
+									osnamecheck := true
+								}
 							}
+						}
+						if len(blstruct.exclude.serversExcl) > 0 {
+							for _, ve := range blstruct.exclude.serversExcl {
+								if serverValue[0].Value.(string) != ve {
+									servernamecheck := true
+								}
+							}
+						}
+
+						if servernamecheck && osnamecheck {
 							serverlist = append(serverlist, serverValue[0].Value.(string))
+							servernames = append(servernames, serverItem.Key.(string))
 							oslist = append(oslist, serverValue[5].Value.(string))
 						}
 					}
 				}
-			} else {
-				for _, groupItem := range *configs {
-					groupValue, ok := groupItem.Value.(yaml.MapSlice)
-					if !ok {
-						panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
-					}
-					if groupItem.Key == servergroupname {
-						for _, serverItem := range groupValue {
-							serverValue, ok := serverItem.Value.(yaml.MapSlice)
-							if !ok {
-								panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
-							}
-							if len(blstruct.exclude.osExcl) > 0 {
-								fmt.Println("Operating Systems to be excluded:")
-								for _, ve := range blstruct.exclude.osExcl {
-									if serverValue[5].Value.(string) != ve {
-										oslist = append(oslist, serverValue[5].Value.(string))
-										servernames = append(servernames, serverItem.Key.(string))
-										// osnamecheck := append(serverlist, serverValue[5].Value.(string))
-									}
-								}
-							}
-							if len(blstruct.exclude.serversExcl) > 0 {
-								fmt.Println("servers to be excluded:")
-								for _, ve := range blstruct.exclude.serversExcl {
-									if serverValue[0].Value.(string) != ve {
-										serverlist = append(serverlist, serverValue[0].Value.(string))
-										servernames = append(servernames, serverItem.Key.(string))
-										// servernamecheck := append(servernames, serverItem.Key.(string))
-
-									}
-								}
-							}
-						}
-					}
-				}
-
 			}
-			return serverlist, servernames, oslist
 		}
-	allServers:
-		var allServers yaml.MapSlice
-		// Concatenates the groups to create a single group
-		for _, groupItem := range *configs {
-			groupValue, ok := groupItem.Value.(yaml.MapSlice)
-			if !ok {
-				panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
-			}
-
-			allServers = append(allServers, groupValue...)
-		}
-		for _, serverItem := range allServers {
-			servernames = append(servernames, serverItem.Key.(string))
-			serverValue, ok := serverItem.Value.(yaml.MapSlice)
-			if !ok {
-				panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
-			}
-			serverlist = append(serverlist, serverValue[0].Value.(string))
-			oslist = append(oslist, serverValue[5].Value.(string))
-		}
+		return serverlist, servernames, oslist
 	}
-	return serverlist, servernames, oslist
 }
 
-func (blstruct *ParsedBaseline) checkPrereq(servers []string) []string {
-	var commandset []string
+func (blstruct *ParsedBaseline) checkPrereq(serverslist []string) commandset []string {
+	fmt.Println(servers)
 	fmt.Println("Verifying server group's prerequisites list:")
 	if len(blstruct.prereq.vcs.execute) == 0 &&
 		len(blstruct.prereq.vcs.urls) == 0 &&
