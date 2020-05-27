@@ -1817,23 +1817,24 @@ func CheckBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 					}
 				}
 			}
-			serverlist, servernames, oslist := blstruct.checkOSExcludes(servergroupname, configs)
+			var serverlist []string
+			var oslist []string
+			serverlist, oslist = blstruct.checkOSExcludes(servergroupname, configs)
 			fmt.Println(serverlist)
-			fmt.Println(servernames)
 			fmt.Println(oslist)
 			// establish ssh connections to servers via goroutines and maintain sessions
 
 			var commandset []string
-			commandset = blstruct.checkPrereq(serverlist)
+			commandset = blstruct.checkPrereq(&serverlist, &oslist)
 			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
-			commandset = blstruct.checkMustHaves(serverlist)
+			commandset = blstruct.checkMustHaves(&serverlist, &oslist)
 			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
-			commandset = blstruct.checkMustNotHaves(serverlist)
+			commandset = blstruct.checkMustNotHaves(&serverlist, &oslist)
 			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
-			commandset = blstruct.checkFinals(serverlist)
+			commandset = blstruct.checkFinals(&serverlist, &oslist)
 			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
 
