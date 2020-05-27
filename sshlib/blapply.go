@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func (blstruct *ParsedBaseline) checkOSExcludes(servergroupname string, configs *yaml.MapSlice) (serverlist []string, oslist []string) {
+func (blstruct *ParsedBaseline) applyOSExcludes(servergroupname string, configs *yaml.MapSlice) (serverlist []string, oslist []string) {
 	if strings.ToLower(servergroupname) == "all" {
 		if len(blstruct.exclude.osExcl) == 0 &&
 			len(blstruct.exclude.serversExcl) == 0 {
@@ -126,7 +126,163 @@ func (blstruct *ParsedBaseline) checkOSExcludes(servergroupname string, configs 
 	return
 }
 
-func (blstruct *ParsedBaseline) checkMustHaves(servers *[]string, oslist *[]string) (commandset []string) {
+func (blstruct *ParsedBaseline) applyPrereq(servers *[]string, oslist *[]string) (commandset []string) {
+	fmt.Println(servers)
+	fmt.Println("Verifying server group's prerequisites list:")
+	if len(blstruct.prereq.vcs.execute) == 0 &&
+		len(blstruct.prereq.vcs.urls) == 0 &&
+		blstruct.prereq.files.local.dest == "" &&
+		blstruct.prereq.files.local.src == "" &&
+		blstruct.prereq.files.remote.address == "" &&
+		blstruct.prereq.files.remote.dest == "" &&
+		blstruct.prereq.files.remote.mounttype == "" &&
+		blstruct.prereq.files.remote.pwd == "" &&
+		blstruct.prereq.files.remote.src == "" &&
+		blstruct.prereq.files.remote.username == "" &&
+		len(blstruct.prereq.files.remote.files) == 0 &&
+		len(blstruct.prereq.files.urls) == 0 &&
+		len(blstruct.prereq.tools) == 0 &&
+		blstruct.prereq.script == "" &&
+		!blstruct.prereq.cleanup {
+		// fmt.Println("No prerequisites have been specified  -- Please check your baseline, if you believe this to be incorrect")
+	} else {
+		// prerequisite tools
+		if len(blstruct.prereq.tools) == 0 {
+			// fmt.Println("No prerequisite tools specified")
+		} else {
+			// fmt.Println("The following prerequisite tools will be installed via the package manager:")
+			for _, ve := range blstruct.prereq.tools {
+				fmt.Println(ve)
+			}
+		}
+		// prerequisite files URLs
+		if len(blstruct.prereq.files.urls) == 0 {
+			// fmt.Println("No prerequisite files URLs' specified")
+		} else {
+			// fmt.Println("The following prerequisite files URLs' will be downloaded via curl/wget:")
+			for _, ve := range blstruct.prereq.files.urls {
+				fmt.Println(ve)
+			}
+		}
+		// prerequisite files local
+		if blstruct.prereq.files.local.dest != "" &&
+			blstruct.prereq.files.local.src != "" {
+			// fmt.Println("No prerequisite files (local) specified")
+		} else {
+			// fmt.Println("The following files will be transferred locally via scp")
+			if blstruct.prereq.files.local.src != "" {
+				// fmt.Println("Source (locally):")
+				// fmt.Println(blstruct.prereq.files.local.src)
+			} else {
+				// fmt.Println("No source/local file or directory specified")
+			}
+			if blstruct.prereq.files.local.dest != "" {
+				// fmt.Println("Destination (remote):")
+				// fmt.Println(blstruct.prereq.files.local.dest)
+			} else {
+				// fmt.Println("No destination/remote paths specified")
+			}
+			// fmt.Println("Please review your baseline if either of these are empty")
+		}
+		// prerequisite files remote
+		if blstruct.prereq.files.remote.address == "" &&
+			blstruct.prereq.files.remote.dest == "" &&
+			blstruct.prereq.files.remote.mounttype == "" &&
+			blstruct.prereq.files.remote.pwd == "" &&
+			blstruct.prereq.files.remote.src == "" &&
+			blstruct.prereq.files.remote.username == "" &&
+			len(blstruct.prereq.files.remote.files) == 0 {
+			// fmt.Println("No prerequisite files (remote) specified")
+		} else {
+			// fmt.Println("The following files will be transferred via the mount details specified:")
+			if blstruct.prereq.files.remote.mounttype == "" {
+				// fmt.Println("Mount type:")
+				// fmt.Println(blstruct.prereq.files.remote.mounttype)
+			} else {
+				// fmt.Println("No mount type specified")
+			}
+			if blstruct.prereq.files.remote.address != "" {
+				// fmt.Println("Address:")
+				// fmt.Println(blstruct.prereq.files.remote.address)
+			} else {
+				// fmt.Println("No address specified")
+			}
+			if blstruct.prereq.files.remote.username != "" {
+				// fmt.Println("Username:")
+				// fmt.Println(blstruct.prereq.files.remote.username)
+
+			} else {
+				// fmt.Println("No username specified")
+			}
+			if blstruct.prereq.files.remote.pwd != "" {
+				// fmt.Println("Password:")
+				// fmt.Println(blstruct.prereq.files.remote.pwd)
+			} else {
+				// fmt.Println("No password specified")
+			}
+			if blstruct.prereq.files.remote.src != "" {
+				// fmt.Println("Source (remote):")
+				// fmt.Println(blstruct.prereq.files.remote.src)
+			} else {
+				// fmt.Println("No mount source specified")
+			}
+			if blstruct.prereq.files.remote.dest != "" {
+				// fmt.Println("Destination (remote):")
+				// fmt.Println(blstruct.prereq.files.remote.dest)
+			} else {
+				// fmt.Println("No mount destination specified")
+			}
+			if len(blstruct.prereq.files.remote.files) == 0 {
+				// fmt.Println("No prerequisite tools specified")
+			} else {
+				// fmt.Println("Files to be transferred:")
+				for _, ve := range blstruct.prereq.files.remote.files {
+					fmt.Println(ve)
+				}
+			}
+		}
+		// prerequisite VCS instructions
+		if len(blstruct.prereq.vcs.execute) == 0 &&
+			len(blstruct.prereq.vcs.urls) == 0 {
+			// fmt.Println("No VCS information specified  -- Please check your baseline, if you believe this to be incorrect")
+		} else {
+			if len(blstruct.prereq.vcs.urls) > 0 {
+				// fmt.Println("VCS URL's to be cloned to the home directory:")
+				for _, ve := range blstruct.prereq.vcs.urls {
+					fmt.Println(ve)
+				}
+			} else {
+				// fmt.Println("No VCS URL's specified")
+			}
+			if len(blstruct.prereq.vcs.execute) > 0 {
+				// fmt.Println("VCS related commands to be executed:")
+				for _, ve := range blstruct.prereq.vcs.execute {
+					fmt.Println(ve)
+				}
+			} else {
+				// fmt.Println("No VCS commands to execute")
+			}
+			// fmt.Println("Please review your baseline if either of these are empty")
+		}
+		// prerequisite script
+		if blstruct.prereq.script == "" {
+			// fmt.Println("No prerequisite script information specified  -- Please check your baseline, if you believe this to be incorrect")
+		} else {
+			// fmt.Println("Script:")
+			// fmt.Println(blstruct.prereq.script)
+		}
+		// prerequisite cleanup
+		if !blstruct.prereq.cleanup {
+			// fmt.Println("Prerequisite cleanup is set to false.")
+		} else {
+			// fmt.Println("Prerequisite cleanup is set to true.")
+		}
+
+	}
+	return
+}
+
+func (blstruct *ParsedBaseline) applyMustHaves(servers *[]string, oslist *[]string) (commandset []string) {
 	// MH list
 	fmt.Println("Verifying server group's must-have list:")
 	if len(blstruct.musthave.installed) == 0 && // done
@@ -305,7 +461,7 @@ func (blstruct *ParsedBaseline) checkMustHaves(servers *[]string, oslist *[]stri
 	return commandset
 }
 
-func (blstruct *ParsedBaseline) checkMustNotHaves(servers *[]string, oslist *[]string) (commandset []string) {
+func (blstruct *ParsedBaseline) applyMustNotHaves(servers *[]string, oslist *[]string) (commandset []string) {
 	//MNH list
 	// fmt.Println("Verifying server group's must-not-have list:")
 	if len(blstruct.mustnothave.installed) == 0 && // done
@@ -433,4 +589,89 @@ func (blstruct *ParsedBaseline) checkMustNotHaves(servers *[]string, oslist *[]s
 		}
 	}
 	return commandset
+}
+
+func (blstruct *ParsedBaseline) applyFinals(servers *[]string, oslist *[]string) (commandset []string) {
+	// Final steps list
+	// fmt.Println("Verifying server group's final steps list:")
+	if len(blstruct.final.scripts) == 0 &&
+		len(blstruct.final.commands) == 0 &&
+		len(blstruct.final.collect.logs) == 0 &&
+		len(blstruct.final.collect.stats) == 0 &&
+		len(blstruct.final.collect.files) == 0 &&
+		!blstruct.final.collect.users &&
+		!blstruct.final.restart.services &&
+		!blstruct.final.restart.servers {
+		// fmt.Println("No final steps have been specified  -- Please check your baseline, if you believe this to be incorrect")
+	} else {
+		// final scripts
+		if len(blstruct.final.scripts) > 0 {
+			// fmt.Println("Scripts:")
+			for _, ve := range blstruct.final.scripts {
+				fmt.Println(ve)
+			}
+		} else {
+			// fmt.Println("No scripts specified  -- Please check your baseline, if you believe this to be incorrect")
+		}
+		// final commands
+		if len(blstruct.final.commands) > 0 {
+			// fmt.Println("Commands:")
+			for _, ve := range blstruct.final.commands {
+				fmt.Println(ve)
+			}
+		} else {
+			// fmt.Println("No commands specified  -- Please check your baseline, if you believe this to be incorrect")
+		}
+		// final collections
+		if len(blstruct.final.collect.logs) == 0 &&
+			len(blstruct.final.collect.stats) == 0 &&
+			len(blstruct.final.collect.files) == 0 &&
+			!blstruct.final.collect.users {
+			// fmt.Println("No collections specified  -- Please check your baseline, if you believe this to be incorrect")
+		} else {
+			// fmt.Println("Collect:")
+			if len(blstruct.final.collect.logs) > 0 {
+				// fmt.Println("Logs:")
+				for _, ve := range blstruct.final.collect.logs {
+					fmt.Println(ve)
+				}
+			} else {
+				// fmt.Println("No logs specified  -- Please check your baseline, if you believe this to be incorrect")
+			}
+			if len(blstruct.final.collect.stats) > 0 {
+				// fmt.Println("Stats:")
+				for _, ve := range blstruct.final.collect.stats {
+					fmt.Println(ve)
+				}
+			} else {
+				// fmt.Println("No stats specified  -- Please check your baseline, if you believe this to be incorrect")
+			}
+			if len(blstruct.final.collect.files) > 0 {
+				// fmt.Println("Files:")
+				for _, ve := range blstruct.final.collect.files {
+					fmt.Println(ve)
+				}
+			} else {
+				// fmt.Println("No files specified  -- Please check your baseline, if you believe this to be incorrect")
+			}
+		}
+		// final restarts
+		if !blstruct.final.restart.services &&
+			!blstruct.final.restart.servers {
+			// fmt.Println("No restart options specified  -- Please check your baseline, if you believe this to be incorrect")
+		} else {
+			// fmt.Println("Reboot:")
+			if blstruct.final.restart.services {
+				// fmt.Printf("Services: %v\n", blstruct.final.restart.services)
+			} else {
+				// fmt.Println("Services reboot set to false, or not in baseline  -- Please check your baseline, if you believe this to be incorrect")
+			}
+			if blstruct.final.restart.servers {
+				// fmt.Printf("Servers: %v\n", blstruct.final.restart.servers)
+			} else {
+				// fmt.Println("Servers reboot set to false, or not in baseline  -- Please check your baseline, if you believe this to be incorrect")
+			}
+		}
+	}
+	return
 }

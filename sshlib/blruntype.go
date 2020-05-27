@@ -9,7 +9,7 @@ import (
 )
 
 // ApplyBaselines Apply defined baselines
-func ApplyBaselines(baselineyaml *yaml.MapSlice) {
+func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 	var warnings int
 	var maincategorywarnings int
 	var datawarnings int
@@ -897,21 +897,25 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice) {
 					}
 				}
 			}
-			// serverlist := blstruct.checkOSExcludes(servergroupname)
+			var serverlist []string
+			var oslist []string
+			serverlist, oslist = blstruct.applyOSExcludes(servergroupname, configs)
+			fmt.Println(serverlist)
+			fmt.Println(oslist)
 			// establish ssh connections to servers via goroutines and maintain sessions
 
-			// var commandset []string
-			// commandset = blstruct.checkPrereq(serverlist)
-			// fmt.Println(commandset)
+			var commandset []string
+			commandset = blstruct.applyPrereq(&serverlist, &oslist)
+			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
-			// commandset = blstruct.checkMustHaves(serverlist)
-			// fmt.Println(commandset)
+			commandset = blstruct.applyMustHaves(&serverlist, &oslist)
+			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
-			// commandset = blstruct.checkMustNotHaves(serverlist)
-			// fmt.Println(commandset)
+			commandset = blstruct.applyMustNotHaves(&serverlist, &oslist)
+			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
-			// commandset = blstruct.checkFinals(serverlist)
-			// fmt.Println(commandset)
+			commandset = blstruct.applyFinals(&serverlist, &oslist)
+			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
 
 			// once all checks are completed pass disconnect via channels to open sessions
@@ -1825,16 +1829,11 @@ func CheckBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 			// establish ssh connections to servers via goroutines and maintain sessions
 
 			var commandset []string
-			commandset = blstruct.checkPrereq(&serverlist, &oslist)
-			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
 			commandset = blstruct.checkMustHaves(&serverlist, &oslist)
 			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
 			commandset = blstruct.checkMustNotHaves(&serverlist, &oslist)
-			fmt.Println(commandset)
-			// commandset via channel to servers and wait for it to complete
-			commandset = blstruct.checkFinals(&serverlist, &oslist)
 			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
 

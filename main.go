@@ -473,8 +473,9 @@ func main() {
 					Action: func(c *cli.Context) error {
 						cmd = os.Args[3:]
 						baselinepath := "./config/" + strings.Join(cmd, " ") + ".yml"
+						yamlparser.ParsePool()
 						yamlparser.BaselineParse(baselinepath)
-						sshlib.ApplyBaselines(&yamlparser.Baseline)
+						sshlib.ApplyBaselines(&yamlparser.Baseline, &yamlparser.Pool)
 						return nil
 					},
 				},
