@@ -92,7 +92,7 @@ func (blstruct *ParsedBaseline) checkOSExcludes(servergroupname string, configs 
 				if !ok {
 					panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
 				}
-				if groupItem.Key == servergroupname {
+				if strings.EqualFold(groupItem.Key.(string), servergroupname) {
 					for _, serverItem := range groupValue {
 						var osnamecheck bool
 						var servernamecheck bool
@@ -128,7 +128,7 @@ func (blstruct *ParsedBaseline) checkOSExcludes(servergroupname string, configs 
 
 func (blstruct *ParsedBaseline) checkMustHaves(servers *[]string, oslist *[]string) (commandset []string) {
 	// MH list
-	fmt.Println("Verifying server group's must-have list:")
+	fmt.Println("Must Have Checklist:")
 	if len(blstruct.musthave.installed) == 0 && // done
 		len(blstruct.musthave.enabled) == 0 && // done
 		len(blstruct.musthave.disabled) == 0 && // done
@@ -143,75 +143,81 @@ func (blstruct *ParsedBaseline) checkMustHaves(servers *[]string, oslist *[]stri
 		len(blstruct.musthave.rules.fwclosed.protocols) == 0 &&
 		len(blstruct.musthave.rules.fwzones) == 0 &&
 		len(blstruct.musthave.mounts.mountname) == 0 {
-		// fmt.Println("No must-haves have been specified  -- Please check your baseline, if you believe this to be incorrect")
+		fmt.Println("Skipping...")
+		commandset = append(commandset, "")
 	} else {
 		// MH installed
-		if len(blstruct.musthave.installed) == 0 {
-			// fmt.Println("No must-have installed information specified  -- Please check your baseline, if you believe this to be incorrect")
-		} else {
-			if len(blstruct.musthave.installed) > 0 {
-				// fmt.Println("The following must-have tools/software will be installed, if they haven't been installed previously:")
-				for _, ve := range blstruct.musthave.installed {
-					fmt.Println(ve)
-				}
-			} else {
-				// fmt.Println("No must-have installed specified")
+		fmt.Printf("Installed: ")
+		if len(blstruct.musthave.installed) > 0 {
+			for _, ve := range blstruct.musthave.installed {
+				fmt.Println(ve)
 			}
+		} else {
+			fmt.Printf("Skipping...\n")
 		}
+
 		// MH enabled
-		if len(blstruct.musthave.enabled) == 0 {
-			// fmt.Println("No must-have enabled information specified  -- Please check your baseline, if you believe this to be incorrect")
-		} else {
-			if len(blstruct.musthave.enabled) > 0 {
-				// fmt.Println("The following must-have tools/software will be enabled, if they haven't been enabled previously:")
-				for _, ve := range blstruct.musthave.enabled {
-					fmt.Println(ve)
-				}
-			} else {
-				// fmt.Println("No must-have enabled specified")
+		fmt.Printf("Enabled: ")
+		if len(blstruct.musthave.enabled) > 0 {
+			// fmt.Println("The following must-have tools/software will be enabled, if they haven't been enabled previously:")
+			for _, ve := range blstruct.musthave.enabled {
+				fmt.Println(ve)
 			}
+		} else {
+			fmt.Printf("Skipping...\n")
 		}
+
 		// MH disabled
-		if len(blstruct.musthave.disabled) == 0 {
-			// fmt.Println("No must-have disabled information specified  -- Please check your baseline, if you believe this to be incorrect")
-		} else {
-			if len(blstruct.musthave.disabled) > 0 {
-				// fmt.Println("The following must-have tools/software will be disabled, if they haven't been disabled previously:")
-				for _, ve := range blstruct.musthave.disabled {
-					fmt.Println(ve)
-				}
-			} else {
-				// fmt.Println("No must-have disabled specified")
+		fmt.Printf("Disabled: ")
+		if len(blstruct.musthave.disabled) > 0 {
+			// fmt.Println("The following must-have tools/software will be disabled, if they haven't been disabled previously:")
+			for _, ve := range blstruct.musthave.disabled {
+				fmt.Println(ve)
 			}
+		} else {
+			fmt.Printf("Skipping...\n")
 		}
+
 		// MH configured
+		fmt.Printf("Configured Checklist: ")
 		for ke, ve := range blstruct.musthave.configured.services {
 			if ke == "" {
-				// fmt.Println("No must-have configurations specified  -- Please check your baseline, if you believe this to be incorrect")
-				break
+				fmt.Printf("Skipping...\n")
 			} else {
-				fmt.Printf("%s:\n", ke)
+				fmt.Printf("\n      %s:\n", ke)
 				for _, val := range ve.source {
-					fmt.Printf("Source: %s\n", val)
+					fmt.Printf("Baseline File (Source): %s\n", val)
 				}
 				for _, val := range ve.destination {
-					fmt.Printf("Destination: %s\n", val)
+					fmt.Printf("Current File (Destination): %s\n", val)
 				}
 			}
 		}
 		// MH Users
+		fmt.Printf("Users Checklist: ")
 		for ke, ve := range blstruct.musthave.users.users {
 			if ke == "" {
-				// fmt.Println("No must-have users specified  -- Please check your baseline, if you believe this to be incorrect")
-				break
+				fmt.Printf("Skipping...\n")
 			} else {
-				fmt.Printf("%s:\n", ke)
-				for _, val := range ve.groups {
-					fmt.Printf("Groups: %s\n", val)
+				fmt.Printf("\n      %s:\n", ke)
+				if len(ve.groups) == 0 &&
+				ve.home == "" &&
+				ve.shell == "" &&
+				ve.sudoer = false {
+					fmt.Printf("\n") // Here it will only check if the user exists
+				}else{
+				fmt.Printf("   Groups: ")
+				if len(ve.groups) > 0 {
+					for _, val := range ve.groups {
+						fmt.Printf("%s\n", val)
+					}
+				} else {
+					fmt.Printf("\n")
 				}
-				fmt.Printf("Shell: %v\n", ve.shell)
-				fmt.Printf("Home: %v\n", ve.home)
-				fmt.Printf("Sudoer: %v\n", ve.sudoer)
+				fmt.Printf("   Shell: %v\n", ve.shell)
+				fmt.Printf("   Home: %v\n", ve.home)
+				fmt.Printf("   Sudoer: %v\n", ve.sudoer)
+			}
 			}
 		}
 		// MH Policies
@@ -329,8 +335,6 @@ func (blstruct *ParsedBaseline) checkMustNotHaves(servers *[]string, oslist *[]s
 				for _, ve := range blstruct.mustnothave.installed {
 					fmt.Println(ve)
 				}
-			} else {
-				// fmt.Println("No must-not-have installed specified")
 			}
 		}
 		// MNH enabled
@@ -342,8 +346,6 @@ func (blstruct *ParsedBaseline) checkMustNotHaves(servers *[]string, oslist *[]s
 				for _, ve := range blstruct.mustnothave.enabled {
 					fmt.Println(ve)
 				}
-			} else {
-				// fmt.Println("No must-not-have enabled specified")
 			}
 		}
 		// MNH disabled
@@ -355,8 +357,6 @@ func (blstruct *ParsedBaseline) checkMustNotHaves(servers *[]string, oslist *[]s
 				for _, ve := range blstruct.mustnothave.disabled {
 					fmt.Println(ve)
 				}
-			} else {
-				// fmt.Println("No must-not-have disabled specified")
 			}
 		}
 		// MNH Users
