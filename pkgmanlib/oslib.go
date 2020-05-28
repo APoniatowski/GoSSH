@@ -36,7 +36,7 @@ var PkgUpdateOS = map[string]string{
 	"ubuntu":   "apt-get dist-upgrade -y",
 }
 
-// PkgInstall map of Pkgs for every OS. Installation flags differ from dist
+// PkgInstall map of Pkgs for every OS. Installation flags differ from dist to dist
 var PkgInstall = map[string]string{
 	"debian":   "apt-get install ",
 	"centos":   "yum install ",
@@ -48,7 +48,7 @@ var PkgInstall = map[string]string{
 	"ubuntu":   "apt-get install ",
 }
 
-// PkgUninstall map of Pkgs for every OS. Installation flags differ from dist
+// PkgUninstall map of Pkgs for every OS. Installation flags differ from dist to dist
 var PkgUninstall = map[string]string{
 	"debian":   "apt-get remove ",
 	"centos":   "yum remove ",
@@ -59,3 +59,6 @@ var PkgUninstall = map[string]string{
 	"sles":     "zypper remove ",
 	"ubuntu":   "apt-get remove ",
 }
+
+// OmniTools map of
+var OmniTools = map[string]string{}

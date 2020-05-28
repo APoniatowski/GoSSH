@@ -19,9 +19,7 @@ var validator string
 var recoveries interface{}
 
 //Switcher Method to check the switches set for each respective action (update/install/uninstall)
-func (S *Switches) Switcher(pp ParsedPool, command string) string {
-	rtncommand := ""
-
+func (S *Switches) Switcher(pp ParsedPool, command string) (rtncommand string) {
 	if *S.Updater {
 		rtncommand = pkgmanlib.Update(pp.username.(string), pp.os.(string))
 	}
@@ -34,6 +32,5 @@ func (S *Switches) Switcher(pp ParsedPool, command string) string {
 	if *S.Uninstall {
 		rtncommand = pkgmanlib.Uninstall(pp.username.(string), pp.os.(string)) + command + " -y 2>&1"
 	}
-
-	return rtncommand
+	return
 }
