@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/APoniatowski/GoSSH/pkgmanlib"
 	"gopkg.in/yaml.v2"
 )
 
@@ -283,8 +284,9 @@ func (blstruct *ParsedBaseline) applyPrereq(servers *[]string, oslist *[]string)
 }
 
 func (blstruct *ParsedBaseline) applyMustHaves(servers *[]string, oslist *[]string) (commandset []string) {
+	fmt.Println(pkgmanlib.PkgRefresh["arch"]) //  just to prevent go from removing the import
 	// MH list
-	fmt.Println("Verifying server group's must-have list:")
+	fmt.Printf("Must Have Checklist: ")
 	if len(blstruct.musthave.installed) == 0 && // done
 		len(blstruct.musthave.enabled) == 0 && // done
 		len(blstruct.musthave.disabled) == 0 && // done
@@ -299,162 +301,165 @@ func (blstruct *ParsedBaseline) applyMustHaves(servers *[]string, oslist *[]stri
 		len(blstruct.musthave.rules.fwclosed.protocols) == 0 &&
 		len(blstruct.musthave.rules.fwzones) == 0 &&
 		len(blstruct.musthave.mounts.mountname) == 0 {
-		// fmt.Println("No must-haves have been specified  -- Please check your baseline, if you believe this to be incorrect")
+		fmt.Printf("Skipping...\n")
+		commandset = append(commandset, "")
 	} else {
 		// MH installed
-		if len(blstruct.musthave.installed) == 0 {
-			// fmt.Println("No must-have installed information specified  -- Please check your baseline, if you believe this to be incorrect")
-		} else {
-			if len(blstruct.musthave.installed) > 0 {
-				// fmt.Println("The following must-have tools/software will be installed, if they haven't been installed previously:")
-				for _, ve := range blstruct.musthave.installed {
-					fmt.Println(ve)
-				}
-			} else {
-				// fmt.Println("No must-have installed specified")
+		fmt.Printf(" Installed: ")
+		if len(blstruct.musthave.installed) > 0 {
+			fmt.Printf("\n")
+			for _, ve := range blstruct.musthave.installed {
+				fmt.Println(ve)
 			}
+		} else {
+			fmt.Printf("Skipping...\n")
 		}
+
 		// MH enabled
-		if len(blstruct.musthave.enabled) == 0 {
-			// fmt.Println("No must-have enabled information specified  -- Please check your baseline, if you believe this to be incorrect")
-		} else {
-			if len(blstruct.musthave.enabled) > 0 {
-				// fmt.Println("The following must-have tools/software will be enabled, if they haven't been enabled previously:")
-				for _, ve := range blstruct.musthave.enabled {
-					fmt.Println(ve)
-				}
-			} else {
-				// fmt.Println("No must-have enabled specified")
+		fmt.Printf(" Enabled: ")
+		if len(blstruct.musthave.enabled) > 0 {
+			fmt.Printf("\n")
+			for _, ve := range blstruct.musthave.enabled {
+				fmt.Println(ve)
 			}
+		} else {
+			fmt.Printf("Skipping...\n")
 		}
+
 		// MH disabled
-		if len(blstruct.musthave.disabled) == 0 {
-			// fmt.Println("No must-have disabled information specified  -- Please check your baseline, if you believe this to be incorrect")
-		} else {
-			if len(blstruct.musthave.disabled) > 0 {
-				// fmt.Println("The following must-have tools/software will be disabled, if they haven't been disabled previously:")
-				for _, ve := range blstruct.musthave.disabled {
-					fmt.Println(ve)
-				}
-			} else {
-				// fmt.Println("No must-have disabled specified")
+		fmt.Printf(" Disabled: ")
+		if len(blstruct.musthave.disabled) > 0 {
+			fmt.Printf("\n")
+			for _, ve := range blstruct.musthave.disabled {
+				fmt.Println(ve)
 			}
+		} else {
+			fmt.Printf("Skipping...\n")
 		}
+
 		// MH configured
+		fmt.Printf(" Configured Checklist: ")
 		for ke, ve := range blstruct.musthave.configured.services {
 			if ke == "" {
-				// fmt.Println("No must-have configurations specified  -- Please check your baseline, if you believe this to be incorrect")
-				break
+				fmt.Printf("Skipping...\n")
 			} else {
-				fmt.Printf("%s:\n", ke)
+				fmt.Printf("\n      %s:\n", ke)
 				for _, val := range ve.source {
-					fmt.Printf("Source: %s\n", val)
+					fmt.Printf("Baseline File (Source): %s\n", val)
 				}
 				for _, val := range ve.destination {
-					fmt.Printf("Destination: %s\n", val)
+					fmt.Printf("Current File (Destination): %s\n", val)
 				}
 			}
 		}
 		// MH Users
+		fmt.Printf(" Users Checklist: ")
 		for ke, ve := range blstruct.musthave.users.users {
 			if ke == "" {
-				// fmt.Println("No must-have users specified  -- Please check your baseline, if you believe this to be incorrect")
-				break
+				fmt.Printf("Skipping...\n")
 			} else {
-				fmt.Printf("%s:\n", ke)
-				for _, val := range ve.groups {
-					fmt.Printf("Groups: %s\n", val)
+				fmt.Printf("\n      %s:\n", ke)
+				if len(ve.groups) == 0 &&
+					ve.home == "" &&
+					ve.shell == "" &&
+					!ve.sudoer {
+					fmt.Printf("\n") // Here it will only check if the user exists
+				} else {
+					fmt.Printf("   Groups: ")
+					if len(ve.groups) > 0 {
+						for _, val := range ve.groups {
+							fmt.Printf("%s\n", val)
+						}
+					} else {
+						fmt.Printf("\n")
+					}
+					fmt.Printf("   Shell: %v\n", ve.shell)
+					fmt.Printf("   Home: %v\n", ve.home)
+					fmt.Printf("   Sudoer: %v\n", ve.sudoer)
 				}
-				fmt.Printf("Shell: %v\n", ve.shell)
-				fmt.Printf("Home: %v\n", ve.home)
-				fmt.Printf("Sudoer: %v\n", ve.sudoer)
 			}
 		}
 		// MH Policies
+		fmt.Printf(" Policies Checklist: ")
 		if blstruct.musthave.policies.polstatus == "" &&
 			blstruct.musthave.policies.polimport == "" &&
 			!blstruct.musthave.policies.polreboot {
-			// fmt.Println("No must-have policies specified  -- Please check your baseline, if you believe this to be incorrect")
+			fmt.Printf("Skipping...\n")
 		} else {
+			fmt.Printf("\n")
 			if blstruct.musthave.policies.polstatus != "" {
-				// fmt.Printf("Status: %s\n", blstruct.musthave.policies.polstatus)
-			} else {
-				// fmt.Println("No must-have policy status specified  -- Please check your baseline, if you believe this to be incorrect")
+				fmt.Printf("   Status: %s\n", blstruct.musthave.policies.polstatus)
 			}
 			if blstruct.musthave.policies.polimport != "" {
-				// fmt.Printf("Import: %s\n", blstruct.musthave.policies.polimport)
-			} else {
-				// fmt.Println("No must-have policy to import  -- Please check your baseline, if you believe this to be incorrect")
+				fmt.Printf("   Import: %s\n", blstruct.musthave.policies.polimport)
 			}
 			if blstruct.musthave.policies.polreboot {
-				// fmt.Printf("Reboot: %v\n", blstruct.musthave.policies.polreboot)
-			} else {
-				// fmt.Println("Reboot set to false, or not in baseline  -- Please check your baseline, if you believe this to be incorrect")
+				fmt.Printf("   Reboot: %v\n", blstruct.musthave.policies.polreboot)
 			}
 		}
 		// MH Firewall rules
+		fmt.Printf(" Firewall Checklist: ")
 		if len(blstruct.musthave.rules.fwopen.ports) == 0 &&
 			len(blstruct.musthave.rules.fwopen.protocols) == 0 &&
 			len(blstruct.musthave.rules.fwclosed.ports) == 0 &&
 			len(blstruct.musthave.rules.fwclosed.protocols) == 0 &&
 			len(blstruct.musthave.rules.fwzones) == 0 {
-			// fmt.Println("No must-have firewall rules specified  -- Please check your baseline, if you believe this to be incorrect")
+			fmt.Printf("Skipping...\n")
 		} else {
-			// fmt.Println("Firewall rules:")
+			fmt.Printf("\n")
 			if len(blstruct.musthave.rules.fwopen.ports) > 0 {
-				// fmt.Println("Open ports:")
+				fmt.Println("   Open ports:")
 				for _, ve := range blstruct.musthave.rules.fwopen.ports {
 					fmt.Println(ve)
 				}
-			} else {
-				// fmt.Println("No open ports specified  -- Please check your baseline, if you believe this to be incorrect")
 			}
 			if len(blstruct.musthave.rules.fwopen.protocols) > 0 {
-				// fmt.Println("Open protocols:")
+				fmt.Println("   Open protocols:")
 				for _, ve := range blstruct.musthave.rules.fwopen.protocols {
 					fmt.Println(ve)
 				}
-			} else {
-				// fmt.Println("No open protocols specified  -- Please check your baseline, if you believe this to be incorrect")
 			}
 			if len(blstruct.musthave.rules.fwclosed.ports) > 0 {
-				// fmt.Println("Closed ports:")
+				fmt.Println("   Closed ports:")
 				for _, ve := range blstruct.musthave.rules.fwclosed.ports {
 					fmt.Println(ve)
 				}
-			} else {
-				// fmt.Println("No closed ports specified  -- Please check your baseline, if you believe this to be incorrect")
 			}
 			if len(blstruct.musthave.rules.fwclosed.protocols) > 0 {
-				// fmt.Println("Closed protocols:")
+				fmt.Println("   Closed protocols:")
 				for _, ve := range blstruct.musthave.rules.fwclosed.protocols {
 					fmt.Println(ve)
 				}
-			} else {
-				// fmt.Println("No closed protocols specified  -- Please check your baseline, if you believe this to be incorrect")
 			}
 			if len(blstruct.musthave.rules.fwzones) > 0 {
-				// fmt.Println("Firewall zones:")
+				fmt.Println("   Firewall zones:")
 				for _, ve := range blstruct.musthave.rules.fwzones {
 					fmt.Println(ve)
 				}
-			} else {
-				// fmt.Println("No firewall zones specified  -- Please check your baseline, if you believe this to be incorrect")
 			}
 		}
 		// MH mounts
+		fmt.Printf(" Mounts Checklist: ")
 		for ke, ve := range blstruct.musthave.mounts.mountname {
 			if ke == "" {
-				// fmt.Println("No must-have mounts specified  -- Please check your baseline, if you believe this to be incorrect")
-				break
+				fmt.Printf("Skipping...\n")
 			} else {
-				fmt.Printf("%s:\n", ke)
-				fmt.Printf("Mount Type: %v\n", ve.mounttype)
-				fmt.Printf("Address: %v\n", ve.address)
-				fmt.Printf("Username: %v\n", ve.username)
-				fmt.Printf("Password: %v\n", ve.pwd)
-				fmt.Printf("Source: %v\n", ve.src)
-				fmt.Printf("Destination: %v\n", ve.dest)
+				if ve.mounttype == "" &&
+					ve.address == "" &&
+					ve.src == "" &&
+					ve.dest == "" {
+					fmt.Printf("\nNo info found for %s. Skipping...\n", ke)
+				} else {
+					fmt.Printf("\n      %s:\n", ke)
+					fmt.Printf("   Mount Type: %v\n", ve.mounttype)
+					fmt.Printf("   Address: %v\n", ve.address)
+					fmt.Printf("   Source: %v\n", ve.src)
+					if ve.dest == "" {
+						fmt.Printf("Mount directory info not found for %s. Skipping...\n", ke)
+					} else {
+						fmt.Printf("   Destination: %v\n", ve.dest)
+					}
+				}
 			}
 		}
 	}
@@ -463,10 +468,10 @@ func (blstruct *ParsedBaseline) applyMustHaves(servers *[]string, oslist *[]stri
 
 func (blstruct *ParsedBaseline) applyMustNotHaves(servers *[]string, oslist *[]string) (commandset []string) {
 	//MNH list
-	// fmt.Println("Verifying server group's must-not-have list:")
-	if len(blstruct.mustnothave.installed) == 0 && // done
-		len(blstruct.mustnothave.enabled) == 0 && // done
-		len(blstruct.mustnothave.disabled) == 0 && // done
+	fmt.Printf("Must Not Have Checklist: ")
+	if len(blstruct.mustnothave.installed) == 0 &&
+		len(blstruct.mustnothave.enabled) == 0 &&
+		len(blstruct.mustnothave.disabled) == 0 &&
 		len(blstruct.mustnothave.users) == 0 &&
 		len(blstruct.mustnothave.rules.fwopen.ports) == 0 &&
 		len(blstruct.mustnothave.rules.fwopen.protocols) == 0 &&
@@ -474,118 +479,100 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(servers *[]string, oslist *[]s
 		len(blstruct.mustnothave.rules.fwclosed.protocols) == 0 &&
 		len(blstruct.mustnothave.rules.fwzones) == 0 &&
 		len(blstruct.mustnothave.mounts) == 0 {
-		// fmt.Println("No must-not-haves have been specified  -- Please check your baseline, if you believe this to be incorrect")
+		fmt.Printf("Skipping...\n")
 	} else {
 		// MNH installed
-		if len(blstruct.mustnothave.installed) == 0 {
-			// fmt.Println("No must-not-have installed information specified  -- Please check your baseline, if you believe this to be incorrect")
-		} else {
-			if len(blstruct.mustnothave.installed) > 0 {
-				// fmt.Println("The following must-not-have tools/software will be removed, if they haven't been removed previously:")
-				for _, ve := range blstruct.mustnothave.installed {
-					fmt.Println(ve)
-				}
-			} else {
-				// fmt.Println("No must-not-have installed specified")
+		fmt.Printf("\n")
+		fmt.Printf(" Installed Checklist: ")
+		if len(blstruct.mustnothave.installed) > 0 {
+			fmt.Printf("\n")
+			for _, ve := range blstruct.mustnothave.installed {
+				fmt.Println(ve)
 			}
+		} else {
+			fmt.Printf("Skipping...\n")
 		}
 		// MNH enabled
-		if len(blstruct.mustnothave.enabled) == 0 {
-			// fmt.Println("No must-not-have enabled information specified  -- Please check your baseline, if you believe this to be incorrect")
-		} else {
-			if len(blstruct.mustnothave.enabled) > 0 {
-				// fmt.Println("The following tools/software will be disabled, if they haven't been disabled previously:")
-				for _, ve := range blstruct.mustnothave.enabled {
-					fmt.Println(ve)
-				}
-			} else {
-				// fmt.Println("No must-not-have enabled specified")
+		fmt.Printf(" Enabled Checklist: ")
+		if len(blstruct.mustnothave.enabled) > 0 {
+			fmt.Printf("\n")
+			for _, ve := range blstruct.mustnothave.enabled {
+				fmt.Println(ve)
 			}
+		} else {
+			fmt.Printf("Skipping...\n")
 		}
 		// MNH disabled
-		if len(blstruct.mustnothave.disabled) == 0 {
-			// fmt.Println("No must-not-have disabled information specified  -- Please check your baseline, if you believe this to be incorrect")
-		} else {
-			if len(blstruct.mustnothave.disabled) > 0 {
-				// fmt.Println("The following tools/software will be enabled, if they haven't been enabled previously:")
-				for _, ve := range blstruct.mustnothave.disabled {
-					fmt.Println(ve)
-				}
-			} else {
-				// fmt.Println("No must-not-have disabled specified")
+		fmt.Printf(" Disabled Checklist: ")
+		if len(blstruct.mustnothave.disabled) > 0 {
+			fmt.Printf("\n")
+			for _, ve := range blstruct.mustnothave.disabled {
+				fmt.Println(ve)
 			}
+		} else {
+			fmt.Printf("Skipping...\n")
 		}
 		// MNH Users
-		if len(blstruct.mustnothave.users) == 0 {
-			// fmt.Println("No must-not-have users information specified  -- Please check your baseline, if you believe this to be incorrect")
-		} else {
-			if len(blstruct.mustnothave.users) > 0 {
-				// fmt.Println("The following users will be removed, if they haven't been removed previously:")
-				for _, ve := range blstruct.mustnothave.users {
-					fmt.Println(ve)
-				}
-			} else {
-				// fmt.Println("No must-not-have users specified")
+		fmt.Printf(" Users Checklist: ")
+		if len(blstruct.mustnothave.users) > 0 {
+			fmt.Printf("\n")
+			for _, ve := range blstruct.mustnothave.users {
+				fmt.Println(ve)
 			}
+		} else {
+			fmt.Printf("Skipping...\n")
 		}
+
 		// MNH Firewall rules
+		fmt.Printf(" Firewall Checklist: ")
 		if len(blstruct.mustnothave.rules.fwopen.ports) == 0 &&
 			len(blstruct.mustnothave.rules.fwopen.protocols) == 0 &&
 			len(blstruct.mustnothave.rules.fwclosed.ports) == 0 &&
 			len(blstruct.mustnothave.rules.fwclosed.protocols) == 0 &&
 			len(blstruct.mustnothave.rules.fwzones) == 0 {
-			// fmt.Println("No must-not-have firewall rules specified  -- Please check your baseline, if you believe this to be incorrect")
+			fmt.Printf("Skipping...\n")
 		} else {
-			// fmt.Println("Firewall rules:")
+			fmt.Printf("\n")
 			if len(blstruct.mustnothave.rules.fwopen.ports) > 0 {
-				// fmt.Println("Open ports:")
-				for _, ve := range blstruct.mustnothave.rules.fwopen.ports {
+				fmt.Println("   Open ports:")
+				for _, ve := range blstruct.musthave.rules.fwopen.ports {
 					fmt.Println(ve)
 				}
-			} else {
-				// fmt.Println("No open ports specified  -- Please check your baseline, if you believe this to be incorrect")
 			}
 			if len(blstruct.mustnothave.rules.fwopen.protocols) > 0 {
-				// fmt.Println("Open protocols:")
+				fmt.Println("   Open protocols:")
 				for _, ve := range blstruct.mustnothave.rules.fwopen.protocols {
 					fmt.Println(ve)
 				}
-			} else {
-				// fmt.Println("No open protocols specified  -- Please check your baseline, if you believe this to be incorrect")
 			}
 			if len(blstruct.mustnothave.rules.fwclosed.ports) > 0 {
-				// fmt.Println("Closed ports:")
+				fmt.Println("   Closed ports:")
 				for _, ve := range blstruct.mustnothave.rules.fwclosed.ports {
 					fmt.Println(ve)
 				}
-			} else {
-				// fmt.Println("No closed ports specified  -- Please check your baseline, if you believe this to be incorrect")
 			}
 			if len(blstruct.mustnothave.rules.fwclosed.protocols) > 0 {
-				// fmt.Println("Closed protocols:")
+				fmt.Println("   Closed protocols:")
 				for _, ve := range blstruct.mustnothave.rules.fwclosed.protocols {
 					fmt.Println(ve)
 				}
-			} else {
-				// fmt.Println("No closed protocols specified  -- Please check your baseline, if you believe this to be incorrect")
 			}
 			if len(blstruct.mustnothave.rules.fwzones) > 0 {
-				// fmt.Println("Firewall zones:")
+				fmt.Println("   Firewall zones:")
 				for _, ve := range blstruct.mustnothave.rules.fwzones {
 					fmt.Println(ve)
 				}
-			} else {
-				// fmt.Println("No firewall zones specified  -- Please check your baseline, if you believe this to be incorrect")
 			}
 		}
 		// MNH mounts
+		fmt.Printf(" Mounts Checklist: ")
 		if len(blstruct.mustnothave.mounts) > 0 {
-			// fmt.Println("Mounts:")
+			fmt.Printf("\n")
 			for _, ve := range blstruct.mustnothave.mounts {
 				fmt.Println(ve)
 			}
 		} else {
-			// fmt.Println("No mounts specified  -- Please check your baseline, if you believe this to be incorrect")
+			fmt.Printf("Skipping...\n")
 		}
 	}
 	return commandset
