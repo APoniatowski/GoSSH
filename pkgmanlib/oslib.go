@@ -60,5 +60,19 @@ var PkgUninstall = map[string]string{
 	"ubuntu":   "apt-get remove ",
 }
 
+// PkgSearch map to search installed packages
+var PkgSearch = map[string]string{
+	"debian":   "dpkg-query -l | grep ",
+	"centos":   "rpm -qa | grep ",
+	"fedora":   "rpm -qa | grep ",
+	"opensuse": "rpm -qa | grep ",
+	"arch":     "pacman -Q | grep ",
+	"rhel":     "rpm -qa | grep ",
+	"sles":     "rpm -qa | grep ",
+	"ubuntu":   "dpkg-query -l | grep ",
+}
+
 // OmniTools map of
-var OmniTools = map[string]string{}
+var OmniTools = map[string]string{
+	"": "",
+}
