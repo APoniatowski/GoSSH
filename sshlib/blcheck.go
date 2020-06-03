@@ -8,7 +8,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func (blstruct *ParsedBaseline) checkOSExcludes(servergroupname string, configs *yaml.MapSlice) (sshList map[string]string) {
+func (blstruct *ParsedBaseline) checkOSExcludes(servergroupname string, configs *yaml.MapSlice) map[string]string {
+	sshList := make(map[string]string)
 	if strings.ToLower(servergroupname) == "all" {
 		if len(blstruct.exclude.osExcl) == 0 &&
 			len(blstruct.exclude.serversExcl) == 0 {
@@ -74,7 +75,6 @@ func (blstruct *ParsedBaseline) checkOSExcludes(servergroupname string, configs 
 				if strings.EqualFold(groupItem.Key.(string), servergroupname) {
 					for _, serverItem := range groupValue {
 						serverValue, ok := serverItem.Value.(yaml.MapSlice)
-						fmt.Println(serverValue[0].Value)
 						if !ok {
 							panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
 						}
@@ -118,14 +118,12 @@ func (blstruct *ParsedBaseline) checkOSExcludes(servergroupname string, configs 
 			}
 		}
 	}
-	return
+	return sshList
 }
 
-func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) (commandset map[string]string) {
+func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) map[string]string {
+	commandset := make(map[string]string)
 	fmt.Println(pkgmanlib.PkgSearch["arch"]) //  just to prevent go from removing the import
-	var installedPackages string
-	var enabledPackages string
-	var disabledPackages string
 	// MH list
 	fmt.Printf("Must Have Checklist: ")
 	if len(blstruct.musthave.installed) == 0 &&
@@ -142,18 +140,27 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) (comm
 		len(blstruct.musthave.rules.fwclosed.protocols) == 0 &&
 		len(blstruct.musthave.rules.fwzones) == 0 &&
 		len(blstruct.musthave.mounts.mountname) == 0 {
-		fmt.Printf("Skipping...\n")
 		commandset[""] = ""
+		fmt.Printf("Skipping...\n")
 	} else {
 		// MH installed
+		fmt.Printf("\n")
 		fmt.Printf(" Installed: ")
 		if len(blstruct.musthave.installed) > 0 {
 			fmt.Printf("\n")
 			for _, ve := range blstruct.musthave.installed {
-				installedPackages = installedPackages + ve
+				fmt.Println(ve)
+				for key, val := range *sshList {
+					if commandset[val] == "" {
+						commandset[key] = pkgmanlib.PkgSearch[val] + ve
+					}
+				}
+				for k, v := range commandset {
+					fmt.Printf("%v   %v\n", k, v)
+				}
+				// send to channel
+				// wait for response and display compliancy
 			}
-			// iterate through sshList and create command for each server
-			// pass info to ssh session and waiting for a response
 		} else {
 			fmt.Printf("Skipping...\n")
 		}
@@ -161,12 +168,21 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) (comm
 		// MH enabled
 		fmt.Printf(" Enabled: ")
 		if len(blstruct.musthave.enabled) > 0 {
+			commandset = make(map[string]string)
 			fmt.Printf("\n")
 			for _, ve := range blstruct.musthave.enabled {
-				enabledPackages = enabledPackages + ve
+				fmt.Println(ve)
+				for key, val := range *sshList {
+					if commandset[val] == "" {
+						commandset[key] = pkgmanlib.PkgSearch[val] + ve
+					}
+				}
+				for k, v := range commandset {
+					fmt.Printf("%v   %v\n", k, v)
+				}
+				// send to channel
+				// wait for response and display compliancy
 			}
-			// iterate through sshList and create command for each server
-			// pass info to ssh session and waiting for a response
 		} else {
 			fmt.Printf("Skipping...\n")
 		}
@@ -174,12 +190,25 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) (comm
 		// MH disabled
 		fmt.Printf(" Disabled: ")
 		if len(blstruct.musthave.disabled) > 0 {
-			fmt.Printf("\n")
+			commandset = make(map[string]string)
 			for _, ve := range blstruct.musthave.disabled {
-				disabledPackages = disabledPackages + ve
+				if ve != "" {
+					fmt.Printf("\n")
+					fmt.Println(ve)
+					for key, val := range *sshList {
+						if commandset[val] == "" {
+							commandset[key] = pkgmanlib.PkgSearch[val] + ve
+						}
+					}
+					for k, v := range commandset {
+						fmt.Printf("%v   %v\n", k, v)
+					}
+					// send to channel
+					// wait for response and display compliancy
+				} else {
+					fmt.Printf("Skipping...\n")
+				}
 			}
-			// iterate through sshList and create command for each server
-			// pass info to ssh session and waiting for a response
 		} else {
 			fmt.Printf("Skipping...\n")
 		}
@@ -190,6 +219,7 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) (comm
 			if ke == "" {
 				fmt.Printf("Skipping...\n")
 			} else {
+				commandset = make(map[string]string)
 				fmt.Printf("\n      %s:\n", ke)
 				for _, val := range ve.source {
 					fmt.Printf("Baseline File (Source): %s\n", val)
@@ -207,6 +237,7 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) (comm
 			if ke == "" {
 				fmt.Printf("Skipping...\n")
 			} else {
+				commandset = make(map[string]string)
 				fmt.Printf("\n      %s:\n", ke)
 				if len(ve.groups) == 0 &&
 					ve.home == "" &&
@@ -237,6 +268,7 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) (comm
 			!blstruct.musthave.policies.polreboot {
 			fmt.Printf("Skipping...\n")
 		} else {
+			commandset = make(map[string]string)
 			fmt.Printf("\n")
 			if blstruct.musthave.policies.polstatus != "" {
 				fmt.Printf("   Status: %s\n", blstruct.musthave.policies.polstatus)
@@ -259,6 +291,7 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) (comm
 			len(blstruct.musthave.rules.fwzones) == 0 {
 			fmt.Printf("Skipping...\n")
 		} else {
+			commandset = make(map[string]string)
 			fmt.Printf("\n")
 			if len(blstruct.musthave.rules.fwopen.ports) > 0 {
 				fmt.Println("   Open ports:")
@@ -305,6 +338,7 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) (comm
 					ve.dest == "" {
 					fmt.Printf("\nNo info found for %s. Skipping...\n", ke)
 				} else {
+					commandset = make(map[string]string)
 					fmt.Printf("\n      %s:\n", ke)
 					fmt.Printf("   Mount Type: %v\n", ve.mounttype)
 					fmt.Printf("   Address: %v\n", ve.address)
@@ -437,12 +471,11 @@ func (blstruct *ParsedBaseline) checkMustNotHaves(sshList *map[string]string) (c
 			fmt.Printf("\n")
 			for _, ve := range blstruct.mustnothave.mounts {
 				fmt.Println(ve)
+				// commandset[] =  "" + ve + commandset[]
 			}
-			// iterate through sshList and create command for each server
-			// pass info to ssh session and waiting for a response
 		} else {
 			fmt.Printf("Skipping...\n")
 		}
 	}
-	return commandset
+	return
 }
