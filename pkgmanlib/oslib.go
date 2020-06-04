@@ -74,5 +74,6 @@ var PkgSearch = map[string]string{
 
 // OmniTools map of
 var OmniTools = map[string]string{
-	"": "",
+	"serviceisactive": "systemctl is-active ",
+	"userinfo":        "getent passwd ",
 }

@@ -174,7 +174,7 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) map[s
 				fmt.Println(ve)
 				for key, val := range *sshList {
 					if commandset[val] == "" {
-						commandset[key] = pkgmanlib.PkgSearch[val] + ve
+						commandset[key] = pkgmanlib.OmniTools["serviceisactive"] + ve
 					}
 				}
 				for k, v := range commandset {
@@ -182,6 +182,7 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) map[s
 				}
 				// send to channel
 				// wait for response and display compliancy
+				// check if service is active
 			}
 		} else {
 			fmt.Printf("Skipping...\n")
@@ -197,7 +198,7 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) map[s
 					fmt.Println(ve)
 					for key, val := range *sshList {
 						if commandset[val] == "" {
-							commandset[key] = pkgmanlib.PkgSearch[val] + ve
+							commandset[key] = pkgmanlib.OmniTools["serviceisactive"] + ve
 						}
 					}
 					for k, v := range commandset {
@@ -205,6 +206,7 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) map[s
 					}
 					// send to channel
 					// wait for response and display compliancy
+					// check if service is inactive
 				} else {
 					fmt.Printf("Skipping...\n")
 				}
@@ -238,27 +240,49 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) map[s
 				fmt.Printf("Skipping...\n")
 			} else {
 				commandset = make(map[string]string)
+				var infoAvailable bool
 				fmt.Printf("\n      %s:\n", ke)
 				if len(ve.groups) == 0 &&
 					ve.home == "" &&
 					ve.shell == "" &&
 					!ve.sudoer {
 					fmt.Printf("\n") // Here it will only check if the user exists
-				} else {
-					fmt.Printf("   Groups: ")
-					if len(ve.groups) > 0 {
-						for _, val := range ve.groups {
-							fmt.Printf("%s\n", val)
+					for key, val := range *sshList {
+						if commandset[val] == "" {
+							commandset[key] = pkgmanlib.OmniTools["userinfo"] + ke
 						}
-					} else {
-						fmt.Printf("\n")
 					}
-					fmt.Printf("   Shell: %v\n", ve.shell)
-					fmt.Printf("   Home: %v\n", ve.home)
-					fmt.Printf("   Sudoer: %v\n", ve.sudoer)
+					for k, v := range commandset {
+						fmt.Printf("%v   %v\n", k, v)
+					}
+					infoAvailable = false
+				} else {
+					for key, val := range *sshList {
+						if commandset[val] == "" {
+							commandset[key] = pkgmanlib.OmniTools["userinfo"] + ke
+						}
+					}
+					infoAvailable = true
+					for k, v := range commandset {
+						fmt.Printf("%v   %v\n", k, v)
+					}
 				}
 				// iterate through sshList and create command for each server
 				// pass info to ssh session and waiting for a response
+				// process the info received available info
+
+				fmt.Println(infoAvailable)
+				// fmt.Printf("   Groups: ")
+				// if len(ve.groups) > 0 {
+				// 	for _, val := range ve.groups {
+				// 		fmt.Printf("%s\n", val)
+				// 	}
+				// } else {
+				// 	fmt.Printf("\n")
+				// }
+				// fmt.Printf("   Shell: %v\n", ve.shell)
+				// fmt.Printf("   Home: %v\n", ve.home)
+				// fmt.Printf("   Sudoer: %v\n", ve.sudoer)
 			}
 		}
 		// MH Policies
