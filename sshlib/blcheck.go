@@ -121,6 +121,186 @@ func (blstruct *ParsedBaseline) checkOSExcludes(servergroupname string, configs 
 	return sshList
 }
 
+func (blstruct *ParsedBaseline) checkPrereqs(sshList *map[string]string) map[string]string {
+	commandset := make(map[string]string)
+	if !blstruct.prereq.cleanup {
+		fmt.Printf("Prerequisites Checklist: ")
+		if len(blstruct.prereq.vcs.execute) == 0 &&
+			len(blstruct.prereq.vcs.urls) == 0 &&
+			blstruct.prereq.files.local.dest == "" &&
+			blstruct.prereq.files.local.src == "" &&
+			blstruct.prereq.files.remote.address == "" &&
+			blstruct.prereq.files.remote.dest == "" &&
+			blstruct.prereq.files.remote.mounttype == "" &&
+			blstruct.prereq.files.remote.pwd == "" &&
+			blstruct.prereq.files.remote.src == "" &&
+			blstruct.prereq.files.remote.username == "" &&
+			len(blstruct.prereq.files.remote.files) == 0 &&
+			len(blstruct.prereq.files.urls) == 0 &&
+			len(blstruct.prereq.tools) == 0 &&
+			blstruct.prereq.script == "" &&
+			!blstruct.prereq.cleanup {
+			commandset[""] = ""
+			fmt.Printf("Skipping...\n")
+		} else {
+			fmt.Printf("\n")
+			// prerequisite tools
+			fmt.Printf(" Prerequisite Tools: ")
+			if len(blstruct.prereq.tools) == 0 {
+				fmt.Printf("Skipping...\n")
+			} else {
+				fmt.Printf("\n")
+				for _, ve := range blstruct.prereq.tools {
+					fmt.Printf(ve)
+					for key, val := range *sshList {
+						if commandset[val] == "" {
+							commandset[key] = pkgmanlib.PkgSearch[val] + ve
+						}
+					}
+					for k, v := range commandset {
+						fmt.Printf("%v   %v\n", k, v)
+					}
+					// send to channel
+					// wait for response and display compliancy
+				}
+			}
+			// prerequisite files URLs
+			fmt.Printf(" Prerequisite URL's: ")
+			if len(blstruct.prereq.files.urls) == 0 {
+				fmt.Printf("Skipping...\n")
+			} else {
+				fmt.Printf("\n")
+				for _, ve := range blstruct.prereq.files.urls {
+					fmt.Printf(ve)
+					parseFile := strings.Split(ve, "/")
+					parsedFile := parseFile[len(parseFile)-1]
+					for key, val := range *sshList {
+						if commandset[val] == "" {
+							commandset[key] = pkgmanlib.OmniTools["statinfo"] + parsedFile
+						}
+					}
+					for k, v := range commandset {
+						fmt.Printf("%v   %v\n", k, v)
+					}
+					// send to channel
+					// wait for response and display compliancy
+				}
+			}
+			// prerequisite files local
+			fmt.Printf(" Prerequisite Files (via scp): ")
+			if blstruct.prereq.files.local.dest != "" &&
+				blstruct.prereq.files.local.src != "" {
+				fmt.Printf("Skipping...\n")
+			} else {
+				fmt.Printf("\n")
+				var srcFile string
+				fmt.Println("The following files will be transferred locally via scp")
+				if blstruct.prereq.files.local.src != "" {
+					srcFile = blstruct.prereq.files.local.src
+				}
+				if blstruct.prereq.files.local.dest != "" {
+					for key, val := range *sshList {
+						if commandset[val] == "" {
+							commandset[key] = pkgmanlib.OmniTools["suminfo"] + blstruct.prereq.files.local.dest + srcFile
+							/*
+								-will need to find a better way to compare files and directories-
+								cat would kill memory, if its a large file or binary
+								sum only does files, not dirs
+								need to create for loop command if its a directory with md5sum
+							*/
+						}
+					}
+					for k, v := range commandset {
+						fmt.Printf("%v   %v\n", k, v)
+					}
+					// send to channel
+					// wait for response
+					// diff the file/dir with the source
+					// display compliancy
+				}
+			}
+			// prerequisite files remote
+			fmt.Printf(" Prerequisite Files (via mount): ")
+			if blstruct.prereq.files.remote.address == "" &&
+				blstruct.prereq.files.remote.dest == "" &&
+				blstruct.prereq.files.remote.mounttype == "" &&
+				blstruct.prereq.files.remote.pwd == "" &&
+				blstruct.prereq.files.remote.src == "" &&
+				blstruct.prereq.files.remote.username == "" &&
+				len(blstruct.prereq.files.remote.files) == 0 {
+				fmt.Printf("Skipping...\n")
+			} else {
+				fmt.Printf("\n")
+				if blstruct.prereq.files.remote.dest != "" {
+					fmt.Println(blstruct.prereq.files.remote.dest)
+				}
+				if len(blstruct.prereq.files.remote.files) != 0 {
+					for _, ve := range blstruct.prereq.files.remote.files {
+						fmt.Println(ve)
+						for key, val := range *sshList {
+							if commandset[val] == "" {
+								commandset[key] = pkgmanlib.OmniTools["suminfo"] + blstruct.prereq.files.local.dest
+								/*
+									-will need to find a better way to compare files and directories-
+									cat would kill memory, if its a large file or binary
+									sum only does files, not dirs
+									need to create for loop command if its a directory with md5sum
+								*/
+							}
+						}
+						for k, v := range commandset {
+							fmt.Printf("%v   %v\n", k, v)
+						}
+						// send to channel
+						// wait for response
+						// diff the file/dir with the source
+						// display compliancy
+					}
+				}
+			}
+			// prerequisite VCS instructions
+			fmt.Printf(" Prerequisite Files (via VCS): ")
+			if len(blstruct.prereq.vcs.execute) == 0 &&
+				len(blstruct.prereq.vcs.urls) == 0 {
+				fmt.Printf("Skipping...\n")
+			} else {
+				fmt.Printf("\n")
+				if len(blstruct.prereq.vcs.urls) > 0 {
+					fmt.Println("VCS URL's to be cloned to the home directory:")
+					var vcsDirs string
+					for _, ve := range blstruct.prereq.vcs.urls {
+						fmt.Println(ve)
+						parseFile := strings.Split(ve, "/")
+						parsedFile := parseFile[len(parseFile)-1]
+						vcsDirs = vcsDirs + ve
+						for key, val := range *sshList {
+							if commandset[val] == "" {
+								commandset[key] = pkgmanlib.OmniTools["statinfo"] + parsedFile
+								/*
+									-will need to find a better way to compare files and directories-
+									ls the dir and check if it exists?
+									or use stat?
+									add home dir path?
+								*/
+							}
+						}
+						for k, v := range commandset {
+							fmt.Printf("%v   %v\n", k, v)
+						}
+						// send to channel
+						// wait for response
+						// diff the file/dir with the source
+						// display compliancy
+					}
+				}
+			}
+		}
+	} else {
+		commandset[""] = ""
+	}
+	return commandset
+}
+
 func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) map[string]string {
 	commandset := make(map[string]string)
 	fmt.Println(pkgmanlib.PkgSearch["arch"]) //  just to prevent go from removing the import

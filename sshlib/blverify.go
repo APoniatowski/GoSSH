@@ -149,7 +149,7 @@ func (blstruct *ParsedBaseline) verification(servergroupname string) {
 				fmt.Println("No mount destination specified")
 			}
 			if len(blstruct.prereq.files.remote.files) == 0 {
-				fmt.Println("No prerequisite tools specified")
+				fmt.Println("No prerequisite files specified")
 			} else {
 				fmt.Println("Files to be transferred:")
 				for _, ve := range blstruct.prereq.files.remote.files {
