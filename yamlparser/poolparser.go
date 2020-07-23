@@ -50,7 +50,7 @@ func ReadPool() string {
 	// green := color.Green.Render
 	// red := color.Red.Render
 	yellow := color.Yellow.Render
-	yamlLocation, _ := filepath.Abs("./config/pool-testing.yml") // remove -testing to revert changes, using custom server list
+	yamlLocation, _ := filepath.Abs("./config/pool.yml") // remove -testing to revert changes, using custom server list
 	bufRead, err := os.Open(yamlLocation)
 	if err != nil {
 		fmt.Println(yellow("Please check your pool.yml file, or generate one with:"))

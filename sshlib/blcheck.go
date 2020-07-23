@@ -304,6 +304,7 @@ func (blstruct *ParsedBaseline) checkPrereqs(sshList *map[string]string) map[str
 func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) map[string]string {
 	commandset := make(map[string]string)
 	fmt.Println(pkgmanlib.PkgSearch["arch"]) //  just to prevent go from removing the import
+	fmt.Println("line 307  !!! remember to remove later !!!")
 	// MH list
 	fmt.Printf("Must Have Checklist: ")
 	if len(blstruct.musthave.installed) == 0 &&
@@ -476,15 +477,25 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) map[s
 			fmt.Printf("\n")
 			if blstruct.musthave.policies.polstatus != "" {
 				fmt.Printf("   Status: %s\n", blstruct.musthave.policies.polstatus)
+				for key, val := range *sshList {
+					if commandset[val] == "" {
+						commandset[key] = pkgmanlib.OmniTools["userinfo"]
+					}
+				}
+				// iterate through sshList and create command for each server
+				// pass info to ssh session and waiting for a response
 			}
 			if blstruct.musthave.policies.polimport != "" {
+
 				fmt.Printf("   Import: %s\n", blstruct.musthave.policies.polimport)
+				for key, val := range *sshList {
+					if commandset[val] == "" {
+						commandset[key] = pkgmanlib.OmniTools["userinfo"]
+					}
+				}
+				// iterate through sshList and create command for each server
+				// pass info to ssh session and waiting for a response
 			}
-			if blstruct.musthave.policies.polreboot {
-				fmt.Printf("   Reboot: %v\n", blstruct.musthave.policies.polreboot)
-			}
-			// iterate through sshList and create command for each server
-			// pass info to ssh session and waiting for a response
 		}
 		// MH Firewall rules
 		fmt.Printf(" Firewall Checklist: ")
@@ -497,34 +508,70 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) map[s
 		} else {
 			commandset = make(map[string]string)
 			fmt.Printf("\n")
-			if len(blstruct.musthave.rules.fwopen.ports) > 0 {
-				fmt.Println("   Open ports:")
-				for _, ve := range blstruct.musthave.rules.fwopen.ports {
-					fmt.Println(ve)
+			//if len(blstruct.musthave.rules.fwopen.ports) > 0 {
+			//	fmt.Println("   Open ports:")
+			//	for _, ve := range blstruct.musthave.rules.fwopen.ports {
+			//		fmt.Println(ve)
+			//	}
+			//}
+			//if len(blstruct.musthave.rules.fwopen.protocols) > 0 {
+			//	fmt.Println("   Open protocols:")
+			//	for _, ve := range blstruct.musthave.rules.fwopen.protocols {
+			//		fmt.Println(ve)
+			//	}
+			//}
+			//if len(blstruct.musthave.rules.fwclosed.ports) > 0 {
+			//	fmt.Println("   Closed ports:")
+			//	for _, ve := range blstruct.musthave.rules.fwclosed.ports {
+			//		fmt.Println(ve)
+			//	}
+			//}
+			//if len(blstruct.musthave.rules.fwclosed.protocols) > 0 {
+			//	fmt.Println("   Closed protocols:")
+			//	for _, ve := range blstruct.musthave.rules.fwclosed.protocols {
+			//		fmt.Println(ve)
+			//	}
+			//}
+
+			if len(blstruct.musthave.rules.fwopen.ports) == len(blstruct.musthave.rules.fwopen.protocols) {
+				for i := range blstruct.musthave.rules.fwopen.ports {
+					fmt.Printf("%s  %s\n",blstruct.musthave.rules.fwopen.ports[i],
+						blstruct.musthave.rules.fwopen.protocols[i])
+					// firewall check creation
+					// need to determine what firewall is installed on remote machine
 				}
-			}
-			if len(blstruct.musthave.rules.fwopen.protocols) > 0 {
-				fmt.Println("   Open protocols:")
-				for _, ve := range blstruct.musthave.rules.fwopen.protocols {
-					fmt.Println(ve)
-				}
-			}
-			if len(blstruct.musthave.rules.fwclosed.ports) > 0 {
-				fmt.Println("   Closed ports:")
-				for _, ve := range blstruct.musthave.rules.fwclosed.ports {
-					fmt.Println(ve)
-				}
-			}
-			if len(blstruct.musthave.rules.fwclosed.protocols) > 0 {
-				fmt.Println("   Closed protocols:")
-				for _, ve := range blstruct.musthave.rules.fwclosed.protocols {
-					fmt.Println(ve)
-				}
+			} else {
+				fmt.Println("There seems to be inconsistencies between your firewall ports and protocols.")
+				fmt.Println("Please review your baseline and rectify it.")
 			}
 			if len(blstruct.musthave.rules.fwzones) > 0 {
 				fmt.Println("   Firewall zones:")
 				for _, ve := range blstruct.musthave.rules.fwzones {
+					// check if zone has these open rules
 					fmt.Println(ve)
+				}
+			}
+			if len(blstruct.musthave.rules.fwclosed.ports) == len(blstruct.musthave.rules.fwclosed.protocols) {
+				for i := range blstruct.musthave.rules.fwclosed.ports {
+					fmt.Printf("%s  %s\n",blstruct.musthave.rules.fwclosed.ports[i],
+						blstruct.musthave.rules.fwclosed.protocols[i])
+					// firewall check creation
+					// need to determine what firewall is installed on remote machine
+				}
+			} else {
+				fmt.Println("There seems to be inconsistencies between your firewall ports and protocols.")
+				fmt.Println("Please review your baseline and rectify it.")
+			}
+			if len(blstruct.musthave.rules.fwzones) > 0 {
+				fmt.Println("   Firewall zones:")
+				for _, ve := range blstruct.musthave.rules.fwzones {
+					// check if zone has these closed rules
+					fmt.Println(ve)
+				}
+			}
+			for key, val := range *sshList {
+				if commandset[val] == "" {
+					commandset[key] = pkgmanlib.OmniTools["userinfo"]
 				}
 			}
 			// iterate through sshList and create command for each server
