@@ -578,14 +578,40 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string)  {
 					fmt.Printf("\nNo info found for %s. Skipping...\n", ke)
 				} else {
 					commandset = make(map[string]string)
+					noInfo := false
 					fmt.Printf("\n      %s:\n", ke)
-					fmt.Printf("   Mount Type: %v\n", ve.mounttype)
-					fmt.Printf("   Address: %v\n", ve.address)
-					fmt.Printf("   Source: %v\n", ve.src)
+					if ve.mounttype == "" {
+						noInfo = true
+						fmt.Printf("Mount Type info not found for %s. Skipping...\n", ke)
+					} else {
+						fmt.Printf("   Mount Type: %v\n", ve.mounttype)
+					}
+					if ve.address == "" {
+						noInfo = true
+						fmt.Printf("Address info not found for %s. Skipping...\n", ke)
+					} else {
+						fmt.Printf("   Address: %v\n", ve.address)
+					}
+					if ve.src == "" {
+						noInfo = true
+						fmt.Printf("Source mount directory info not found for %s. Skipping...\n", ke)
+					} else {
+						fmt.Printf("   Source: %v\n", ve.src)
+					}
 					if ve.dest == "" {
-						fmt.Printf("Mount directory info not found for %s. Skipping...\n", ke)
+						noInfo = true
+						fmt.Printf("Destination mount directory info not found for %s. Skipping...\n", ke)
 					} else {
 						fmt.Printf("   Destination: %v\n", ve.dest)
+					}
+					if noInfo {
+						fmt.Printf("Critical mounting info missing for %s. Skipping...\n", ke)
+					} else {
+						for key, val := range *sshList {
+							if commandset[val] == "" {
+								commandset[key] = pkgmanlib.OmniTools["userinfo"]
+							}
+						}
 					}
 				}
 				// iterate through sshList and create command for each server
