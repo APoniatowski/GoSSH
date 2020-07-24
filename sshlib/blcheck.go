@@ -121,7 +121,7 @@ func (blstruct *ParsedBaseline) checkOSExcludes(servergroupname string, configs 
 	return sshList
 }
 
-func (blstruct *ParsedBaseline) checkPrereqs(sshList *map[string]string) map[string]string {
+func (blstruct *ParsedBaseline) checkPrereqs(sshList *map[string]string) {
 	commandset := make(map[string]string)
 	if !blstruct.prereq.cleanup {
 		fmt.Printf("Prerequisites Checklist: ")
@@ -298,10 +298,10 @@ func (blstruct *ParsedBaseline) checkPrereqs(sshList *map[string]string) map[str
 	} else {
 		commandset[""] = ""
 	}
-	return commandset
+	return
 }
 
-func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) map[string]string {
+func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string)  {
 	commandset := make(map[string]string)
 	fmt.Println(pkgmanlib.PkgSearch["arch"]) //  just to prevent go from removing the import
 	fmt.Println("line 307  !!! remember to remove later !!!")
@@ -508,66 +508,54 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) map[s
 		} else {
 			commandset = make(map[string]string)
 			fmt.Printf("\n")
-			//if len(blstruct.musthave.rules.fwopen.ports) > 0 {
-			//	fmt.Println("   Open ports:")
-			//	for _, ve := range blstruct.musthave.rules.fwopen.ports {
-			//		fmt.Println(ve)
-			//	}
-			//}
-			//if len(blstruct.musthave.rules.fwopen.protocols) > 0 {
-			//	fmt.Println("   Open protocols:")
-			//	for _, ve := range blstruct.musthave.rules.fwopen.protocols {
-			//		fmt.Println(ve)
-			//	}
-			//}
-			//if len(blstruct.musthave.rules.fwclosed.ports) > 0 {
-			//	fmt.Println("   Closed ports:")
-			//	for _, ve := range blstruct.musthave.rules.fwclosed.ports {
-			//		fmt.Println(ve)
-			//	}
-			//}
-			//if len(blstruct.musthave.rules.fwclosed.protocols) > 0 {
-			//	fmt.Println("   Closed protocols:")
-			//	for _, ve := range blstruct.musthave.rules.fwclosed.protocols {
-			//		fmt.Println(ve)
-			//	}
-			//}
 
 			if len(blstruct.musthave.rules.fwopen.ports) == len(blstruct.musthave.rules.fwopen.protocols) {
-				for i := range blstruct.musthave.rules.fwopen.ports {
-					fmt.Printf("%s  %s\n",blstruct.musthave.rules.fwopen.ports[i],
-						blstruct.musthave.rules.fwopen.protocols[i])
-					// firewall check creation
-					// need to determine what firewall is installed on remote machine
+				if len(blstruct.musthave.rules.fwzones) > 0 {
+					fmt.Println("   Firewall zones:")
+					for _, ve := range blstruct.musthave.rules.fwzones {
+						fmt.Printf("      %v\n",ve)
+						for i := range blstruct.musthave.rules.fwopen.ports {
+							fmt.Printf("%s  %s\n",blstruct.musthave.rules.fwopen.ports[i],
+								blstruct.musthave.rules.fwopen.protocols[i])
+							// firewall check creation per zone
+							// channel to ssh session and wait for a reply
+						}
+					}
+				} else {
+					for i := range blstruct.musthave.rules.fwopen.ports {
+						fmt.Printf("%s  %s\n",blstruct.musthave.rules.fwopen.ports[i],
+							blstruct.musthave.rules.fwopen.protocols[i])
+						// firewall check creation with no zone specified
+						// channel to ssh session and wait for a reply
+					}
 				}
 			} else {
 				fmt.Println("There seems to be inconsistencies between your firewall ports and protocols.")
 				fmt.Println("Please review your baseline and rectify it.")
-			}
-			if len(blstruct.musthave.rules.fwzones) > 0 {
-				fmt.Println("   Firewall zones:")
-				for _, ve := range blstruct.musthave.rules.fwzones {
-					// check if zone has these open rules
-					fmt.Println(ve)
-				}
 			}
 			if len(blstruct.musthave.rules.fwclosed.ports) == len(blstruct.musthave.rules.fwclosed.protocols) {
-				for i := range blstruct.musthave.rules.fwclosed.ports {
-					fmt.Printf("%s  %s\n",blstruct.musthave.rules.fwclosed.ports[i],
-						blstruct.musthave.rules.fwclosed.protocols[i])
-					// firewall check creation
-					// need to determine what firewall is installed on remote machine
+				if len(blstruct.musthave.rules.fwzones) > 0 {
+					fmt.Println("   Firewall zones:")
+					for _, ve := range blstruct.musthave.rules.fwzones {
+						fmt.Printf("      %v\n",ve)
+						for i := range blstruct.musthave.rules.fwclosed.ports {
+							fmt.Printf("%s  %s\n",blstruct.musthave.rules.fwclosed.ports[i],
+								blstruct.musthave.rules.fwclosed.protocols[i])
+							// firewall check creation per zone
+							// channel to ssh session and wait for a reply
+						}
+					}
+				} else {
+					for i := range blstruct.musthave.rules.fwclosed.ports {
+						fmt.Printf("%s  %s\n",blstruct.musthave.rules.fwclosed.ports[i],
+							blstruct.musthave.rules.fwclosed.protocols[i])
+						// firewall check creation with no zone specified
+						// channel to ssh session and wait for a reply
+					}
 				}
 			} else {
 				fmt.Println("There seems to be inconsistencies between your firewall ports and protocols.")
 				fmt.Println("Please review your baseline and rectify it.")
-			}
-			if len(blstruct.musthave.rules.fwzones) > 0 {
-				fmt.Println("   Firewall zones:")
-				for _, ve := range blstruct.musthave.rules.fwzones {
-					// check if zone has these closed rules
-					fmt.Println(ve)
-				}
 			}
 			for key, val := range *sshList {
 				if commandset[val] == "" {
@@ -605,11 +593,12 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) map[s
 			}
 		}
 	}
-	return commandset
+	return
 }
 
-func (blstruct *ParsedBaseline) checkMustNotHaves(sshList *map[string]string) (commandset map[string]string) {
+func (blstruct *ParsedBaseline) checkMustNotHaves(sshList *map[string]string) {
 	//MNH list
+	commandset := make(map[string]string)
 	fmt.Printf("Must Not Have Checklist: ")
 	if len(blstruct.mustnothave.installed) == 0 &&
 		len(blstruct.mustnothave.enabled) == 0 &&
@@ -627,45 +616,97 @@ func (blstruct *ParsedBaseline) checkMustNotHaves(sshList *map[string]string) (c
 		fmt.Printf("\n")
 		fmt.Printf(" Installed Checklist: ")
 		if len(blstruct.mustnothave.installed) > 0 {
+			commandset = make(map[string]string)
 			fmt.Printf("\n")
 			for _, ve := range blstruct.mustnothave.installed {
 				fmt.Println(ve)
+				for key, val := range *sshList {
+					if commandset[val] == "" {
+						commandset[key] = pkgmanlib.PkgSearch[val] + ve
+					}
+				}
+				for k, v := range commandset {
+					fmt.Printf("%v   %v\n", k, v)
+				}
+				// send to channel
+				// wait for response and display compliancy
 			}
-			// iterate through sshList and create command for each server
-			// pass info to ssh session and waiting for a response
 		} else {
 			fmt.Printf("Skipping...\n")
 		}
 		// MNH enabled
 		fmt.Printf(" Enabled Checklist: ")
 		if len(blstruct.mustnothave.enabled) > 0 {
+			commandset = make(map[string]string)
 			fmt.Printf("\n")
 			for _, ve := range blstruct.mustnothave.enabled {
 				fmt.Println(ve)
+				for key, val := range *sshList {
+					if commandset[val] == "" {
+						commandset[key] = pkgmanlib.OmniTools["serviceisactive"] + ve
+					}
+				}
+				for k, v := range commandset {
+					fmt.Printf("%v   %v\n", k, v)
+				}
+				// send to channel
+				// wait for response and display compliancy
+				// check if service is active
 			}
-			// iterate through sshList and create command for each server
-			// pass info to ssh session and waiting for a response
 		} else {
 			fmt.Printf("Skipping...\n")
 		}
 		// MNH disabled
 		fmt.Printf(" Disabled Checklist: ")
 		if len(blstruct.mustnothave.disabled) > 0 {
+			commandset = make(map[string]string)
 			fmt.Printf("\n")
 			for _, ve := range blstruct.mustnothave.disabled {
-				fmt.Println(ve)
+				if ve != "" {
+					fmt.Printf("\n")
+					fmt.Println(ve)
+					for key, val := range *sshList {
+						if commandset[val] == "" {
+							commandset[key] = pkgmanlib.OmniTools["serviceisactive"] + ve
+						}
+					}
+					for k, v := range commandset {
+						fmt.Printf("%v   %v\n", k, v)
+					}
+					// send to channel
+					// wait for response and display compliancy
+					// check if service is inactive
+				} else {
+					fmt.Printf("Skipping...\n")
+				}
 			}
-			// iterate through sshList and create command for each server
-			// pass info to ssh session and waiting for a response
-		} else {
-			fmt.Printf("Skipping...\n")
 		}
 		// MNH Users
 		fmt.Printf(" Users Checklist: ")
 		if len(blstruct.mustnothave.users) > 0 {
+			commandset = make(map[string]string)
 			fmt.Printf("\n")
 			for _, ve := range blstruct.mustnothave.users {
-				fmt.Println(ve)
+				if len(ve) == 0 {
+					fmt.Printf("\n") // Here it will only check if the user exists
+					for key, val := range *sshList {
+						if commandset[val] == "" {
+							commandset[key] = pkgmanlib.OmniTools["userinfo"]
+						}
+					}
+					for k, v := range commandset {
+						fmt.Printf("%v   %v\n", k, v)
+					}
+				} else {
+					for key, val := range *sshList {
+						if commandset[val] == "" {
+							commandset[key] = pkgmanlib.OmniTools["userinfo"]
+						}
+					}
+					for k, v := range commandset {
+						fmt.Printf("%v   %v\n", k, v)
+					}
+				}
 			}
 			// iterate through sshList and create command for each server
 			// pass info to ssh session and waiting for a response
@@ -683,34 +724,59 @@ func (blstruct *ParsedBaseline) checkMustNotHaves(sshList *map[string]string) (c
 			fmt.Printf("Skipping...\n")
 		} else {
 			fmt.Printf("\n")
-			if len(blstruct.mustnothave.rules.fwopen.ports) > 0 {
-				fmt.Println("   Open ports:")
-				for _, ve := range blstruct.musthave.rules.fwopen.ports {
-					fmt.Println(ve)
+			commandset = make(map[string]string)
+
+			if len(blstruct.mustnothave.rules.fwopen.ports) == len(blstruct.mustnothave.rules.fwopen.protocols) {
+				if len(blstruct.mustnothave.rules.fwzones) > 0 {
+					fmt.Println("   Firewall zones:")
+					for _, ve := range blstruct.mustnothave.rules.fwzones {
+						fmt.Printf("      %v\n",ve)
+						for i := range blstruct.mustnothave.rules.fwopen.ports {
+							fmt.Printf("%s  %s\n",blstruct.mustnothave.rules.fwopen.ports[i],
+								blstruct.mustnothave.rules.fwopen.protocols[i])
+							// firewall check creation per zone
+							// channel to ssh session and wait for a reply
+						}
+					}
+				} else {
+					for i := range blstruct.mustnothave.rules.fwopen.ports {
+						fmt.Printf("%s  %s\n",blstruct.mustnothave.rules.fwopen.ports[i],
+							blstruct.mustnothave.rules.fwopen.protocols[i])
+						// firewall check creation with no zone specified
+						// channel to ssh session and wait for a reply
+					}
 				}
+			} else {
+				fmt.Println("There seems to be inconsistencies between your firewall ports and protocols.")
+				fmt.Println("Please review your baseline and rectify it.")
 			}
-			if len(blstruct.mustnothave.rules.fwopen.protocols) > 0 {
-				fmt.Println("   Open protocols:")
-				for _, ve := range blstruct.mustnothave.rules.fwopen.protocols {
-					fmt.Println(ve)
+			if len(blstruct.mustnothave.rules.fwclosed.ports) == len(blstruct.mustnothave.rules.fwclosed.protocols) {
+				if len(blstruct.mustnothave.rules.fwzones) > 0 {
+					fmt.Println("   Firewall zones:")
+					for _, ve := range blstruct.mustnothave.rules.fwzones {
+						fmt.Printf("      %v\n",ve)
+						for i := range blstruct.mustnothave.rules.fwclosed.ports {
+							fmt.Printf("%s  %s\n",blstruct.mustnothave.rules.fwclosed.ports[i],
+								blstruct.mustnothave.rules.fwclosed.protocols[i])
+							// firewall check creation per zone
+							// channel to ssh session and wait for a reply
+						}
+					}
+				} else {
+					for i := range blstruct.mustnothave.rules.fwclosed.ports {
+						fmt.Printf("%s  %s\n",blstruct.mustnothave.rules.fwclosed.ports[i],
+							blstruct.mustnothave.rules.fwclosed.protocols[i])
+						// firewall check creation with no zone specified
+						// channel to ssh session and wait for a reply
+					}
 				}
+			} else {
+				fmt.Println("There seems to be inconsistencies between your firewall ports and protocols.")
+				fmt.Println("Please review your baseline and rectify it.")
 			}
-			if len(blstruct.mustnothave.rules.fwclosed.ports) > 0 {
-				fmt.Println("   Closed ports:")
-				for _, ve := range blstruct.mustnothave.rules.fwclosed.ports {
-					fmt.Println(ve)
-				}
-			}
-			if len(blstruct.mustnothave.rules.fwclosed.protocols) > 0 {
-				fmt.Println("   Closed protocols:")
-				for _, ve := range blstruct.mustnothave.rules.fwclosed.protocols {
-					fmt.Println(ve)
-				}
-			}
-			if len(blstruct.mustnothave.rules.fwzones) > 0 {
-				fmt.Println("   Firewall zones:")
-				for _, ve := range blstruct.mustnothave.rules.fwzones {
-					fmt.Println(ve)
+			for key, val := range *sshList {
+				if commandset[val] == "" {
+					commandset[key] = pkgmanlib.OmniTools["userinfo"]
 				}
 			}
 			// iterate through sshList and create command for each server
@@ -719,10 +785,15 @@ func (blstruct *ParsedBaseline) checkMustNotHaves(sshList *map[string]string) (c
 		// MNH mounts
 		fmt.Printf(" Mounts Checklist: ")
 		if len(blstruct.mustnothave.mounts) > 0 {
+			commandset = make(map[string]string)
 			fmt.Printf("\n")
 			for _, ve := range blstruct.mustnothave.mounts {
 				fmt.Println(ve)
-				// commandset[] =  "" + ve + commandset[]
+				for key, val := range *sshList {
+					if commandset[val] == "" {
+						commandset[key] = pkgmanlib.OmniTools["userinfo"]
+					}
+				}
 			}
 		} else {
 			fmt.Printf("Skipping...\n")
