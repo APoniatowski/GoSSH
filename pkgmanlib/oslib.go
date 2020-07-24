@@ -78,4 +78,11 @@ var OmniTools = map[string]string{
 	"userinfo":        "getent passwd ",
 	"statinfo":        "stat ",
 	"suminfo":         "sum ",
+	"catfile":         "cat ",
+	"policystatus":    "getenforce || systemctl is-active apparmor",
+	"policycheck":"",
+	"policyimport":"",
+	"fwlist":"",
+	"fwadd":"",
+	"fwremove":"",
 }

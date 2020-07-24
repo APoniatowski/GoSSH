@@ -2,6 +2,8 @@ package sshlib
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/APoniatowski/GoSSH/pkgmanlib"
@@ -303,8 +305,6 @@ func (blstruct *ParsedBaseline) checkPrereqs(sshList *map[string]string) {
 
 func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string)  {
 	commandset := make(map[string]string)
-	fmt.Println(pkgmanlib.PkgSearch["arch"]) //  just to prevent go from removing the import
-	fmt.Println("line 307  !!! remember to remove later !!!")
 	// MH list
 	fmt.Printf("Must Have Checklist: ")
 	if len(blstruct.musthave.installed) == 0 &&
@@ -403,13 +403,25 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string)  {
 				fmt.Printf("Skipping...\n")
 			} else {
 				commandset = make(map[string]string)
+				var sourcefile interface{}
 				fmt.Printf("\n      %s:\n", ke)
 				for _, val := range ve.source {
 					fmt.Printf("Baseline File (Source): %s\n", val)
+					sourcefile = exec.Command(pkgmanlib.OmniTools["catfile"] + val)
 				}
 				for _, val := range ve.destination {
-					fmt.Printf("Current File (Destination): %s\n", val)
+					fmt.Printf("Baseline File (Destination): %s\n", val)
+					for key, val := range *sshList {
+						if commandset[val] == "" {
+							commandset[key] = pkgmanlib.OmniTools["catfile"] + val
+						}
+					}
 				}
+				for k, v := range commandset {
+					fmt.Printf("SERVER: %v   COMMAND: %v\n", k, v)
+				}
+				// compare sourcefile with result from servers and see if they are == or !=
+
 				// iterate through sshList and create command for each server
 				// pass info to ssh session and waiting for a response
 			}
@@ -452,7 +464,6 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string)  {
 				// pass info to ssh session and waiting for a response
 				// process the info received available info
 
-				fmt.Println(infoAvailable)
 				// fmt.Printf("   Groups: ")
 				// if len(ve.groups) > 0 {
 				// 	for _, val := range ve.groups {
@@ -479,19 +490,24 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string)  {
 				fmt.Printf("   Status: %s\n", blstruct.musthave.policies.polstatus)
 				for key, val := range *sshList {
 					if commandset[val] == "" {
-						commandset[key] = pkgmanlib.OmniTools["userinfo"]
+						commandset[key] = pkgmanlib.OmniTools["policystatus"]
 					}
+				}
+				for k, v := range commandset {
+					fmt.Printf("%v   %v\n", k, v)
 				}
 				// iterate through sshList and create command for each server
 				// pass info to ssh session and waiting for a response
 			}
 			if blstruct.musthave.policies.polimport != "" {
-
 				fmt.Printf("   Import: %s\n", blstruct.musthave.policies.polimport)
 				for key, val := range *sshList {
 					if commandset[val] == "" {
-						commandset[key] = pkgmanlib.OmniTools["userinfo"]
+						commandset[key] = pkgmanlib.OmniTools["policycheck"]
 					}
+				}
+				for k, v := range commandset {
+					fmt.Printf("%v   %v\n", k, v)
 				}
 				// iterate through sshList and create command for each server
 				// pass info to ssh session and waiting for a response
@@ -508,7 +524,6 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string)  {
 		} else {
 			commandset = make(map[string]string)
 			fmt.Printf("\n")
-
 			if len(blstruct.musthave.rules.fwopen.ports) == len(blstruct.musthave.rules.fwopen.protocols) {
 				if len(blstruct.musthave.rules.fwzones) > 0 {
 					fmt.Println("   Firewall zones:")
@@ -517,6 +532,16 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string)  {
 						for i := range blstruct.musthave.rules.fwopen.ports {
 							fmt.Printf("%s  %s\n",blstruct.musthave.rules.fwopen.ports[i],
 								blstruct.musthave.rules.fwopen.protocols[i])
+							for key, val := range *sshList {
+								if commandset[val] == "" {
+									portprotocol := blstruct.musthave.rules.fwopen.ports[i] + "" + blstruct.musthave.rules.fwopen.protocols[i]
+									// need to create args for grep
+									commandset[key] = pkgmanlib.OmniTools["fwlist"] + portprotocol
+								}
+							}
+							for k, v := range commandset {
+								fmt.Printf("%v   %v\n", k, v)
+							}
 							// firewall check creation per zone
 							// channel to ssh session and wait for a reply
 						}
@@ -525,6 +550,16 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string)  {
 					for i := range blstruct.musthave.rules.fwopen.ports {
 						fmt.Printf("%s  %s\n",blstruct.musthave.rules.fwopen.ports[i],
 							blstruct.musthave.rules.fwopen.protocols[i])
+						for key, val := range *sshList {
+							if commandset[val] == "" {
+								portprotocol := blstruct.musthave.rules.fwopen.ports[i] + "" + blstruct.musthave.rules.fwopen.protocols[i]
+								// need to create args for grep
+								commandset[key] = pkgmanlib.OmniTools["fwlist"] + portprotocol
+							}
+						}
+						for k, v := range commandset {
+							fmt.Printf("%v   %v\n", k, v)
+						}
 						// firewall check creation with no zone specified
 						// channel to ssh session and wait for a reply
 					}
@@ -541,6 +576,16 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string)  {
 						for i := range blstruct.musthave.rules.fwclosed.ports {
 							fmt.Printf("%s  %s\n",blstruct.musthave.rules.fwclosed.ports[i],
 								blstruct.musthave.rules.fwclosed.protocols[i])
+							for key, val := range *sshList {
+								if commandset[val] == "" {
+									portprotocol := blstruct.musthave.rules.fwclosed.ports[i] + "" + blstruct.musthave.rules.fwclosed.protocols[i]
+									// need to create args for grep
+									commandset[key] = pkgmanlib.OmniTools["fwlist"] + portprotocol
+								}
+							}
+							for k, v := range commandset {
+								fmt.Printf("%v   %v\n", k, v)
+							}
 							// firewall check creation per zone
 							// channel to ssh session and wait for a reply
 						}
@@ -549,6 +594,16 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string)  {
 					for i := range blstruct.musthave.rules.fwclosed.ports {
 						fmt.Printf("%s  %s\n",blstruct.musthave.rules.fwclosed.ports[i],
 							blstruct.musthave.rules.fwclosed.protocols[i])
+						for key, val := range *sshList {
+							if commandset[val] == "" {
+								portprotocol := blstruct.musthave.rules.fwclosed.ports[i] + "" + blstruct.musthave.rules.fwclosed.protocols[i]
+								// need to create args for grep
+								commandset[key] = pkgmanlib.OmniTools["fwlist"] + portprotocol
+							}
+						}
+						for k, v := range commandset {
+							fmt.Printf("%v   %v\n", k, v)
+						}
 						// firewall check creation with no zone specified
 						// channel to ssh session and wait for a reply
 					}
@@ -557,13 +612,6 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string)  {
 				fmt.Println("There seems to be inconsistencies between your firewall ports and protocols.")
 				fmt.Println("Please review your baseline and rectify it.")
 			}
-			for key, val := range *sshList {
-				if commandset[val] == "" {
-					commandset[key] = pkgmanlib.OmniTools["userinfo"]
-				}
-			}
-			// iterate through sshList and create command for each server
-			// pass info to ssh session and waiting for a response
 		}
 		// MH mounts
 		fmt.Printf(" Mounts Checklist: ")
