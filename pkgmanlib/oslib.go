@@ -85,4 +85,6 @@ var OmniTools = map[string]string{
 	"fwlist":"",
 	"fwadd":"",
 	"fwremove":"",
+	"mkdir":"mkdir -p ",
+	"mountdir":"mount ",
 }

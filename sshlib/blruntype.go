@@ -1577,7 +1577,7 @@ func CheckBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 									for i, v := range mnhEnabledSlice {
 										mnhEnabled[i] = v.(string)
 									}
-									blstruct.mustnothave.installed = mnhEnabled
+									blstruct.mustnothave.enabled = mnhEnabled
 								}
 							case "Disabled":
 								if thirdStep.Value == nil {
@@ -1589,7 +1589,7 @@ func CheckBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 									for i, v := range mnhDisabledSlice {
 										mnhDisabled[i] = v.(string)
 									}
-									blstruct.mustnothave.enabled = mnhDisabled
+									blstruct.mustnothave.disabled = mnhDisabled
 								}
 							case "Users":
 								if thirdStep.Value == nil {
@@ -2496,7 +2496,7 @@ func VerifyBaselines(baselineyaml *yaml.MapSlice) {
 									for i, v := range mnhEnabledSlice {
 										mnhEnabled[i] = v.(string)
 									}
-									blstruct.mustnothave.installed = mnhEnabled
+									blstruct.mustnothave.enabled = mnhEnabled
 								}
 							case "Disabled":
 								if thirdStep.Value == nil {
