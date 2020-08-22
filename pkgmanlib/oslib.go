@@ -88,7 +88,7 @@ var OmniTools = map[string]string{
 	"grep":            "grep ",
 	"awk":            "awk ",
 	"mkdir":           "mkdir -p ",
-	"mountdir":        "mount ",
+	"mount":        "mount ",
 }
 
 // Firewalld map of firewalld commands

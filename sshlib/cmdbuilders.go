@@ -2,6 +2,7 @@ package sshlib
 
 import (
 	"github.com/APoniatowski/GoSSH/pkgmanlib"
+	"strings"
 )
 
 // Switches For checking what CLI option was used and run the appropriate functions
@@ -33,4 +34,32 @@ func (S *Switches) Switcher(pp ParsedPool, command string) (rtncommand string) {
 		rtncommand = pkgmanlib.Uninstall(pp.username.(string), pp.os.(string)) + command + " -y 2>&1"
 	}
 	return
+}
+
+func firewallCheckCommandBuilder(port, protocol string) string {
+	// TODO chang awk to grep and add another parameter for open/deny/closed/etc
+	fwCommand := strings.Builder{}
+	fwCommand.WriteString("{ ")
+	fwCommand.WriteString(pkgmanlib.Firewalld["list"])
+	fwCommand.WriteString(" || ")
+	fwCommand.WriteString(pkgmanlib.Ufw["list"])
+	fwCommand.WriteString(" || ")
+	fwCommand.WriteString(pkgmanlib.Iptables["list"])
+	fwCommand.WriteString(" || ")
+	fwCommand.WriteString(pkgmanlib.Nftables["list"])
+	fwCommand.WriteString(" || ")
+	fwCommand.WriteString(pkgmanlib.PfFirewall["list"])
+	fwCommand.WriteString(" } ")
+	fwCommand.WriteString(" > ")
+	fwCommand.WriteString(pkgmanlib.OmniTools["awk"])
+	fwCommand.WriteString("'/"+port+"/")
+	fwCommand.WriteString(" && ")
+	fwCommand.WriteString("'/"+protocol+"/'")
+	return fwCommand.String()
+}
+
+func (mountDetails *mountdetails) mountCheckCommandBuilder() string {
+	mountCommand := strings.Builder{}
+
+	return mountCommand.String()
 }

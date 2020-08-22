@@ -1392,7 +1392,6 @@ func CheckBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 										if !ok {
 											warnings++
 										}
-
 										switch blItem.Key {
 										case "Open":
 											for _, rulesItems := range rulesValues {
@@ -1540,7 +1539,6 @@ func CheckBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 													mhMountDest = mountItems.Value.(string)
 												}
 											}
-
 										}
 										blstruct.musthave.mounts.mountname[mhMounts] = mountdetails{
 											mounttype: mhMountType,
@@ -1617,7 +1615,6 @@ func CheckBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 										if !ok {
 											warnings++
 										}
-
 										switch blItem.Key {
 										case "Open":
 											for _, rulesItems := range rulesValues {
@@ -1786,7 +1783,6 @@ func CheckBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 											}
 										}
 									}
-
 								}
 							case "Restart":
 								if thirdStep.Value == nil {
@@ -1821,9 +1817,9 @@ func CheckBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 					}
 				}
 			}
-
+			// TODO Run baseline check
 			sshList := blstruct.checkOSExcludes(servergroupname, configs)
-			fmt.Println(sshList)
+			//fmt.Println(sshList)
 
 			// establish ssh connections to servers via goroutines and maintain sessions and channel commands to open connections
 

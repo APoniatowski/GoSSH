@@ -1,6 +1,6 @@
 module github.com/APoniatowski/GoSSH
 
-go 1.13
+go 1.15
 
 require (
 	github.com/briandowns/spinner v1.9.0
@@ -14,7 +14,6 @@ require (
 	github.com/superhawk610/terminal v0.0.0-20200123193603-cbc69427a94a // indirect
 	github.com/urfave/cli v1.22.2
 	golang.org/x/crypto v0.0.0-20191202143827-86a70503ff7e
-	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/yaml.v2 v2.2.8
 )
