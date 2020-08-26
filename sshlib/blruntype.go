@@ -897,24 +897,24 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 					}
 				}
 			}
-			var serverlist []string
-			var oslist []string
-			serverlist, oslist = blstruct.applyOSExcludes(servergroupname, configs)
+
+			// TODO apply baseline
+			sshList = blstruct.applyOSExcludes(servergroupname, configs)
 			fmt.Println(serverlist)
 			fmt.Println(oslist)
 			// establish ssh connections to servers via goroutines and maintain sessions
 
 			var commandset []string
-			commandset = blstruct.applyPrereq(&serverlist, &oslist)
+			commandset = blstruct.applyPrereq(sshList)
 			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
-			commandset = blstruct.applyMustHaves(&serverlist, &oslist)
+			commandset = blstruct.applyMustHaves(sshList)
 			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
-			commandset = blstruct.applyMustNotHaves(&serverlist, &oslist)
+			commandset = blstruct.applyMustNotHaves(sshList)
 			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
-			commandset = blstruct.applyFinals(&serverlist, &oslist)
+			commandset = blstruct.applyFinals(sshList)
 			fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete
 
@@ -1826,6 +1826,8 @@ func CheckBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 			// commandset via channel to servers and wait for it to complete
 			// commandChannel := make(chan map[string]string)
 			// commandChannel <- blstruct.checkMustHaves(&sshList)
+			blstruct.checkPrereqs(&sshList)
+
 			blstruct.checkMustHaves(&sshList)
 			// fmt.Println(commandset)
 			// commandset via channel to servers and wait for it to complete

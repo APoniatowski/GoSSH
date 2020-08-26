@@ -36,30 +36,45 @@ func (S *Switches) Switcher(pp ParsedPool, command string) (rtncommand string) {
 	return
 }
 
-func firewallCheckCommandBuilder(port, protocol string) string {
+func firewallCommandBuilder(port, protocol *string, chosenOption string) string {
 	// TODO chang awk to grep and add another parameter for open/deny/closed/etc
 	fwCommand := strings.Builder{}
-	fwCommand.WriteString("{ ")
-	fwCommand.WriteString(pkgmanlib.Firewalld["list"])
-	fwCommand.WriteString(" || ")
-	fwCommand.WriteString(pkgmanlib.Ufw["list"])
-	fwCommand.WriteString(" || ")
-	fwCommand.WriteString(pkgmanlib.Iptables["list"])
-	fwCommand.WriteString(" || ")
-	fwCommand.WriteString(pkgmanlib.Nftables["list"])
-	fwCommand.WriteString(" || ")
-	fwCommand.WriteString(pkgmanlib.PfFirewall["list"])
-	fwCommand.WriteString(" } ")
-	fwCommand.WriteString(" > ")
-	fwCommand.WriteString(pkgmanlib.OmniTools["awk"])
-	fwCommand.WriteString("'/"+port+"/")
-	fwCommand.WriteString(" && ")
-	fwCommand.WriteString("'/"+protocol+"/'")
+	switch chosenOption {
+	case "check":
+		fwCommand.WriteString("{ ")
+		fwCommand.WriteString(pkgmanlib.Firewalld["list"])
+		fwCommand.WriteString(" || ")
+		fwCommand.WriteString(pkgmanlib.Ufw["list"])
+		fwCommand.WriteString(" || ")
+		fwCommand.WriteString(pkgmanlib.Iptables["list"])
+		fwCommand.WriteString(" || ")
+		fwCommand.WriteString(pkgmanlib.Nftables["list"])
+		fwCommand.WriteString(" || ")
+		fwCommand.WriteString(pkgmanlib.PfFirewall["list"])
+		fwCommand.WriteString(" } ")
+		fwCommand.WriteString(" > ")
+		fwCommand.WriteString(pkgmanlib.OmniTools["awk"])
+		fwCommand.WriteString("'/"+*port+"/")
+		fwCommand.WriteString(" && ")
+		fwCommand.WriteString("'/"+*protocol+"/'")
+	case "apply":
+
+	default:
+		fwCommand.WriteString("")
+	}
+
 	return fwCommand.String()
 }
 
-func (mountDetails *mountdetails) mountCheckCommandBuilder() string {
+func (mountDetails *mountdetails) mountCommandBuilder() string {
 	mountCommand := strings.Builder{}
-
+	mountCommand.WriteString(pkgmanlib.OmniTools["mkdir"])
+	mountCommand.WriteString(mountDetails.dest + " && ")
+	mountCommand.WriteString("echo '")
+	mountCommand.WriteString(mountDetails.address + ":" + mountDetails.src + " " + mountDetails.dest + " ")
+	mountCommand.WriteString(mountDetails.mounttype)
+	mountCommand.WriteString(" defaults 0 0") // Default mounting details
+	mountCommand.WriteString("' >> /etc/fstab;")
+	mountCommand.WriteString(pkgmanlib.OmniTools["mount"] + mountDetails.dest)
 	return mountCommand.String()
 }
