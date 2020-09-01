@@ -86,9 +86,14 @@ var OmniTools = map[string]string{
 	"suminfo":         "sum ",
 	"catfile":         "cat ",
 	"grep":            "grep ",
-	"awk":            "awk ",
+	"awk":             "awk ",
 	"mkdir":           "mkdir -p ",
-	"mount":        "mount ",
+	"mount":           "mount ",
+	"wget":            "wget ",
+	"curl":            "curl ",
+	"git":             "git clone ",
+	"svn":             "svn checkout ",
+	"md5sum": "md5sum ",
 }
 
 // Firewalld map of firewalld commands

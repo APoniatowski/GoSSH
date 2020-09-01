@@ -899,23 +899,16 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 			}
 
 			// TODO apply baseline
-			sshList = blstruct.applyOSExcludes(servergroupname, configs)
-			fmt.Println(serverlist)
-			fmt.Println(oslist)
+			sshList := blstruct.applyOSExcludes(servergroupname, configs)
 			// establish ssh connections to servers via goroutines and maintain sessions
 
-			var commandset []string
-			commandset = blstruct.applyPrereq(sshList)
-			fmt.Println(commandset)
+			blstruct.applyPrereq(&sshList)
 			// commandset via channel to servers and wait for it to complete
-			commandset = blstruct.applyMustHaves(sshList)
-			fmt.Println(commandset)
+			blstruct.applyMustHaves(&sshList)
 			// commandset via channel to servers and wait for it to complete
-			commandset = blstruct.applyMustNotHaves(sshList)
-			fmt.Println(commandset)
+			blstruct.applyMustNotHaves(&sshList)
 			// commandset via channel to servers and wait for it to complete
-			commandset = blstruct.applyFinals(sshList)
-			fmt.Println(commandset)
+			blstruct.applyFinals(&sshList)
 			// commandset via channel to servers and wait for it to complete
 
 			// once all checks are completed pass disconnect via channels to open sessions

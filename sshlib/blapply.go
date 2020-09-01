@@ -152,13 +152,12 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 			} else {
 				fmt.Printf("\n")
 				for _, ve := range blstruct.prereq.tools {
-					fmt.Printf(ve)
 					for key, val := range *sshList {
 						if commandset[val] == "" {
-							// TODO Prereq Tools apply make some changes and move to cmdbuilders
-							commandset[key] = pkgmanlib.PkgSearch[val] + ve
+							commandset[key] = pkgmanlib.PkgInstall[val] + ve
 						}
 					}
+					// TODO Prereq Tools apply
 					//for k, v := range commandset {
 					//	fmt.Printf("%v   %v\n", k, v)
 					//}
@@ -173,15 +172,12 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 			} else {
 				fmt.Printf("\n")
 				for _, ve := range blstruct.prereq.files.urls {
-					fmt.Printf(ve)
-					parseFile := strings.Split(ve, "/")
-					parsedFile := parseFile[len(parseFile)-1]
 					for key, val := range *sshList {
 						if commandset[val] == "" {
-							// TODO URL Files apply make some changes and move to cmdbuilders
-							commandset[key] = pkgmanlib.OmniTools["statinfo"] + parsedFile
+							commandset[key] = prereqURLFetch(ve)
 						}
 					}
+					// TODO URL Files
 					//for k, v := range commandset {
 					//	fmt.Printf("%v   %v\n", k, v)
 					//}
@@ -190,14 +186,13 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 				}
 			}
 			// prerequisite files local
-			fmt.Printf(" Prerequisite Files (via scp): ")
+			fmt.Printf(" Prerequisite Files (network transfer): ")
 			if blstruct.prereq.files.local.dest != "" &&
 				blstruct.prereq.files.local.src != "" {
 				fmt.Printf("Skipping...\n")
 			} else {
 				fmt.Printf("\n")
 				var srcFile string
-				fmt.Println("The following files will be transferred locally via scp")
 				if blstruct.prereq.files.local.src != "" {
 					srcFile = blstruct.prereq.files.local.src
 				}
@@ -683,20 +678,10 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 					} else {
 						for key, val := range *sshList {
 							if commandset[val] == "" {
-								commandset[key] = "grep '" + ve.address + "' /etc/fstab"
-							}
-						}
-						//    check if the mount address is in fstab
-						// iterate through sshList and create command for each server
-						// pass info to ssh session and waiting for a response
-
-						for key, val := range *sshList {
-							if commandset[val] == "" {
 								// TODO Must Have Mounts apply
-								commandset[key] = pkgmanlib.OmniTools["mount"] + "| grep '" + ve.address + "'"
+								commandset[key] = ve.mountCommandBuilder("apply")
 							}
 						}
-						//   grep the mount address
 						// iterate through sshList and create command for each server
 						// pass info to ssh session and waiting for a response
 					}
@@ -709,7 +694,6 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 	}
 	return
 }
-
 
 func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 	//MNH list

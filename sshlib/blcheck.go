@@ -152,7 +152,6 @@ func (blstruct *ParsedBaseline) checkPrereqs(sshList *map[string]string) {
 			} else {
 				fmt.Printf("\n")
 				for _, ve := range blstruct.prereq.tools {
-					fmt.Printf(ve)
 					for key, val := range *sshList {
 						if commandset[val] == "" {
 							// TODO Prereq Tools Checks make some changes and move to cmdbuilders
@@ -173,7 +172,6 @@ func (blstruct *ParsedBaseline) checkPrereqs(sshList *map[string]string) {
 			} else {
 				fmt.Printf("\n")
 				for _, ve := range blstruct.prereq.files.urls {
-					fmt.Printf(ve)
 					parseFile := strings.Split(ve, "/")
 					parsedFile := parseFile[len(parseFile)-1]
 					for key, val := range *sshList {
@@ -190,22 +188,21 @@ func (blstruct *ParsedBaseline) checkPrereqs(sshList *map[string]string) {
 				}
 			}
 			// prerequisite files local
-			fmt.Printf(" Prerequisite Files (via scp): ")
+			fmt.Printf(" Prerequisite Files (network transfer): ")
 			if blstruct.prereq.files.local.dest != "" &&
 				blstruct.prereq.files.local.src != "" {
 				fmt.Printf("Skipping...\n")
 			} else {
 				fmt.Printf("\n")
-				var srcFile string
-				fmt.Println("The following files will be transferred locally via scp")
+				var srcFile interface{}
+				var dstFile string
 				if blstruct.prereq.files.local.src != "" {
-					srcFile = blstruct.prereq.files.local.src
+					srcFile = exec.Command(pkgmanlib.OmniTools["suminfo"] + blstruct.prereq.files.local.src)
 				}
 				if blstruct.prereq.files.local.dest != "" {
 					for key, val := range *sshList {
 						if commandset[val] == "" {
-							// TODO Prereq SCP Files Checks make some changes and move to cmdbuilders
-							commandset[key] = pkgmanlib.OmniTools["suminfo"] + blstruct.prereq.files.local.dest + srcFile
+							commandset[key] = pkgmanlib.OmniTools["suminfo"] + blstruct.prereq.files.local.dest
 							/*
 								-will need to find a better way to compare files and directories-
 								cat would kill memory, if its a large file or binary
@@ -214,6 +211,8 @@ func (blstruct *ParsedBaseline) checkPrereqs(sshList *map[string]string) {
 							*/
 						}
 					}
+					// TODO Prereq SCP Files Checks
+
 					//for k, v := range commandset {
 					//	fmt.Printf("%v   %v\n", k, v)
 					//}
@@ -221,6 +220,9 @@ func (blstruct *ParsedBaseline) checkPrereqs(sshList *map[string]string) {
 					// wait for response
 					// diff the file/dir with the source
 					// display compliancy
+				}
+				if srcFile.(string) == dstFile {
+					// TODO Prereq SCP Files comparison, if identical give OK
 				}
 			}
 			// prerequisite files remote
@@ -235,22 +237,17 @@ func (blstruct *ParsedBaseline) checkPrereqs(sshList *map[string]string) {
 				fmt.Printf("Skipping...\n")
 			} else {
 				fmt.Printf("\n")
-				if blstruct.prereq.files.remote.dest != "" {
-					fmt.Println(blstruct.prereq.files.remote.dest)
+				if blstruct.prereq.files.remote.src != "" {
+					srcChecksum := blstruct.prereq.files.remote
+					srcFile := srcChecksum.remoteSourceFilesCommandBuilder("check")
 				}
 				if len(blstruct.prereq.files.remote.files) != 0 {
 					for _, ve := range blstruct.prereq.files.remote.files {
-						fmt.Println(ve)
 						for key, val := range *sshList {
 							if commandset[val] == "" {
 								// TODO Prereq Mount Files Checks make some changes and move to cmdbuilders
-								commandset[key] = pkgmanlib.OmniTools["suminfo"] + blstruct.prereq.files.local.dest
-								/*
-									-will need to find a better way to compare files and directories-
-									cat would kill memory, if its a large file or binary
-									sum only does files, not dirs
-									need to create for loop command if its a directory with md5sum
-								*/
+								commandset[key] = pkgmanlib.OmniTools["suminfo"] + ve
+
 							}
 						}
 						for k, v := range commandset {
