@@ -154,7 +154,7 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 				for _, ve := range blstruct.prereq.tools {
 					for key, val := range *sshList {
 						if commandset[val] == "" {
-							commandset[key] = pkgmanlib.PkgInstall[val] + ve
+							commandset[key] = serviceCommandBuilder(&ve, &val,"install")
 						}
 					}
 					// TODO Prereq Tools apply
@@ -174,7 +174,7 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 				for _, ve := range blstruct.prereq.files.urls {
 					for key, val := range *sshList {
 						if commandset[val] == "" {
-							commandset[key] = prereqURLFetch(ve)
+							commandset[key] = prereqURLFetch(&ve)
 						}
 					}
 					// TODO URL Files
@@ -235,7 +235,7 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 						for _, ve := range blstruct.prereq.files.remote.files {
 							for key, val := range *sshList {
 								if commandset[val] == "" {
-									commandset[key] = fileCheck.remoteFilesCommandBuilder("apply", ve)
+									commandset[key] = fileCheck.remoteFilesCommandBuilder(&ve,"apply")
 								}
 							}
 							// TODO Prereq Mount Files apply
@@ -264,7 +264,7 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 						for key, val := range *sshList {
 							if commandset[val] == "" {
 								// TODO Prereq VCS Files apply make some changes and move to cmdbuilders
-								commandset[key] = prereqURLFetch(ve)
+								commandset[key] = prereqURLFetch(&ve)
 								/*
 									-will need to find a better way to compare files and directories-
 									ls the dir and check if it exists?
@@ -320,8 +320,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 				for key, val := range *sshList {
 					if commandset[val] == "" {
 						// TODO Must Have Installed apply make some changes and move to cmdbuilders
-						// TODO Need to fix OS selection
-						commandset[key] = pkgmanlib.PkgInstall[val] + ve
+						commandset[key] = serviceCommandBuilder(&ve, &val,"install")
 					}
 				}
 				//for k, v := range commandset {
@@ -340,11 +339,10 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 			commandset = make(map[string]string)
 			fmt.Printf("\n")
 			for _, ve := range blstruct.musthave.enabled {
-				fmt.Println(ve)
 				for key, val := range *sshList {
 					if commandset[val] == "" {
-						// TODO Must Have Enabled apply make some changes and move to cmdbuilders
-						commandset[key] = serviceCommandBuilder(&ve,"apply","enabled",val)
+						// TODO Must Have Enabled apply
+						commandset[key] = serviceCommandBuilder(&ve, &val,"enable")
 					}
 				}
 				//for k, v := range commandset {
@@ -365,13 +363,12 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 			for _, ve := range blstruct.musthave.disabled {
 				if ve != "" {
 					fmt.Printf("\n")
-					fmt.Println(ve)
 					for key, val := range *sshList {
 						if commandset[val] == "" {
-							// TODO Must Have Disabled apply make some changes and move to cmdbuilders
-							commandset[key] = pkgmanlib.OmniTools["serviceisactive"] + ve
+							commandset[key] = serviceCommandBuilder(&ve, &val,"disable")
 						}
 					}
+					// TODO Must Have Disabled apply
 					//for k, v := range commandset {
 					//	fmt.Printf("%v   %v\n", k, v)
 					//}
@@ -530,14 +527,11 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 					for _, ve := range blstruct.musthave.rules.fwzones {
 						fmt.Printf("      %v\n", ve)
 						for i := range blstruct.musthave.rules.fwopen.ports {
-							fmt.Printf("%s  %s\n", blstruct.musthave.rules.fwopen.ports[i],
-								blstruct.musthave.rules.fwopen.protocols[i])
 							for key, val := range *sshList {
 								if commandset[val] == "" {
-									fwcheckcommand := firewallCommandBuilder(&blstruct.musthave.rules.fwopen.ports[i],
+									commandset[key] = firewallCommandBuilder(&blstruct.musthave.rules.fwopen.ports[i],
 										&blstruct.musthave.rules.fwopen.protocols[i],
 										"apply")
-									commandset[key] = fwcheckcommand
 								}
 							}
 							//for k, v := range commandset {
@@ -554,10 +548,9 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 							blstruct.musthave.rules.fwopen.protocols[i])
 						for key, val := range *sshList {
 							if commandset[val] == "" {
-								fwcheckcommand := firewallCommandBuilder(&blstruct.musthave.rules.fwopen.ports[i],
+								commandset[key] = firewallCommandBuilder(&blstruct.musthave.rules.fwopen.ports[i],
 									&blstruct.musthave.rules.fwopen.protocols[i],
 									"apply")
-								commandset[key] = fwcheckcommand
 							}
 						}
 						//for k, v := range commandset {
@@ -578,14 +571,11 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 					for _, ve := range blstruct.musthave.rules.fwzones {
 						fmt.Printf("      %v\n", ve)
 						for i := range blstruct.musthave.rules.fwclosed.ports {
-							fmt.Printf("%s  %s\n", blstruct.musthave.rules.fwclosed.ports[i],
-								blstruct.musthave.rules.fwclosed.protocols[i])
 							for key, val := range *sshList {
 								if commandset[val] == "" {
-									fwcheckcommand := firewallCommandBuilder(&blstruct.musthave.rules.fwclosed.ports[i],
+									commandset[key] = firewallCommandBuilder(&blstruct.musthave.rules.fwclosed.ports[i],
 										&blstruct.musthave.rules.fwclosed.protocols[i],
 										"apply")
-									commandset[key] = fwcheckcommand
 								}
 							}
 							//for k, v := range commandset {
@@ -598,14 +588,11 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 					}
 				} else {
 					for i := range blstruct.musthave.rules.fwclosed.ports {
-						fmt.Printf("%s  %s\n", blstruct.musthave.rules.fwclosed.ports[i],
-							blstruct.musthave.rules.fwclosed.protocols[i])
 						for key, val := range *sshList {
 							if commandset[val] == "" {
-								fwcheckcommand := firewallCommandBuilder(&blstruct.musthave.rules.fwclosed.ports[i],
+								commandset[key] = firewallCommandBuilder(&blstruct.musthave.rules.fwclosed.ports[i],
 									&blstruct.musthave.rules.fwclosed.protocols[i],
 									"apply")
-								commandset[key] = fwcheckcommand
 							}
 						}
 						//for k, v := range commandset {
@@ -640,26 +627,18 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 					if ve.mounttype == "" {
 						noInfo = true
 						fmt.Printf("Mount Type info not found for %s. Skipping...\n", ke)
-					} else {
-						fmt.Printf("   Mount Type: %v\n", ve.mounttype)
 					}
 					if ve.address == "" {
 						noInfo = true
 						fmt.Printf("Address info not found for %s. Skipping...\n", ke)
-					} else {
-						fmt.Printf("   Address: %v\n", ve.address)
 					}
 					if ve.src == "" {
 						noInfo = true
 						fmt.Printf("Source mount directory info not found for %s. Skipping...\n", ke)
-					} else {
-						fmt.Printf("   Source: %v\n", ve.src)
 					}
 					if ve.dest == "" {
 						noInfo = true
 						fmt.Printf("Destination mount directory info not found for %s. Skipping...\n", ke)
-					} else {
-						fmt.Printf("   Destination: %v\n", ve.dest)
 					}
 					if noInfo {
 						fmt.Printf("Critical mounting info missing for %s. Skipping...\n", ke)
@@ -706,11 +685,10 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 			commandset = make(map[string]string)
 			fmt.Printf("\n")
 			for _, ve := range blstruct.mustnothave.installed {
-				fmt.Println(ve)
 				for key, val := range *sshList {
 					if commandset[val] == "" {
 						// TODO Must Not Have Installed apply make some changes and move to cmdbuilders
-						commandset[key] = pkgmanlib.PkgSearch[val] + ve
+						commandset[key] = serviceCommandBuilder(&ve, &val,"uninstall")
 					}
 				}
 				//for k, v := range commandset {
@@ -728,11 +706,10 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 			commandset = make(map[string]string)
 			fmt.Printf("\n")
 			for _, ve := range blstruct.mustnothave.enabled {
-				fmt.Println(ve)
 				for key, val := range *sshList {
 					if commandset[val] == "" {
 						// TODO Must Not Have Enabled apply make some changes and move to cmdbuilders
-						commandset[key] = pkgmanlib.OmniTools["serviceisactive"] + ve
+						commandset[key] = serviceCommandBuilder(&ve, &val,"disable")
 					}
 				}
 				//for k, v := range commandset {
@@ -752,11 +729,10 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 			fmt.Printf("\n")
 			for _, ve := range blstruct.mustnothave.disabled {
 				if ve != "" {
-					fmt.Println(ve)
 					for key, val := range *sshList {
 						if commandset[val] == "" {
 							// TODO Must Not Have Disabled apply make some changes and move to cmdbuilders
-							commandset[key] = pkgmanlib.OmniTools["serviceisactive"] + ve
+							commandset[key] = serviceCommandBuilder(&ve, &val,"enable")
 						}
 					}
 					//for k, v := range commandset {
@@ -777,7 +753,6 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 			fmt.Printf("\n")
 			for _, ve := range blstruct.mustnothave.users {
 				if ve != "" {
-					fmt.Println(ve)
 					for key, val := range *sshList {
 						if commandset[val] == "" {
 							// TODO Must Not Have Users apply make some changes and move to cmdbuilders
@@ -814,14 +789,11 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 					for _, ve := range blstruct.mustnothave.rules.fwzones {
 						fmt.Printf("      %v\n", ve)
 						for i := range blstruct.mustnothave.rules.fwopen.ports {
-							fmt.Printf("%s  %s\n", blstruct.mustnothave.rules.fwopen.ports[i],
-								blstruct.mustnothave.rules.fwopen.protocols[i])
 							for key, val := range *sshList {
 								if commandset[val] == "" {
-									fwcheckcommand := firewallCommandBuilder(&blstruct.mustnothave.rules.fwopen.ports[i],
+									commandset[key] = firewallCommandBuilder(&blstruct.mustnothave.rules.fwopen.ports[i],
 										&blstruct.mustnothave.rules.fwopen.protocols[i],
 										"apply")
-									commandset[key] = fwcheckcommand
 								}
 							}
 							//for k, v := range commandset {
@@ -838,10 +810,9 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 							blstruct.mustnothave.rules.fwopen.protocols[i])
 						for key, val := range *sshList {
 							if commandset[val] == "" {
-								fwcheckcommand := firewallCommandBuilder(&blstruct.mustnothave.rules.fwopen.ports[i],
+								commandset[key] = firewallCommandBuilder(&blstruct.mustnothave.rules.fwopen.ports[i],
 									&blstruct.mustnothave.rules.fwopen.protocols[i],
 									"apply")
-								commandset[key] = fwcheckcommand
 							}
 						}
 						//for k, v := range commandset {
@@ -862,14 +833,11 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 					for _, ve := range blstruct.mustnothave.rules.fwzones {
 						fmt.Printf("      %v\n", ve)
 						for i := range blstruct.mustnothave.rules.fwclosed.ports {
-							fmt.Printf("%s  %s\n", blstruct.mustnothave.rules.fwclosed.ports[i],
-								blstruct.mustnothave.rules.fwclosed.protocols[i])
 							for key, val := range *sshList {
 								if commandset[val] == "" {
-									fwcheckcommand := firewallCommandBuilder(&blstruct.mustnothave.rules.fwclosed.ports[i],
+									commandset[key] = firewallCommandBuilder(&blstruct.mustnothave.rules.fwclosed.ports[i],
 										&blstruct.mustnothave.rules.fwclosed.protocols[i],
 										"apply")
-									commandset[key] = fwcheckcommand
 								}
 							}
 							//for k, v := range commandset {
@@ -882,14 +850,11 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 					}
 				} else {
 					for i := range blstruct.mustnothave.rules.fwclosed.ports {
-						fmt.Printf("%s  %s\n", blstruct.mustnothave.rules.fwclosed.ports[i],
-							blstruct.mustnothave.rules.fwclosed.protocols[i])
 						for key, val := range *sshList {
 							if commandset[val] == "" {
-								fwcheckcommand := firewallCommandBuilder(&blstruct.mustnothave.rules.fwclosed.ports[i],
+								commandset[key] = firewallCommandBuilder(&blstruct.mustnothave.rules.fwclosed.ports[i],
 									&blstruct.mustnothave.rules.fwclosed.protocols[i],
 									"apply")
-								commandset[key] = fwcheckcommand
 							}
 						}
 
@@ -936,7 +901,7 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 	}
 	return
 }
-
+// TODO remove fmt.printf's here... took a while to find them all
 func (blstruct *ParsedBaseline) applyFinals(sshList *map[string]string) {
 	// Final steps list
 	fmt.Println("Applying final instructions:")

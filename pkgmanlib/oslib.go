@@ -81,7 +81,8 @@ var PkgSearch = map[string]string{
 // OmniTools map of default tools installed on the majority of distros/OS'
 var OmniTools = map[string]string{
 	"serviceisactive": "systemctl is-active ",
-	"systemctl":       "systemctl ",
+	"systemctlenable":       "systemctl enable --now ",
+	"systemctldisable":       "systemctl disable --now ",
 	"userinfo":        "getent passwd ",
 	"statinfo":        "stat ",
 	"suminfo":         "sum ",

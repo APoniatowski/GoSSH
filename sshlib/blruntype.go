@@ -900,6 +900,7 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 
 			// TODO apply baseline
 			sshList := blstruct.applyOSExcludes(servergroupname, configs)
+			fmt.Println(sshList)
 			// establish ssh connections to servers via goroutines and maintain sessions
 
 			blstruct.applyPrereq(&sshList)

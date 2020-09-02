@@ -36,9 +36,9 @@ func (S *Switches) Switcher(pp ParsedPool, command string) (rtncommand string) {
 	return
 }
 
-func prereqURLFetch(url string) string {
+func prereqURLFetch(url *string) string {
 	fetchURLCommand := strings.Builder{}
-	stripSlashURL := strings.Split(url, "/")
+	stripSlashURL := strings.Split(*url, "/")
 	parsedURL := strings.Split(stripSlashURL[2], ".")
 	var checkURL string
 	if parsedURL[0] == "www" {
@@ -49,39 +49,39 @@ func prereqURLFetch(url string) string {
 	switch checkURL {
 	case "github":
 		fetchURLCommand.WriteString(pkgmanlib.OmniTools["git"])
-		fetchURLCommand.WriteString(url)
+		fetchURLCommand.WriteString(*url)
 	case "gitlab":
 		fetchURLCommand.WriteString(pkgmanlib.OmniTools["git"])
-		fetchURLCommand.WriteString(url)
+		fetchURLCommand.WriteString(*url)
 	case "bitbucket":
 		fetchURLCommand.WriteString(pkgmanlib.OmniTools["git"])
-		fetchURLCommand.WriteString(url)
+		fetchURLCommand.WriteString(*url)
 	case "gerrit":
 		fetchURLCommand.WriteString(pkgmanlib.OmniTools["git"])
-		fetchURLCommand.WriteString(url)
+		fetchURLCommand.WriteString(*url)
 	case "git":
 		fetchURLCommand.WriteString(pkgmanlib.OmniTools["git"])
-		fetchURLCommand.WriteString(url)
+		fetchURLCommand.WriteString(*url)
 	case "svn":
 		fetchURLCommand.WriteString(pkgmanlib.OmniTools["svn"])
-		fetchURLCommand.WriteString(url)
+		fetchURLCommand.WriteString(*url)
 	default:
 		fetchURLCommand.WriteString(pkgmanlib.OmniTools["curl"])
-		fetchURLCommand.WriteString(url)
+		fetchURLCommand.WriteString(*url)
 		fetchURLCommand.WriteString(" || ")
 		fetchURLCommand.WriteString(pkgmanlib.OmniTools["wget"])
-		fetchURLCommand.WriteString(url)
+		fetchURLCommand.WriteString(*url)
 	}
 	return fetchURLCommand.String()
 }
 
-func (remoteMount *filesremote) remoteFilesCommandBuilder(chosenOption,file string) string {
+func (remoteMount *filesremote) remoteFilesCommandBuilder(file *string,chosenOption string) string {
 	remoteMountCommand := strings.Builder{}
 	switch chosenOption {
 	case "check":
 		remoteMountCommand.WriteString("test")
 		remoteMountCommand.WriteString(remoteMount.dest)
-		remoteMountCommand.WriteString(file)
+		remoteMountCommand.WriteString(*file)
 		remoteMountCommand.WriteString(" && echo \"1\"")
 	case "apply":
 		remoteMountCommand.WriteString("mount -F ")
@@ -101,33 +101,21 @@ func (remoteMount *filesremote) remoteFilesCommandBuilder(chosenOption,file stri
 	return remoteMountCommand.String()
 }
 
-func serviceCommandBuilder(service *string, chosenOption,serviceOption,osOption string) string {
+func serviceCommandBuilder(service,osOption *string, serviceOption string) string {
 	serviceCommand := strings.Builder{}
-	switch chosenOption {
-	case "check":
-		switch serviceOption {
-		case "install":
-			serviceCommand.WriteString(pkgmanlib.PkgInstall[osOption] + *service)
-		case "uninstall":
-
-		case "enabled":
-
-		case "disabled":
-
-		default:
-		}
-	case "apply":
-		switch serviceOption {
-		case "install":
-			serviceCommand.WriteString("")
-		case "uninstall":
-
-		case "enabled":
-
-		case "disabled":
-
-		default:
-		}
+	switch serviceOption {
+	case "search":
+		serviceCommand.WriteString(pkgmanlib.PkgSearch[*osOption] + *service)
+	case "install":
+		serviceCommand.WriteString(pkgmanlib.PkgInstall[*osOption] + *service)
+	case "uninstall":
+		serviceCommand.WriteString(pkgmanlib.PkgUninstall[*osOption] + *service)
+	case "enable":
+		serviceCommand.WriteString(pkgmanlib.OmniTools["systemctlenable"] + *service)
+	case "disable":
+		serviceCommand.WriteString(pkgmanlib.OmniTools["systemctldisable"] + *service)
+	case "isactive":
+		serviceCommand.WriteString(pkgmanlib.OmniTools["serviceisactive"] + *service)
 	default:
 		serviceCommand.WriteString("")
 	}
