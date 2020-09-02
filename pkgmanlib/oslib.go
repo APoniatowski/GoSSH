@@ -94,6 +94,7 @@ var OmniTools = map[string]string{
 	"git":             "git clone ",
 	"svn":             "svn checkout ",
 	"md5sum": "md5sum ",
+	"test": "test -f ",
 }
 
 // Firewalld map of firewalld commands

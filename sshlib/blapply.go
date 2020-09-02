@@ -229,34 +229,27 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 				len(blstruct.prereq.files.remote.files) == 0 {
 				fmt.Printf("Skipping...\n")
 			} else {
-				fmt.Printf("\n")
-				if blstruct.prereq.files.remote.dest != "" {
-					fmt.Println(blstruct.prereq.files.remote.dest)
-				}
-				if len(blstruct.prereq.files.remote.files) != 0 {
-					for _, ve := range blstruct.prereq.files.remote.files {
-						fmt.Println(ve)
-						for key, val := range *sshList {
-							if commandset[val] == "" {
-								// TODO Prereq Mount Files apply make some changes and move to cmdbuilders
-								commandset[key] = pkgmanlib.OmniTools["suminfo"] + blstruct.prereq.files.local.dest
-								/*
-									-will need to find a better way to compare files and directories-
-									cat would kill memory, if its a large file or binary
-									sum only does files, not dirs
-									need to create for loop command if its a directory with md5sum
-								*/
+				var fileCheck filesremote
+				if blstruct.prereq.files.remote.src != "" {
+					if len(blstruct.prereq.files.remote.files) != 0 {
+						for _, ve := range blstruct.prereq.files.remote.files {
+							for key, val := range *sshList {
+								if commandset[val] == "" {
+									commandset[key] = fileCheck.remoteFilesCommandBuilder("apply", ve)
+								}
 							}
+							// TODO Prereq Mount Files apply
+							for k, v := range commandset {
+								fmt.Printf("%v   %v\n", k, v)
+							}
+							// send to channel
+							// wait for response
+							// diff the file/dir with the source
+							// display compliancy
 						}
-						for k, v := range commandset {
-							fmt.Printf("%v   %v\n", k, v)
-						}
-						// send to channel
-						// wait for response
-						// diff the file/dir with the source
-						// display compliancy
 					}
 				}
+				fmt.Printf("\n")
 			}
 			// prerequisite VCS instructions
 			fmt.Printf(" Prerequisite Files (via VCS): ")
@@ -267,16 +260,11 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 				fmt.Printf("\n")
 				if len(blstruct.prereq.vcs.urls) > 0 {
 					fmt.Println("VCS URL's to be cloned to the home directory:")
-					var vcsDirs string
 					for _, ve := range blstruct.prereq.vcs.urls {
-						fmt.Println(ve)
-						parseFile := strings.Split(ve, "/")
-						parsedFile := parseFile[len(parseFile)-1]
-						vcsDirs = vcsDirs + ve
 						for key, val := range *sshList {
 							if commandset[val] == "" {
 								// TODO Prereq VCS Files apply make some changes and move to cmdbuilders
-								commandset[key] = pkgmanlib.OmniTools["statinfo"] + parsedFile
+								commandset[key] = prereqURLFetch(ve)
 								/*
 									-will need to find a better way to compare files and directories-
 									ls the dir and check if it exists?

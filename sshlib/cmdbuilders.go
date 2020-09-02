@@ -75,13 +75,14 @@ func prereqURLFetch(url string) string {
 	return fetchURLCommand.String()
 }
 
-func (remoteMount *filesremote) remoteSourceFilesCommandBuilder(chosenOption string) string {
+func (remoteMount *filesremote) remoteFilesCommandBuilder(chosenOption,file string) string {
 	remoteMountCommand := strings.Builder{}
 	switch chosenOption {
 	case "check":
-		remoteMountCommand.WriteString("md5sum")
-		remoteMountCommand.WriteString(" ")
+		remoteMountCommand.WriteString("test")
 		remoteMountCommand.WriteString(remoteMount.dest)
+		remoteMountCommand.WriteString(file)
+		remoteMountCommand.WriteString(" && echo \"1\"")
 	case "apply":
 		remoteMountCommand.WriteString("mount -F ")
 		remoteMountCommand.WriteString(remoteMount.mounttype)

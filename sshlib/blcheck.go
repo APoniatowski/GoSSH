@@ -236,29 +236,27 @@ func (blstruct *ParsedBaseline) checkPrereqs(sshList *map[string]string) {
 				len(blstruct.prereq.files.remote.files) == 0 {
 				fmt.Printf("Skipping...\n")
 			} else {
-				fmt.Printf("\n")
+				var fileCheck filesremote
 				if blstruct.prereq.files.remote.src != "" {
-					srcChecksum := blstruct.prereq.files.remote
-					srcFile := srcChecksum.remoteSourceFilesCommandBuilder("check")
-				}
-				if len(blstruct.prereq.files.remote.files) != 0 {
-					for _, ve := range blstruct.prereq.files.remote.files {
-						for key, val := range *sshList {
-							if commandset[val] == "" {
-								// TODO Prereq Mount Files Checks make some changes and move to cmdbuilders
-								commandset[key] = pkgmanlib.OmniTools["suminfo"] + ve
-
+					if len(blstruct.prereq.files.remote.files) != 0 {
+						for _, ve := range blstruct.prereq.files.remote.files {
+							for key, val := range *sshList {
+								if commandset[val] == "" {
+									commandset[key] = fileCheck.remoteFilesCommandBuilder("check", ve)
+								}
 							}
+							// TODO Prereq Mount Files Checks
+							for k, v := range commandset {
+								fmt.Printf("%v   %v\n", k, v)
+							}
+							// send to channel
+							// wait for response
+							// diff the file/dir with the source
+							// display compliancy
 						}
-						for k, v := range commandset {
-							fmt.Printf("%v   %v\n", k, v)
-						}
-						// send to channel
-						// wait for response
-						// diff the file/dir with the source
-						// display compliancy
 					}
 				}
+				fmt.Printf("\n")
 			}
 			// prerequisite VCS instructions
 			fmt.Printf(" Prerequisite Files (via VCS): ")
