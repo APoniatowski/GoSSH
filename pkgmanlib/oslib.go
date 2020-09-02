@@ -81,6 +81,7 @@ var PkgSearch = map[string]string{
 // OmniTools map of default tools installed on the majority of distros/OS'
 var OmniTools = map[string]string{
 	"serviceisactive": "systemctl is-active ",
+	"systemctl":       "systemctl ",
 	"userinfo":        "getent passwd ",
 	"statinfo":        "stat ",
 	"suminfo":         "sum ",
@@ -93,8 +94,8 @@ var OmniTools = map[string]string{
 	"curl":            "curl ",
 	"git":             "git clone ",
 	"svn":             "svn checkout ",
-	"md5sum": "md5sum ",
-	"test": "test -f ",
+	"md5sum":          "md5sum ",
+	"test":            "test -f ",
 }
 
 // Firewalld map of firewalld commands

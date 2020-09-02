@@ -101,6 +101,39 @@ func (remoteMount *filesremote) remoteFilesCommandBuilder(chosenOption,file stri
 	return remoteMountCommand.String()
 }
 
+func serviceCommandBuilder(service *string, chosenOption,serviceOption,osOption string) string {
+	serviceCommand := strings.Builder{}
+	switch chosenOption {
+	case "check":
+		switch serviceOption {
+		case "install":
+			serviceCommand.WriteString(pkgmanlib.PkgInstall[osOption] + *service)
+		case "uninstall":
+
+		case "enabled":
+
+		case "disabled":
+
+		default:
+		}
+	case "apply":
+		switch serviceOption {
+		case "install":
+			serviceCommand.WriteString("")
+		case "uninstall":
+
+		case "enabled":
+
+		case "disabled":
+
+		default:
+		}
+	default:
+		serviceCommand.WriteString("")
+	}
+	return serviceCommand.String()
+}
+
 func firewallCommandBuilder(port, protocol *string, chosenOption string) string {
 	// TODO chang awk to grep and add another parameter for open/deny/closed/etc
 	fwCommand := strings.Builder{}

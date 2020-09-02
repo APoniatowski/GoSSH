@@ -546,10 +546,9 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) {
 								blstruct.musthave.rules.fwopen.protocols[i])
 							for key, val := range *sshList {
 								if commandset[val] == "" {
-									fwcheckcommand := firewallCommandBuilder(&blstruct.musthave.rules.fwopen.ports[i],
+									commandset[key] = firewallCommandBuilder(&blstruct.musthave.rules.fwopen.ports[i],
 										&blstruct.musthave.rules.fwopen.protocols[i],
 										"check")
-									commandset[key] = fwcheckcommand
 								}
 							}
 							//for k, v := range commandset {
@@ -566,10 +565,9 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) {
 							blstruct.musthave.rules.fwopen.protocols[i])
 						for key, val := range *sshList {
 							if commandset[val] == "" {
-								fwcheckcommand := firewallCommandBuilder(&blstruct.musthave.rules.fwopen.ports[i],
+								commandset[key] = firewallCommandBuilder(&blstruct.musthave.rules.fwopen.ports[i],
 									&blstruct.musthave.rules.fwopen.protocols[i],
 									"check")
-								commandset[key] = fwcheckcommand
 							}
 						}
 						//for k, v := range commandset {
@@ -594,10 +592,9 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) {
 								blstruct.musthave.rules.fwclosed.protocols[i])
 							for key, val := range *sshList {
 								if commandset[val] == "" {
-									fwcheckcommand := firewallCommandBuilder(&blstruct.musthave.rules.fwclosed.ports[i],
+									commandset[key] = firewallCommandBuilder(&blstruct.musthave.rules.fwclosed.ports[i],
 										&blstruct.musthave.rules.fwclosed.protocols[i],
 										"check")
-									commandset[key] = fwcheckcommand
 								}
 							}
 							//for k, v := range commandset {
@@ -614,10 +611,9 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) {
 							blstruct.musthave.rules.fwclosed.protocols[i])
 						for key, val := range *sshList {
 							if commandset[val] == "" {
-								fwcheckcommand := firewallCommandBuilder(&blstruct.musthave.rules.fwclosed.ports[i],
+								commandset[key] = firewallCommandBuilder(&blstruct.musthave.rules.fwclosed.ports[i],
 									&blstruct.musthave.rules.fwclosed.protocols[i],
 									"check")
-								commandset[key] = fwcheckcommand
 							}
 						}
 						//for k, v := range commandset {
@@ -739,7 +735,6 @@ func (blstruct *ParsedBaseline) checkMustNotHaves(sshList *map[string]string) {
 			commandset = make(map[string]string)
 			fmt.Printf("\n")
 			for _, ve := range blstruct.mustnothave.installed {
-				fmt.Println(ve)
 				for key, val := range *sshList {
 					if commandset[val] == "" {
 						// TODO Must Not Have Installed Checks make some changes and move to cmdbuilders
@@ -761,7 +756,6 @@ func (blstruct *ParsedBaseline) checkMustNotHaves(sshList *map[string]string) {
 			commandset = make(map[string]string)
 			fmt.Printf("\n")
 			for _, ve := range blstruct.mustnothave.enabled {
-				fmt.Println(ve)
 				for key, val := range *sshList {
 					if commandset[val] == "" {
 						// TODO Must Not Have Enabled Checks make some changes and move to cmdbuilders
@@ -785,7 +779,6 @@ func (blstruct *ParsedBaseline) checkMustNotHaves(sshList *map[string]string) {
 			fmt.Printf("\n")
 			for _, ve := range blstruct.mustnothave.disabled {
 				if ve != "" {
-					fmt.Println(ve)
 					for key, val := range *sshList {
 						if commandset[val] == "" {
 							// TODO Must Not Have Disabled Checks make some changes and move to cmdbuilders
@@ -810,7 +803,6 @@ func (blstruct *ParsedBaseline) checkMustNotHaves(sshList *map[string]string) {
 			fmt.Printf("\n")
 			for _, ve := range blstruct.mustnothave.users {
 				if ve != "" {
-					fmt.Println(ve)
 					for key, val := range *sshList {
 						if commandset[val] == "" {
 							// TODO Must Not Have Users Checks make some changes and move to cmdbuilders
@@ -847,14 +839,11 @@ func (blstruct *ParsedBaseline) checkMustNotHaves(sshList *map[string]string) {
 					for _, ve := range blstruct.mustnothave.rules.fwzones {
 						fmt.Printf("      %v\n", ve)
 						for i := range blstruct.mustnothave.rules.fwopen.ports {
-							fmt.Printf("%s  %s\n", blstruct.mustnothave.rules.fwopen.ports[i],
-								blstruct.mustnothave.rules.fwopen.protocols[i])
 							for key, val := range *sshList {
 								if commandset[val] == "" {
-									fwcheckcommand := firewallCommandBuilder(&blstruct.mustnothave.rules.fwopen.ports[i],
+									commandset[key] = firewallCommandBuilder(&blstruct.mustnothave.rules.fwopen.ports[i],
 										&blstruct.mustnothave.rules.fwopen.protocols[i],
 										"check")
-									commandset[key] = fwcheckcommand
 								}
 							}
 							//for k, v := range commandset {
@@ -867,14 +856,11 @@ func (blstruct *ParsedBaseline) checkMustNotHaves(sshList *map[string]string) {
 					}
 				} else {
 					for i := range blstruct.mustnothave.rules.fwopen.ports {
-						fmt.Printf("%s  %s\n", blstruct.mustnothave.rules.fwopen.ports[i],
-							blstruct.mustnothave.rules.fwopen.protocols[i])
 						for key, val := range *sshList {
 							if commandset[val] == "" {
-								fwcheckcommand := firewallCommandBuilder(&blstruct.mustnothave.rules.fwopen.ports[i],
+								commandset[key] = firewallCommandBuilder(&blstruct.mustnothave.rules.fwopen.ports[i],
 									&blstruct.mustnothave.rules.fwopen.protocols[i],
 									"check")
-								commandset[key] = fwcheckcommand
 							}
 						}
 						//for k, v := range commandset {
@@ -895,14 +881,11 @@ func (blstruct *ParsedBaseline) checkMustNotHaves(sshList *map[string]string) {
 					for _, ve := range blstruct.mustnothave.rules.fwzones {
 						fmt.Printf("      %v\n", ve)
 						for i := range blstruct.mustnothave.rules.fwclosed.ports {
-							fmt.Printf("%s  %s\n", blstruct.mustnothave.rules.fwclosed.ports[i],
-								blstruct.mustnothave.rules.fwclosed.protocols[i])
 							for key, val := range *sshList {
 								if commandset[val] == "" {
-									fwcheckcommand := firewallCommandBuilder(&blstruct.mustnothave.rules.fwclosed.ports[i],
+									commandset[key] = firewallCommandBuilder(&blstruct.mustnothave.rules.fwclosed.ports[i],
 										&blstruct.mustnothave.rules.fwclosed.protocols[i],
 										"check")
-									commandset[key] = fwcheckcommand
 								}
 							}
 							//for k, v := range commandset {
@@ -919,10 +902,9 @@ func (blstruct *ParsedBaseline) checkMustNotHaves(sshList *map[string]string) {
 							blstruct.mustnothave.rules.fwclosed.protocols[i])
 						for key, val := range *sshList {
 							if commandset[val] == "" {
-								fwcheckcommand := firewallCommandBuilder(&blstruct.mustnothave.rules.fwclosed.ports[i],
+								commandset[key] = firewallCommandBuilder(&blstruct.mustnothave.rules.fwclosed.ports[i],
 									&blstruct.mustnothave.rules.fwclosed.protocols[i],
 									"check")
-								commandset[key] = fwcheckcommand
 							}
 						}
 

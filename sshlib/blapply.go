@@ -317,11 +317,11 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 		if len(blstruct.musthave.installed) > 0 {
 			fmt.Printf("\n")
 			for _, ve := range blstruct.musthave.installed {
-				fmt.Println(ve)
 				for key, val := range *sshList {
 					if commandset[val] == "" {
 						// TODO Must Have Installed apply make some changes and move to cmdbuilders
-						commandset[key] = pkgmanlib.PkgSearch[val] + ve
+						// TODO Need to fix OS selection
+						commandset[key] = pkgmanlib.PkgInstall[val] + ve
 					}
 				}
 				//for k, v := range commandset {
@@ -344,7 +344,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 				for key, val := range *sshList {
 					if commandset[val] == "" {
 						// TODO Must Have Enabled apply make some changes and move to cmdbuilders
-						commandset[key] = pkgmanlib.OmniTools["serviceisactive"] + ve
+						commandset[key] = serviceCommandBuilder(&ve,"apply","enabled",val)
 					}
 				}
 				//for k, v := range commandset {
