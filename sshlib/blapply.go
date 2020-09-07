@@ -2,7 +2,6 @@ package sshlib
 
 import (
 	"fmt"
-	"os/exec"
 	"strings"
 
 	"github.com/APoniatowski/GoSSH/pkgmanlib"
@@ -154,7 +153,7 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 				for _, ve := range blstruct.prereq.tools {
 					for key, val := range *sshList {
 						if commandset[val] == "" {
-							commandset[key] = serviceCommandBuilder(&ve, &val,"install")
+							commandset[key] = serviceCommandBuilder(&ve, &val, "install")
 						}
 					}
 					// TODO Prereq Tools apply
@@ -235,7 +234,7 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 						for _, ve := range blstruct.prereq.files.remote.files {
 							for key, val := range *sshList {
 								if commandset[val] == "" {
-									commandset[key] = fileCheck.remoteFilesCommandBuilder(&ve,"apply")
+									commandset[key] = fileCheck.remoteFilesCommandBuilder(&ve, "apply")
 								}
 							}
 							// TODO Prereq Mount Files apply
@@ -258,13 +257,39 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 				fmt.Printf("Skipping...\n")
 			} else {
 				fmt.Printf("\n")
+				var parsedFile []string
 				if len(blstruct.prereq.vcs.urls) > 0 {
 					fmt.Println("VCS URL's to be cloned to the home directory:")
 					for _, ve := range blstruct.prereq.vcs.urls {
+						parseFile := strings.Split(ve, "/")
+						parsedFile = append(parsedFile, parseFile[len(parseFile)-1])
 						for key, val := range *sshList {
 							if commandset[val] == "" {
-								// TODO Prereq VCS Files apply make some changes and move to cmdbuilders
+								// TODO Prereq VCS Files apply
 								commandset[key] = prereqURLFetch(&ve)
+								/*
+									-will need to find a better way to compare files and directories-
+									ls the dir and check if it exists?
+									or use stat?
+									add home dir path?
+								*/
+							}
+						}
+						for k, v := range commandset {
+							fmt.Printf("%v   %v\n", k, v)
+						}
+						// send to channel
+						// wait for response
+						// diff the file/dir with the source
+						// display compliancy
+					}
+				}
+				if len(blstruct.prereq.vcs.execute) > 0 {
+					for _, ve := range blstruct.prereq.vcs.execute {
+						for key, val := range *sshList {
+							if commandset[val] == "" {
+								// TODO Prereq VCS execution
+								commandset[key] = ve
 								/*
 									-will need to find a better way to compare files and directories-
 									ls the dir and check if it exists?
@@ -320,7 +345,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 				for key, val := range *sshList {
 					if commandset[val] == "" {
 						// TODO Must Have Installed apply make some changes and move to cmdbuilders
-						commandset[key] = serviceCommandBuilder(&ve, &val,"install")
+						commandset[key] = serviceCommandBuilder(&ve, &val, "install")
 					}
 				}
 				//for k, v := range commandset {
@@ -342,7 +367,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 				for key, val := range *sshList {
 					if commandset[val] == "" {
 						// TODO Must Have Enabled apply
-						commandset[key] = serviceCommandBuilder(&ve, &val,"enable")
+						commandset[key] = serviceCommandBuilder(&ve, &val, "enable")
 					}
 				}
 				//for k, v := range commandset {
@@ -365,7 +390,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 					fmt.Printf("\n")
 					for key, val := range *sshList {
 						if commandset[val] == "" {
-							commandset[key] = serviceCommandBuilder(&ve, &val,"disable")
+							commandset[key] = serviceCommandBuilder(&ve, &val, "disable")
 						}
 					}
 					// TODO Must Have Disabled apply
@@ -390,33 +415,22 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 				fmt.Printf("Skipping...\n")
 			} else {
 				commandset = make(map[string]string)
-				var catfileI interface{}
 				fmt.Printf("\n      %s:\n", ke)
-				for _, val := range ve.source {
-					fmt.Printf("Baseline File (Source): %s\n", val)
-					catfileI = exec.Command(pkgmanlib.OmniTools["catfile"] + val)
-				}
-				for _, val := range ve.destination {
-					fmt.Printf("Baseline File (Destination): %s\n", val)
-					for dkey, dval := range *sshList {
-						if commandset[dval] == "" {
-							// TODO Config apply make some changes and move to cmdbuilders
-							commandset[dkey] = pkgmanlib.OmniTools["catfile"] + val
-						}
+				if len(ve.source) == len(ve.destination) {
+					for i := range ve.source {
+						fmt.Println(ve.source[i])
+						fmt.Println(ve.destination[i])
+						// TODO Transfer config files via ssh
+						// compare sourcefile with result from servers and see if they are == or !=
+						// iterate through sshList and create command for each server
+						// pass info to ssh session and waiting for a response
 					}
+				} else {
+					fmt.Printf("Skipping... Config mismatch in baseline file\n")
 				}
-				for k, v := range commandset {
-					fmt.Printf("SERVER: %v   COMMAND: %v\n", k, v)
-					if catfileI != "" {
-						fmt.Println(catfileI)
-					}
-				}
-				// compare sourcefile with result from servers and see if they are == or !=
-
-				// iterate through sshList and create command for each server
-				// pass info to ssh session and waiting for a response
 			}
 		}
+
 		// MH Users
 		fmt.Printf(" Users Checklist: ")
 		for ke, ve := range blstruct.musthave.users.users {
@@ -688,7 +702,7 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 				for key, val := range *sshList {
 					if commandset[val] == "" {
 						// TODO Must Not Have Installed apply make some changes and move to cmdbuilders
-						commandset[key] = serviceCommandBuilder(&ve, &val,"uninstall")
+						commandset[key] = serviceCommandBuilder(&ve, &val, "uninstall")
 					}
 				}
 				//for k, v := range commandset {
@@ -709,7 +723,7 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 				for key, val := range *sshList {
 					if commandset[val] == "" {
 						// TODO Must Not Have Enabled apply make some changes and move to cmdbuilders
-						commandset[key] = serviceCommandBuilder(&ve, &val,"disable")
+						commandset[key] = serviceCommandBuilder(&ve, &val, "disable")
 					}
 				}
 				//for k, v := range commandset {
@@ -732,7 +746,7 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 					for key, val := range *sshList {
 						if commandset[val] == "" {
 							// TODO Must Not Have Disabled apply make some changes and move to cmdbuilders
-							commandset[key] = serviceCommandBuilder(&ve, &val,"enable")
+							commandset[key] = serviceCommandBuilder(&ve, &val, "enable")
 						}
 					}
 					//for k, v := range commandset {
@@ -901,6 +915,7 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 	}
 	return
 }
+
 // TODO remove fmt.printf's here... took a while to find them all
 func (blstruct *ParsedBaseline) applyFinals(sshList *map[string]string) {
 	// Final steps list

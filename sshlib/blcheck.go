@@ -401,14 +401,12 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) {
 				fmt.Printf("Skipping...\n")
 			} else {
 				commandset = make(map[string]string)
-				var catfileI interface{}
+				var catFileSource []interface{}
 				fmt.Printf("\n      %s:\n", ke)
 				for _, val := range ve.source {
-					fmt.Printf("Baseline File (Source): %s\n", val)
-					catfileI = exec.Command(pkgmanlib.OmniTools["catfile"] + val)
+					catFileSource = append(catFileSource, exec.Command(pkgmanlib.OmniTools["catfile"] + val))
 				}
 				for _, val := range ve.destination {
-					fmt.Printf("Baseline File (Destination): %s\n", val)
 					for dkey, dval := range *sshList {
 						if commandset[dval] == "" {
 							// TODO Config Checks make some changes and move to cmdbuilders
@@ -418,8 +416,8 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) {
 				}
 				for k, v := range commandset {
 					fmt.Printf("SERVER: %v   COMMAND: %v\n", k, v)
-					if catfileI != "" {
-						fmt.Println(catfileI)
+					if len(catFileSource) == 0 {
+						fmt.Println(catFileSource)
 					}
 				}
 				// compare sourcefile with result from servers and see if they are == or !=
