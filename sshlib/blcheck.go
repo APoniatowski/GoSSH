@@ -2,6 +2,7 @@ package sshlib
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os/exec"
 	"strings"
 
@@ -401,27 +402,30 @@ func (blstruct *ParsedBaseline) checkMustHaves(sshList *map[string]string) {
 				fmt.Printf("Skipping...\n")
 			} else {
 				commandset = make(map[string]string)
-				var catFileSource []interface{}
+				var readFileSource []string
 				fmt.Printf("\n      %s:\n", ke)
 				for _, val := range ve.source {
-					catFileSource = append(catFileSource, exec.Command(pkgmanlib.OmniTools["catfile"] + val))
+					byteSource, err := ioutil.ReadFile(val)
+					if err != nil {
+						fmt.Println(err)
+					}
+					readFileSource = append(readFileSource, string(byteSource))
 				}
 				for _, val := range ve.destination {
 					for dkey, dval := range *sshList {
 						if commandset[dval] == "" {
-							// TODO Config Checks make some changes and move to cmdbuilders
 							commandset[dkey] = pkgmanlib.OmniTools["catfile"] + val
 						}
 					}
 				}
+				// TODO Config Checks
 				for k, v := range commandset {
 					fmt.Printf("SERVER: %v   COMMAND: %v\n", k, v)
-					if len(catFileSource) == 0 {
-						fmt.Println(catFileSource)
+					if len(readFileSource) == 0 {
+						fmt.Println(readFileSource)
 					}
 				}
 				// compare sourcefile with result from servers and see if they are == or !=
-
 				// iterate through sshList and create command for each server
 				// pass info to ssh session and waiting for a response
 			}

@@ -407,7 +407,6 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 		} else {
 			fmt.Printf("Skipping...\n")
 		}
-
 		// MH configured
 		fmt.Printf(" Configured Checklist: ")
 		for ke, ve := range blstruct.musthave.configured.services {
@@ -421,16 +420,13 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 						fmt.Println(ve.source[i])
 						fmt.Println(ve.destination[i])
 						// TODO Transfer config files via ssh
-						// compare sourcefile with result from servers and see if they are == or !=
-						// iterate through sshList and create command for each server
-						// pass info to ssh session and waiting for a response
+						// pass source and destination to channel, to transfer the file
 					}
 				} else {
 					fmt.Printf("Skipping... Config mismatch in baseline file\n")
 				}
 			}
 		}
-
 		// MH Users
 		fmt.Printf(" Users Checklist: ")
 		for ke, ve := range blstruct.musthave.users.users {
@@ -447,7 +443,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 					fmt.Printf("\n") // Here it will only check if the user exists
 					for key, val := range *sshList {
 						if commandset[val] == "" {
-							commandset[key] = pkgmanlib.OmniTools["userinfo"] + ke
+							commandset[key] = pkgmanlib.OmniTools["useradd"] + ke
 						}
 					}
 					//for k, v := range commandset {
