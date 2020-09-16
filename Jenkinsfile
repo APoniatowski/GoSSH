@@ -3,7 +3,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        git(url: 'https://github.com/APoniatowski/GoSSH', branch: 'Dev')
+        git(url: 'https://github.com/APoniatowski/GoSSH', branch: 'v2')
       }
     }
 
