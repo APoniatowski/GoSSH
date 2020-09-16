@@ -267,12 +267,6 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 							if commandset[val] == "" {
 								// TODO Prereq VCS Files apply
 								commandset[key] = prereqURLFetch(&ve)
-								/*
-									-will need to find a better way to compare files and directories-
-									ls the dir and check if it exists?
-									or use stat?
-									add home dir path?
-								*/
 							}
 						}
 						for k, v := range commandset {
@@ -280,8 +274,6 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 						}
 						// send to channel
 						// wait for response
-						// diff the file/dir with the source
-						// display compliancy
 					}
 				}
 				if len(blstruct.prereq.vcs.execute) > 0 {
@@ -290,12 +282,6 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 							if commandset[val] == "" {
 								// TODO Prereq VCS execution
 								commandset[key] = ve
-								/*
-									-will need to find a better way to compare files and directories-
-									ls the dir and check if it exists?
-									or use stat?
-									add home dir path?
-								*/
 							}
 						}
 						for k, v := range commandset {
@@ -303,8 +289,6 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 						}
 						// send to channel
 						// wait for response
-						// diff the file/dir with the source
-						// display compliancy
 					}
 				}
 			}
@@ -352,7 +336,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 				//	fmt.Printf("%v   %v\n", k, v)
 				//}
 				// send to channel
-				// wait for response and display compliancy
+				// wait for response
 			}
 		} else {
 			fmt.Printf("Skipping...\n")
@@ -374,8 +358,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 				//	fmt.Printf("%v   %v\n", k, v)
 				//}
 				// send to channel
-				// wait for response and display compliancy
-				// check if service is active
+				// wait for response
 			}
 		} else {
 			fmt.Printf("Skipping...\n")
@@ -398,8 +381,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 					//	fmt.Printf("%v   %v\n", k, v)
 					//}
 					// send to channel
-					// wait for response and display compliancy
-					// check if service is inactive
+					// wait for response
 				} else {
 					fmt.Printf("Skipping...\n")
 				}
@@ -440,7 +422,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 					ve.home == "" &&
 					ve.shell == "" &&
 					!ve.sudoer {
-					fmt.Printf("\n") // Here it will only check if the user exists
+					fmt.Printf("\n")
 					for key, val := range *sshList {
 						if commandset[val] == "" {
 							commandset[key] = pkgmanlib.OmniTools["useradd"] + ke
@@ -454,7 +436,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 					for key, val := range *sshList {
 						if commandset[val] == "" {
 							// TODO User apply make some changes and move to cmdbuilders
-							commandset[key] = pkgmanlib.OmniTools["userinfo"] + ke
+							commandset[key] = ve.userManagementCommandBuilder(ke, "add")
 						}
 					}
 					infoAvailable = true
@@ -465,11 +447,6 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 				if infoAvailable {
 					// TODO  forgot what needs to be done here... will get back to this later
 				}
-
-				// iterate through sshList and create command for each server
-				// pass info to ssh session and waiting for a response
-				// process the info received available info
-
 				// fmt.Printf("   Groups: ")
 				// if len(ve.groups) > 0 {
 				// 	for _, val := range ve.groups {

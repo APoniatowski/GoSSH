@@ -75,7 +75,7 @@ func prereqURLFetch(url *string) string {
 	return fetchURLCommand.String()
 }
 
-func (remoteMount *filesremote) remoteFilesCommandBuilder(file *string,chosenOption string) string {
+func (remoteMount *filesremote) remoteFilesCommandBuilder(file *string, chosenOption string) string {
 	remoteMountCommand := strings.Builder{}
 	switch chosenOption {
 	case "check":
@@ -101,7 +101,7 @@ func (remoteMount *filesremote) remoteFilesCommandBuilder(file *string,chosenOpt
 	return remoteMountCommand.String()
 }
 
-func serviceCommandBuilder(service,osOption *string, serviceOption string) string {
+func serviceCommandBuilder(service, osOption *string, serviceOption string) string {
 	serviceCommand := strings.Builder{}
 	switch serviceOption {
 	case "search":
@@ -120,6 +120,45 @@ func serviceCommandBuilder(service,osOption *string, serviceOption string) strin
 		serviceCommand.WriteString("")
 	}
 	return serviceCommand.String()
+}
+
+func (userDetails *musthaveusersstruct) userManagementCommandBuilder(user, chosenOption string) string {
+	userCommand := strings.Builder{}
+	switch chosenOption {
+	case "add":
+		userCommand.WriteString(pkgmanlib.OmniTools["useradd"])
+		userCommand.WriteString(" -g users ")
+		if len(userDetails.groups) != 0 {
+			userCommand.WriteString(" -G ")
+			for comma, group := range userDetails.groups {
+				userCommand.WriteString(group)
+				if comma != len(userDetails.groups) -1 {
+					userCommand.WriteString(",")
+				}
+			}
+			if userDetails.sudoer != false {
+				userCommand.WriteString(",")
+				userCommand.WriteString("wheel")
+			} else {
+			}
+		}
+		if userDetails.home != "" {
+			userCommand.WriteString(" -d ")
+			userCommand.WriteString(userDetails.home)
+		}
+		if userDetails.shell != "" {
+			userCommand.WriteString(" -s ")
+			userCommand.WriteString(userDetails.shell)
+		}
+		userCommand.WriteString(" -p ")
+		// TODO password generator
+		userCommand.WriteString(user)
+	case "remove":
+
+	default:
+		userCommand.WriteString("")
+	}
+	return userCommand.String()
 }
 
 func firewallCommandBuilder(port, protocol *string, chosenOption string) string {
