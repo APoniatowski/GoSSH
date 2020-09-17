@@ -85,6 +85,7 @@ var OmniTools = map[string]string{
 	"systemctldisable": "systemctl disable --now ",
 	"userinfo":         "getent passwd ",
 	"useradd":          "useradd ",
+	"userdel":          "userdel -r ",
 	"statinfo":         "stat ",
 	"suminfo":          "sum ",
 	"catfile":          "cat ",

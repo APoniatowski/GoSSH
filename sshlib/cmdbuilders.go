@@ -1,7 +1,10 @@
 package sshlib
 
 import (
+	"fmt"
 	"github.com/APoniatowski/GoSSH/pkgmanlib"
+	"io/ioutil"
+	"math/rand"
 	"strings"
 )
 
@@ -84,12 +87,14 @@ func (remoteMount *filesremote) remoteFilesCommandBuilder(file *string, chosenOp
 		remoteMountCommand.WriteString(*file)
 		remoteMountCommand.WriteString(" && echo \"1\"")
 	case "apply":
-		remoteMountCommand.WriteString("mount -F ")
+		remoteMountCommand.WriteString(pkgmanlib.OmniTools["mount"] + "-F ")
 		remoteMountCommand.WriteString(remoteMount.mounttype)
-		remoteMountCommand.WriteString(" -o user=")
-		remoteMountCommand.WriteString(remoteMount.username)
-		remoteMountCommand.WriteString(",pass=")
-		remoteMountCommand.WriteString(remoteMount.pwd)
+		if remoteMount.username != "" && remoteMount.pwd != "" {
+			remoteMountCommand.WriteString(" -o user=")
+			remoteMountCommand.WriteString(remoteMount.username)
+			remoteMountCommand.WriteString(",pass=")
+			remoteMountCommand.WriteString(remoteMount.pwd)
+		}
 		remoteMountCommand.WriteString(" ")
 		remoteMountCommand.WriteString(remoteMount.address)
 		remoteMountCommand.WriteString(":")
@@ -122,7 +127,7 @@ func serviceCommandBuilder(service, osOption *string, serviceOption string) stri
 	return serviceCommand.String()
 }
 
-func (userDetails *musthaveusersstruct) userManagementCommandBuilder(user, chosenOption string) string {
+func (userDetails *musthaveusersstruct) userManagementCommandBuilder(user *string, chosenOption string) string {
 	userCommand := strings.Builder{}
 	switch chosenOption {
 	case "add":
@@ -137,24 +142,25 @@ func (userDetails *musthaveusersstruct) userManagementCommandBuilder(user, chose
 				}
 			}
 			if userDetails.sudoer != false {
-				userCommand.WriteString(",")
-				userCommand.WriteString("wheel")
+				userCommand.WriteString(",wheel")
 			} else {
 			}
 		}
 		if userDetails.home != "" {
-			userCommand.WriteString(" -d ")
-			userCommand.WriteString(userDetails.home)
+			userCommand.WriteString(" -d " + userDetails.home)
 		}
 		if userDetails.shell != "" {
-			userCommand.WriteString(" -s ")
-			userCommand.WriteString(userDetails.shell)
+			userCommand.WriteString(" -s " + userDetails.shell)
 		}
-		userCommand.WriteString(" -p ")
-		// TODO password generator
-		userCommand.WriteString(user)
+		password := randomStringGenerator(8)
+		userCommand.WriteString(" -p " + "\"" + password + "\" " + *user)
+		err := ioutil.WriteFile("",[]byte(password),0644)
+		if err != nil {
+			fmt.Printf("Error writing generated password to file, outputting now -> %s\n", password)
+		}
 	case "remove":
-
+		userCommand.WriteString("killall -u " + *user + ";")
+		userCommand.WriteString(pkgmanlib.OmniTools["userdel"] + *user)
 	default:
 		userCommand.WriteString("")
 	}
@@ -205,9 +211,34 @@ func (mountDetails *mountdetails) mountCommandBuilder(chosenOption string) strin
 		mountCommand.WriteString(" defaults 0 0") // Default mounting details
 		mountCommand.WriteString("' >> /etc/fstab;")
 		mountCommand.WriteString(pkgmanlib.OmniTools["mount"] + mountDetails.dest)
+		mountCommand.WriteString(" && ")
+		mountCommand.WriteString(pkgmanlib.OmniTools["mount"] + "-F ")
+		mountCommand.WriteString(mountDetails.mounttype)
+		if mountDetails.username != "" && mountDetails.pwd != "" {
+			mountCommand.WriteString(" -o user=")
+			mountCommand.WriteString(mountDetails.username)
+			mountCommand.WriteString(",pass=")
+			mountCommand.WriteString(mountDetails.pwd)
+		}
+		mountCommand.WriteString(" ")
+		mountCommand.WriteString(mountDetails.address)
+		mountCommand.WriteString(":")
+		mountCommand.WriteString(mountDetails.src)
+		mountCommand.WriteString(" ")
+		mountCommand.WriteString(mountDetails.dest)
 	default:
 		mountCommand.WriteString("")
 	}
 
 	return mountCommand.String()
+}
+
+func randomStringGenerator(strLength int) string {
+	letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*(){}<>?")
+
+	str := make([]rune, strLength)
+	for i := range str {
+		str[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(str)
 }

@@ -416,7 +416,6 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 				fmt.Printf("Skipping...\n")
 			} else {
 				commandset = make(map[string]string)
-				var infoAvailable bool
 				fmt.Printf("\n      %s:\n", ke)
 				if len(ve.groups) == 0 &&
 					ve.home == "" &&
@@ -431,21 +430,16 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 					//for k, v := range commandset {
 					//	fmt.Printf("%v   %v\n", k, v)
 					//}
-					infoAvailable = false
 				} else {
 					for key, val := range *sshList {
 						if commandset[val] == "" {
-							// TODO User apply make some changes and move to cmdbuilders
-							commandset[key] = ve.userManagementCommandBuilder(ke, "add")
+							commandset[key] = ve.userManagementCommandBuilder(&ke, "add")
 						}
 					}
-					infoAvailable = true
+					// TODO User apply
 					//for k, v := range commandset {
 					//	fmt.Printf("%v   %v\n", k, v)
 					//}
-				}
-				if infoAvailable {
-					// TODO  forgot what needs to be done here... will get back to this later
 				}
 				// fmt.Printf("   Groups: ")
 				// if len(ve.groups) > 0 {

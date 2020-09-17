@@ -84,14 +84,14 @@ Example - Setup webserver:            # this will be the name of a baseline that
         Import: /path/to/policy     # can be left blank, or import a policy stored locally, and apply it remotely
         Reboot: true                # If a reboot is required for policy changes. Especially disabling selinux/apparmor
       Rules:                        # Firewall rules
-        Open:                       # open ports and which protocol to use. the order must match port to protocol
+        Open:                       # open/allowed ports and which protocol to use. the order must match port to protocol
           Ports:
             - 80
             - 443
           Protocols:
             - tcp
             - tcp udp               # a space between them will add both
-        Closed:
+        Closed:                     # closed/denied ports and which protocol to use. the order must match port to protocol
           Ports:
             - 8080
           Protocols:
@@ -102,8 +102,8 @@ Example - Setup webserver:            # this will be the name of a baseline that
         Mount 1:                    # name your mount in this config
           Type: nfs
           Address: 1.2.3.4
-          Username: nfsuser         # leave blank if or remove, not needed
-          Password: nfspassword     # leave blank if or remove, not needed
+          Username: nfsuser         # leave blank if not needed
+          Password: nfspassword     # leave blank if not needed
           Source: /path/from/
           Destination: /path/to/
         Mount 2:                    # name your mount in this config
