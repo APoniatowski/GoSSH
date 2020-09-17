@@ -18,7 +18,7 @@ pipeline {
 
     stage('Build') {
       parallel {
-        stage('Build') {
+        stage('Linux') {
           steps {
             echo 'Compiling GoSSH - Linux'
             sh 'GOOS=linux go build -v'
