@@ -903,16 +903,21 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 			fmt.Println(sshList)
 			// establish ssh connections to servers via goroutines and maintain sessions
 
+			var rebootBool bool
 			blstruct.applyPrereq(&sshList)
 			// commandset via channel to servers and wait for it to complete
-			blstruct.applyMustHaves(&sshList)
+			blstruct.applyMustHaves(&sshList,&rebootBool)
 			// commandset via channel to servers and wait for it to complete
 			blstruct.applyMustNotHaves(&sshList)
 			// commandset via channel to servers and wait for it to complete
 			blstruct.applyFinals(&sshList)
 			// commandset via channel to servers and wait for it to complete
-
 			// once all checks are completed pass disconnect via channels to open sessions
+			if rebootBool {
+				// send reboot command to servers
+			} else {
+				// close connections without rebooting
+			}
 		}
 	}
 }

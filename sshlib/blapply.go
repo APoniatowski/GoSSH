@@ -299,7 +299,7 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 	return
 }
 
-func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
+func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string, rebootBool *bool) {
 	commandset := make(map[string]string)
 	// MH list
 	fmt.Printf("Must Have Checklist: ")
@@ -462,34 +462,22 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string) {
 			fmt.Printf("Skipping...\n")
 		} else {
 			commandset = make(map[string]string)
+			fmt.Printf("   Import: ")
+			for key, val := range *sshList {
+				if commandset[val] == "" {
+					// TODO Must Have Policies apply make some changes and move to cmdbuilders
+					commandset[key] = blstruct.musthave.policies.policyCommandBuilder("apply")
+				}
+			}
+			if blstruct.musthave.policies.polreboot {
+				*rebootBool = true
+			}
+			//for k, v := range commandset {
+			//	fmt.Printf("%v   %v\n", k, v)
+			//}
+			// Send command to channel
+
 			fmt.Printf("\n")
-			if blstruct.musthave.policies.polstatus != "" {
-				fmt.Printf("   Status: %s\n", blstruct.musthave.policies.polstatus)
-				for key, val := range *sshList {
-					if commandset[val] == "" {
-						commandset[key] = pkgmanlib.OmniTools["policystatus"]
-					}
-				}
-				//for k, v := range commandset {
-				//	fmt.Printf("%v   %v\n", k, v)
-				//}
-				// iterate through sshList and create command for each server
-				// pass info to ssh session and waiting for a response
-			}
-			if blstruct.musthave.policies.polimport != "" {
-				fmt.Printf("   Import: %s\n", blstruct.musthave.policies.polimport)
-				for key, val := range *sshList {
-					if commandset[val] == "" {
-						// TODO Must Have Policies apply make some changes and move to cmdbuilders
-						commandset[key] = pkgmanlib.OmniTools["policycheck"]
-					}
-				}
-				//for k, v := range commandset {
-				//	fmt.Printf("%v   %v\n", k, v)
-				//}
-				// iterate through sshList and create command for each server
-				// pass info to ssh session and waiting for a response
-			}
 		}
 		// MH Firewall rules
 		fmt.Printf(" Firewall Checklist: ")

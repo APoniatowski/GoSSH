@@ -52,6 +52,7 @@ Example - Setup webserver:            # this will be the name of a baseline that
         - openssh
         - rsyslog                   # it does not need to match the installed. it will check if it is running and enabled
       Disabled:                     # Beware of conflicts in Must-Not-Have and Enabled.
+        - nginx
       Configured:                   # services with config files that need to be used. these will be copied to their destinations
         httpd:
           Source:
@@ -81,7 +82,7 @@ Example - Setup webserver:            # this will be the name of a baseline that
           Sudoer: true
       Policies:                     # selinux/apparmor policies
         Status: Enforced            # or apparmor equivalent (enforced/complains/disabled), and that will be applied
-        Import: /path/to/policy     # can be left blank, or import a policy stored locally, and apply it remotely
+        Import: /path/to/policy     # can be left blank, or import a policy/module stored locally, and apply it remotely
         Reboot: true                # If a reboot is required for policy changes. Especially disabling selinux/apparmor
       Rules:                        # Firewall rules
         Open:                       # open/allowed ports and which protocol to use. the order must match port to protocol

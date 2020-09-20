@@ -167,6 +167,20 @@ func (userDetails *musthaveusersstruct) userManagementCommandBuilder(user *strin
 	return userCommand.String()
 }
 
+func (policies *musthavepolicies)policyCommandBuilder(chosenOption string) string {
+	policiesCommand := strings.Builder{}
+	switch chosenOption {
+	case "check":
+		policiesCommand.WriteString("")
+	case "apply":
+		policiesCommand.WriteString("")
+	default:
+		policiesCommand.WriteString("")
+	}
+
+	return policiesCommand.String()
+}
+
 func firewallCommandBuilder(port, protocol *string, chosenOption string) string {
 	// TODO chang awk to grep and add another parameter for open/deny/closed/etc
 	fwCommand := strings.Builder{}
@@ -234,7 +248,7 @@ func (mountDetails *mountdetails) mountCommandBuilder(chosenOption string) strin
 }
 
 func randomStringGenerator(strLength int) string {
-	letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*(){}<>?")
+	letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-=!@#$%^&*")
 
 	str := make([]rune, strLength)
 	for i := range str {
