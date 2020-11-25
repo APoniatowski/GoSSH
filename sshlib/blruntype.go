@@ -137,7 +137,7 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 											} else {
 												extrablValues, ok := blItem.Value.(yaml.MapSlice)
 												if !ok {
-													fmt.Println("3 Error parsing baseline. Please check the baseline you specified or generate a template")
+													fmt.Println("Error parsing baseline. Please check the baseline you specified or generate a template")
 												}
 												var nextblStep yaml.MapItem
 												for _, nextblStep = range extrablValues {
@@ -906,11 +906,11 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 			var rebootBool bool
 			blstruct.applyPrereq(&sshList)
 			// commandset via channel to servers and wait for it to complete
-			blstruct.applyMustHaves(&sshList,&rebootBool)
+			blstruct.applyMustHaves(&sshList, &rebootBool)
 			// commandset via channel to servers and wait for it to complete
 			blstruct.applyMustNotHaves(&sshList)
 			// commandset via channel to servers and wait for it to complete
-			blstruct.applyFinals(&sshList)
+			blstruct.applyFinals(&sshList, &rebootBool)
 			// commandset via channel to servers and wait for it to complete
 			// once all checks are completed pass disconnect via channels to open sessions
 			if rebootBool {

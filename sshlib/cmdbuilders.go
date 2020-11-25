@@ -2,10 +2,11 @@ package sshlib
 
 import (
 	"fmt"
-	"github.com/APoniatowski/GoSSH/pkgmanlib"
 	"io/ioutil"
 	"math/rand"
 	"strings"
+
+	"github.com/APoniatowski/GoSSH/pkgmanlib"
 )
 
 // Switches For checking what CLI option was used and run the appropriate functions
@@ -129,7 +130,9 @@ func serviceCommandBuilder(service, osOption *string, serviceOption string) stri
 
 func (userDetails *musthaveusersstruct) userManagementCommandBuilder(user *string, chosenOption string) string {
 	userCommand := strings.Builder{}
-	switch chosenOption {
+	switch chosenOption { // TODO add "check" here later
+	case "check":
+		userCommand.WriteString(pkgmanlib.OmniTools["userinfo"] + *user)
 	case "add":
 		userCommand.WriteString(pkgmanlib.OmniTools["useradd"])
 		userCommand.WriteString(" -g users ")
@@ -137,7 +140,7 @@ func (userDetails *musthaveusersstruct) userManagementCommandBuilder(user *strin
 			userCommand.WriteString(" -G ")
 			for comma, group := range userDetails.groups {
 				userCommand.WriteString(group)
-				if comma != len(userDetails.groups) -1 {
+				if comma != len(userDetails.groups)-1 {
 					userCommand.WriteString(",")
 				}
 			}
@@ -154,7 +157,7 @@ func (userDetails *musthaveusersstruct) userManagementCommandBuilder(user *strin
 		}
 		password := randomStringGenerator(8)
 		userCommand.WriteString(" -p " + "\"" + password + "\" " + *user)
-		err := ioutil.WriteFile("",[]byte(password),0644)
+		err := ioutil.WriteFile("./config/passwords/"+*user, []byte(password), 0644)
 		if err != nil {
 			fmt.Printf("Error writing generated password to file, outputting now -> %s\n", password)
 		}
@@ -167,7 +170,7 @@ func (userDetails *musthaveusersstruct) userManagementCommandBuilder(user *strin
 	return userCommand.String()
 }
 
-func (policies *musthavepolicies)policyCommandBuilder(chosenOption string) string {
+func (policies *musthavepolicies) policyCommandBuilder(chosenOption string) string {
 	policiesCommand := strings.Builder{}
 	switch chosenOption {
 	case "check":
@@ -181,20 +184,21 @@ func (policies *musthavepolicies)policyCommandBuilder(chosenOption string) strin
 	return policiesCommand.String()
 }
 
-func firewallCommandBuilder(port, protocol *string, chosenOption string) string {
-	// TODO chang awk to grep and add another parameter for open/deny/closed/etc
+func firewallCommandBuilder(port, protocol, zone *string, chosenOption string) string {
+	// TODO chang awk to grep and add another parameter for open/deny/closed/etc and add another option for open and closed rules
 	fwCommand := strings.Builder{}
+	const orOperator string = " || "
 	switch chosenOption {
 	case "check":
 		fwCommand.WriteString("{ ")
 		fwCommand.WriteString(pkgmanlib.Firewalld["list"])
-		fwCommand.WriteString(" || ")
+		fwCommand.WriteString(orOperator)
 		fwCommand.WriteString(pkgmanlib.Ufw["list"])
-		fwCommand.WriteString(" || ")
+		fwCommand.WriteString(orOperator)
 		fwCommand.WriteString(pkgmanlib.Iptables["list"])
-		fwCommand.WriteString(" || ")
+		fwCommand.WriteString(orOperator)
 		fwCommand.WriteString(pkgmanlib.Nftables["list"])
-		fwCommand.WriteString(" || ")
+		fwCommand.WriteString(orOperator)
 		fwCommand.WriteString(pkgmanlib.PfFirewall["list"])
 		fwCommand.WriteString(" } ")
 		fwCommand.WriteString(" > ")
@@ -202,7 +206,13 @@ func firewallCommandBuilder(port, protocol *string, chosenOption string) string 
 		fwCommand.WriteString("'/" + *port + "/")
 		fwCommand.WriteString(" && ")
 		fwCommand.WriteString("'/" + *protocol + "/'")
-	case "apply":
+	case "apply-open":
+
+	case "apply-closed":
+
+	case "remove-open":
+
+	case "remove-closed":
 
 	default:
 		fwCommand.WriteString("")

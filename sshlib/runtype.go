@@ -36,7 +36,7 @@ func RunGroups(configs *yaml.MapSlice, command *string) {
 			pp.keypath = serverValue[3].Value
 			pp.port = serverValue[4].Value
 			pp.os = serverValue[5].Value
-			defaulter(&pp)
+			pp.defaulter()
 			go connectAndRun(command, servername.(string), &pp, output, &wg)
 		}
 		go func() {
@@ -76,7 +76,7 @@ func RunAllServers(configs *yaml.MapSlice, command *string) {
 		pp.keypath = serverValue[3].Value
 		pp.port = serverValue[4].Value
 		pp.os = serverValue[5].Value
-		defaulter(&pp)
+		pp.defaulter()
 
 		go connectAndRun(command, servername.(string), &pp, output, &wg)
 	}
@@ -108,7 +108,7 @@ func RunSequentially(configs *yaml.MapSlice, command *string) {
 			pp.keypath = serverValue[3].Value
 			pp.port = serverValue[4].Value
 			pp.os = serverValue[5].Value
-			defaulter(&pp)
+			pp.defaulter()
 			s := spinner.New(spinner.CharSets[9], 25*time.Millisecond)
 			s.Prefix = servername.(string) + ": "
 			s.Start()

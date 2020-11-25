@@ -12,7 +12,7 @@ import (
 )
 
 // executeCommand function to run a command on remote servers. Arguments will run through this function and will take strings,
-func executeCommand(servername string, cmd string, password string, connection *ssh.Client) string {
+func executeCommand(servername string, cmd string, password string, connection *ssh.Client) string { // can refactor this to method
 	// adding recover to avoid panics during a run. Logs are written, so no need to panic when it its one of
 	//the errors below.
 	defer func() {
