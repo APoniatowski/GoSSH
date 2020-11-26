@@ -10,7 +10,7 @@ import (
 )
 
 // connectAndRun Establish a connection and run command(s), will add CLI args in the near future
-func connectAndRun(command *string, servername string, parseddata *ParsedPool, output chan<- string, wg *sync.WaitGroup) {
+func (parseddata *ParsedPool) connectAndRun(command *string, servername string, output chan<- string, wg *sync.WaitGroup) {
 	pp := parseddata
 	derefcmd := *command
 	authMethodCheck := []ssh.AuthMethod{}

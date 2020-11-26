@@ -8,7 +8,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func connectAndRunSeq(command *string, servername string, parseddata *ParsedPool) string {
+func (parseddata *ParsedPool) connectAndRunSeq(command *string, servername string) string {
 	pp := parseddata
 	derefcmd := *command
 	authMethodCheck := []ssh.AuthMethod{}
