@@ -887,6 +887,8 @@ func (blstruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBo
 			fmt.Printf("\n")
 			for _, ve := range blstruct.final.scripts {
 				// TODO Final scripts that need to be transferred
+				// transfer file
+				// execute script
 				fmt.Println(ve)
 			}
 		} else {
@@ -900,7 +902,7 @@ func (blstruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBo
 				for key, val := range *sshList {
 					if commandset[val] == "" {
 						// TODO Final commands
-						commandset[key] = ve
+						commandset[key] = finalCommandBuilder(&ve,"command")
 					}
 				}
 			}
@@ -920,7 +922,7 @@ func (blstruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBo
 				fmt.Printf("\n")
 				for _, ve := range blstruct.final.collect.logs {
 					// TODO transfer to ./collections/[servername]/logs
-					fmt.Println(ve)
+					finalCommandBuilder(&ve,"logs")
 				}
 			} else {
 				fmt.Printf("Skipping...\n")
@@ -930,7 +932,7 @@ func (blstruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBo
 				fmt.Printf("\n")
 				for _, ve := range blstruct.final.collect.stats {
 					// TODO transfer to ./collections/[servername]/stats
-					fmt.Println(ve)
+					finalCommandBuilder(&ve,"stats")
 				}
 			} else {
 				fmt.Printf("Skipping...\n")
@@ -940,7 +942,7 @@ func (blstruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBo
 				fmt.Printf("\n")
 				for _, ve := range blstruct.final.collect.files {
 					// TODO transfer to ./collections/[servername]/files
-					fmt.Println(ve)
+					finalCommandBuilder(&ve,"files")
 				}
 			} else {
 				fmt.Printf("Skipping...\n")

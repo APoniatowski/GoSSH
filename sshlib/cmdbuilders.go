@@ -225,7 +225,7 @@ func (mountDetails *mountdetails) mountCommandBuilder(chosenOption string) strin
 	mountCommand := strings.Builder{}
 	switch chosenOption {
 	case "check":
-
+		//TODO add check here
 	case "apply":
 		mountCommand.WriteString(pkgmanlib.OmniTools["mkdir"])
 		mountCommand.WriteString(mountDetails.dest + " && ")
@@ -255,6 +255,25 @@ func (mountDetails *mountdetails) mountCommandBuilder(chosenOption string) strin
 	}
 
 	return mountCommand.String()
+}
+
+func finalCommandBuilder(command *string, chosenOption string) string {
+	finalCommand := strings.Builder{}
+	switch chosenOption {
+	case "script":
+		finalCommand.WriteString("")
+	case "command":
+		finalCommand.WriteString("")
+	case "logs":
+		finalCommand.WriteString("")
+	case "stats":
+		finalCommand.WriteString("")
+	case "files":
+		finalCommand.WriteString("")
+	default:
+		finalCommand.WriteString("")
+	}
+	return finalCommand.String()
 }
 
 func randomStringGenerator(strLength int) string {
