@@ -16,6 +16,7 @@
 *.out
 
 # Other files I will not need to include
+/.scannerwork
 /logs
 /bin
 /.idea
