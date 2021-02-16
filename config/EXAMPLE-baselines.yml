@@ -1,6 +1,6 @@
 Example - Setup webserver:            # this will be the name of a baseline that will be displayed and logged.
   Server Group 1:                     # this is the group that it will be applied to, must be IDENTICAL to group name in pool.yml.
-    Exclude:                          # this will be the exlusion list, with server name(s) or OS. Can be left empty.
+    Exclude:                          # this will be the exclusion list, with server name(s) or OS. Can be left empty.
       OS:                             # OS's to exclude from this baseline
         - debian
         - arch
@@ -144,8 +144,8 @@ Example - Setup webserver:            # this will be the name of a baseline that
         - /path/to/mount1
         - /path/to/mount2
     Final:                          # any final scripts that needs to be run for scripting, or final changes
-      Scripts:                      # if these are empty, then it will be ignored. or everything can be ignored
-        - /path/to/script           # and these scripts/commands will be run
+      Scripts:                      # if these are empty, then it will be ignored. or everything can be ignored.
+        - /path/to/script           # these scripts/commands will be transferred to /tmp and run
         - /path/to/another
       Commands:
         - command 1
@@ -155,10 +155,12 @@ Example - Setup webserver:            # this will be the name of a baseline that
           - httpd
           - sshd
         Stats:
-          - cpu
+          - cpu                     # gets load average
           - storage
           - memory
-        Files: 
+          - io                      # requires iostat
+          - network
+        Files:                      # transfers a specified file to the home directory
           - /path/to/file
           - /path/to/another
         Users: true                 # collect details of currently logged in users
