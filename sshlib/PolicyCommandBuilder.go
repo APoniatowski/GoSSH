@@ -14,7 +14,7 @@ func (policies *musthavepolicies) policyCommandBuilder(chosenOption string) stri
 		policiesCommand.WriteString("semanage -i ")
 		policy := strings.Split(policies.polimport, "/")
 		policiesCommand.WriteString("/tmp/")
-		policiesCommand.WriteString(policy[len(policy)])
+		policiesCommand.WriteString(policy[len(policy) - 1])
 	default:
 		policiesCommand.WriteString("")
 	}

@@ -151,7 +151,6 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string, reboo
 			fmt.Printf("Skipping...\n")
 		} else {
 			commandset = make(map[string]string)
-			fmt.Printf("   Import: ")
 			for key, val := range *sshList {
 				if commandset[val] == "" {
 					// TODO Must Have Policies apply make some changes and move to cmdbuilders
