@@ -1,7 +1,16 @@
 package sshlib
 
 import (
+	"bufio"
 	"fmt"
+	"github.com/APoniatowski/GoSSH/channelreaderlib"
+	"github.com/APoniatowski/GoSSH/loggerlib"
+	"golang.org/x/crypto/ssh"
+	"io"
+	"io/ioutil"
+	"sync"
+	"time"
+
 	//"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v2"
 	"strconv"
@@ -35,9 +44,9 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 				panic("\nError parsing server groups.\nAborting...\n")
 			}
 			if strings.ToLower(servergroupname) == "all" {
-				fmt.Println("Checking baseline on all servers:")
+				fmt.Println("Applying baseline on all servers:")
 			} else {
-				fmt.Println("Checking baseline on", servergroupname+":")
+				fmt.Println("Applying baseline on", servergroupname+":")
 			}
 			// Exclude, Prerequisites, Must-Have, Must-Not-Have, Final
 			for _, blstepItem := range blstepsValue {
@@ -900,24 +909,183 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 
 			// TODO apply baseline
 			sshList := blstruct.applyOSExcludes(servergroupname, configs)
+
 			//fmt.Println(sshList)
 			// establish ssh connections to servers via goroutines and maintain sessions
+			for _, groupItem := range *configs {
+				if servergroupname == groupItem.Key {
+					output := make(chan string)
+					var wg sync.WaitGroup
+					fmt.Printf("Processing %s:\n", groupItem.Key)
+					groupValue, ok := groupItem.Value.(yaml.MapSlice)
+					if !ok {
+						panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
+					}
+					for _, serverItem := range groupValue {
+						wg.Add(1)
+						servername := serverItem.Key
+						serverValue, ok := serverItem.Value.(yaml.MapSlice)
+						if !ok {
+							panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
+						}
+						var pp ParsedPool
+						pp.fqdn = serverValue[0].Value
+						pp.username = serverValue[1].Value
+						pp.password = serverValue[2].Value
+						pp.keypath = serverValue[3].Value
+						pp.port = serverValue[4].Value
+						pp.os = serverValue[5].Value
+						pp.defaulter()
+						SooS := "placeholder"
+						go pp.connectAndRunBaseline(&SooS, servername.(string), output, &wg)
+					}
+					go func() {
+						wg.Wait()
+						close(output)
+					}()
+					channelreaderlib.ChannelReaderGroups(output, &wg)
+				}
+			}
 			//commandChannel := make(chan map[string]string)
+			//readyState := make(chan []bool)
+			disconnectSessions := make(chan bool)
+			disconnectSessions <- false // To keep sessions alive and not disconnect
 			var rebootBool bool
 			blstruct.applyPrereq(&sshList)
-			// commandset via channel to servers and wait for it to complete
 			blstruct.applyMustHaves(&sshList, &rebootBool)
-			// commandset via channel to servers and wait for it to complete
 			blstruct.applyMustNotHaves(&sshList)
-			// commandset via channel to servers and wait for it to complete
 			blstruct.applyFinals(&sshList, &rebootBool)
-			// commandset via channel to servers and wait for it to complete
-			// once all checks are completed pass disconnect via channels to open sessions
 			if rebootBool {
 				// send reboot command to servers
 			} else {
 				// close connections without rebooting
 			}
+			disconnectSessions <- true // When read, channels/sessions will be closed
 		}
 	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// connectAndRun Establish a connection and run command(s), will add CLI args in the near future
+func (parseddata *ParsedPool) connectAndRunBaseline(command *string, servername string, output chan<- string, wg *sync.WaitGroup) {
+	pp := parseddata
+	derefcmd := *command
+	authMethodCheck := []ssh.AuthMethod{}
+	key, err := ioutil.ReadFile(pp.keypath.(string))
+	if err != nil {
+		authMethodCheck = append(authMethodCheck, ssh.Password(pp.password.(string)))
+	} else {
+		signer, err := ssh.ParsePrivateKey(key)
+		if err != nil {
+			loggerlib.GeneralError(servername, "[INFO: Failed To Parse PrivKey] ", err)
+		}
+		authMethodCheck = append(authMethodCheck, ssh.PublicKeys(signer))
+	}
+	// hostKeyCallback, err := knownhosts.New(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
+	// if err != nil {
+	hostKeyCallback := ssh.InsecureIgnoreHostKey()
+	// }
+	sshConfig := &ssh.ClientConfig{
+		User:            pp.username.(string),
+		Auth:            authMethodCheck,
+		HostKeyCallback: hostKeyCallback,
+		HostKeyAlgorithms: []string{
+			ssh.KeyAlgoRSA,
+			ssh.KeyAlgoDSA,
+			ssh.KeyAlgoECDSA256,
+			ssh.KeyAlgoECDSA384,
+			ssh.KeyAlgoECDSA521,
+			ssh.KeyAlgoED25519,
+		},
+		Timeout: 15 * time.Second,
+	}
+	defer func() {
+		if recv := recover(); recv != nil {
+			recoveries = recv
+		}
+	}()
+	connection, err := ssh.Dial("tcp", pp.fqdn.(string)+":"+pp.port.(string), sshConfig)
+	if err != nil {
+		loggerlib.GeneralError(servername, "[ERROR: Connection Failed] ", err)
+		validator = "NOK\n"
+		output <- validator
+		wg.Done()
+	} else {
+		defer connection.Close()
+		defer wg.Done()
+		derefcmd = OSSwitcher.Switcher(*pp, derefcmd)
+		output <- executeCommand(servername, derefcmd, pp.password.(string), connection)
+	}
+}
+
+func executeBaselines(servername string, cmd string, password string, connection *ssh.Client) string {
+	// adding recover to avoid panics during a run. Logs are written, so no need to panic when it its one of
+	// the errors below.
+	defer func() {
+		if recv := recover(); recv != nil {
+			recoveries = recv
+		}
+	}()
+	session, err := connection.NewSession()
+	if err != nil {
+		loggerlib.GeneralError(servername, "[ERROR: Failed To Create Session] ", err)
+	}
+	defer session.Close()
+	modes := ssh.TerminalModes{
+		ssh.ECHO:          0,     // disable echoing
+		ssh.TTY_OP_ISPEED: 14400, // input speed = 14.4kbaud
+		ssh.TTY_OP_OSPEED: 14400, // output speed = 14.4kbaud
+	}
+	if err := session.RequestPty("xterm", 50, 100, modes); err != nil {
+		session.Close()
+		loggerlib.GeneralError(servername, "[ERROR: Pty Request Failed] ", err)
+	}
+	in, err := session.StdinPipe()
+	if err != nil {
+		loggerlib.GeneralError(servername, "[ERROR: Stdin Error] ", err)
+	}
+	out, err := session.StdoutPipe()
+	if err != nil {
+		loggerlib.GeneralError(servername, "[ERROR: Stdout Error] ", err)
+	}
+	var terminaloutput []byte
+	var waitoutput sync.WaitGroup
+	// it does not wait for output on some machines that are taking too long to respond. I'd like to avoid using Rlocks/Runlocks for this
+	waitoutput.Add(1)
+	go func(in io.WriteCloser, out io.Reader, terminaloutput *[]byte) {
+		var (
+			line string
+			read = bufio.NewReader(out)
+		)
+		for {
+			buffer, err := read.ReadByte()
+			if err != nil {
+				break
+			}
+			*terminaloutput = append(*terminaloutput, buffer)
+			if buffer == byte('\n') {
+				line = ""
+				continue
+			}
+			line += string(buffer)
+			if strings.HasPrefix(line, "[sudo] password for ") && strings.HasSuffix(line, ": ") {
+				_, err = in.Write([]byte(password + "\n"))
+				if err != nil {
+					break
+				}
+			}
+		}
+		waitoutput.Done()
+	}(in, out, &terminaloutput)
+	_, err = session.Output(cmd)
+	waitoutput.Wait()
+	if err != nil {
+		validator = "NOK\n"
+		loggerlib.ErrorLogger(servername, "[INFO: Failed] ", terminaloutput)
+	} else {
+		validator = "OK\n"
+		loggerlib.OutputLogger(servername, "[INFO: Success] ", terminaloutput)
+	}
+	return validator
 }
