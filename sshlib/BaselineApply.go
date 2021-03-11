@@ -3,18 +3,20 @@ package sshlib
 import (
 	"bufio"
 	"fmt"
-	"github.com/APoniatowski/GoSSH/channelreaderlib"
-	"github.com/APoniatowski/GoSSH/loggerlib"
-	"golang.org/x/crypto/ssh"
 	"io"
 	"io/ioutil"
 	"sync"
 	"time"
 
+	"github.com/APoniatowski/GoSSH/channelreaderlib"
+	"github.com/APoniatowski/GoSSH/loggerlib"
+	"golang.org/x/crypto/ssh"
+
 	//"golang.org/x/crypto/ssh"
-	"gopkg.in/yaml.v2"
 	"strconv"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
 // ApplyBaselines Apply defined baselines
@@ -909,12 +911,15 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 
 			// TODO apply baseline
 			sshList := blstruct.applyOSExcludes(servergroupname, configs)
-
+			disconnectSessions := make(chan bool)
+			disconnectSessions <- false // To keep sessions alive and not disconnect
+			var rebootBool bool
 			//fmt.Println(sshList)
 			// establish ssh connections to servers via goroutines and maintain sessions
 			for _, groupItem := range *configs {
 				if servergroupname == groupItem.Key {
 					output := make(chan string)
+					readyState := make(chan []bool)
 					var wg sync.WaitGroup
 					fmt.Printf("Processing %s:\n", groupItem.Key)
 					groupValue, ok := groupItem.Value.(yaml.MapSlice)
@@ -936,25 +941,39 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 						pp.port = serverValue[4].Value
 						pp.os = serverValue[5].Value
 						pp.defaulter()
-						SooS := "placeholder"
-						go pp.connectAndRunBaseline(&SooS, servername.(string), output, &wg)
+						for i := range sshList {
+							if i == pp.fqdn.(string) {
+								commandChannel := make(chan map[string]string)
+
+								go pp.connectAndRunBaseline(commandChannel,
+									servername.(string),
+									output,
+									disconnectSessions,
+									readyState,
+									&wg)
+
+								go func() {
+									wg.Wait()
+									close(output)
+								}()
+								for {
+									if len(readyState) == len(sshList) {
+										break
+									}
+								}
+								blstruct.applyPrereq(&sshList)
+								blstruct.applyMustHaves(&sshList, &rebootBool)
+								blstruct.applyMustNotHaves(&sshList)
+								blstruct.applyFinals(&sshList, &rebootBool)
+
+								channelreaderlib.ChannelReaderGroups(output, &wg)
+
+							}
+						}
 					}
-					go func() {
-						wg.Wait()
-						close(output)
-					}()
-					channelreaderlib.ChannelReaderGroups(output, &wg)
 				}
 			}
-			//commandChannel := make(chan map[string]string)
-			//readyState := make(chan []bool)
-			disconnectSessions := make(chan bool)
-			disconnectSessions <- false // To keep sessions alive and not disconnect
-			var rebootBool bool
-			blstruct.applyPrereq(&sshList)
-			blstruct.applyMustHaves(&sshList, &rebootBool)
-			blstruct.applyMustNotHaves(&sshList)
-			blstruct.applyFinals(&sshList, &rebootBool)
+
 			if rebootBool {
 				// send reboot command to servers
 			} else {
@@ -968,9 +987,13 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // connectAndRun Establish a connection and run command(s), will add CLI args in the near future
-func (parseddata *ParsedPool) connectAndRunBaseline(command *string, servername string, output chan<- string, wg *sync.WaitGroup) {
+func (parseddata *ParsedPool) connectAndRunBaseline(command chan map[string]string,
+	servername string,
+	output chan<- string,
+	disconnect <-chan bool,
+	ready chan<- []bool,
+	wg *sync.WaitGroup) {
 	pp := parseddata
-	derefcmd := *command
 	authMethodCheck := []ssh.AuthMethod{}
 	key, err := ioutil.ReadFile(pp.keypath.(string))
 	if err != nil {
@@ -1012,10 +1035,28 @@ func (parseddata *ParsedPool) connectAndRunBaseline(command *string, servername 
 		output <- validator
 		wg.Done()
 	} else {
+		var yesReady []bool
+		yesReady = append(yesReady, true)
+		ready <- yesReady
+		for {
+			commandCheck := <-command
+			if len(commandCheck) != 0 {
+				disconnectCheck := <-disconnect
+				if !disconnectCheck {
+					for i, j := range commandCheck {
+						if i == pp.fqdn && j != "" {
+							output <- executeBaselines(servername, j, pp.password.(string), connection)
+							commandCheck[i] = ""
+						}
+					}
+					command <- commandCheck
+				} else {
+					break
+				}
+			}
+		}
 		defer connection.Close()
 		defer wg.Done()
-		derefcmd = OSSwitcher.Switcher(*pp, derefcmd)
-		output <- executeCommand(servername, derefcmd, pp.password.(string), connection)
 	}
 }
 
