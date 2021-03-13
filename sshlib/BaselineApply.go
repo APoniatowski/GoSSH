@@ -969,9 +969,9 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 						}
 						fmt.Println("starting stages...")
 						baselineStruct.applyPrereq(&sshList, commandChannel)
-						baselineStruct.applyMustHaves(&sshList, &rebootBool)
-						baselineStruct.applyMustNotHaves(&sshList)
-						baselineStruct.applyFinals(&sshList, &rebootBool)
+						baselineStruct.applyMustHaves(&sshList, &rebootBool, commandChannel)
+						baselineStruct.applyMustNotHaves(&sshList, commandChannel)
+						baselineStruct.applyFinals(&sshList, &rebootBool, commandChannel)
 
 						channelreaderlib.ChannelReaderGroups(output, &wg) // move to each apply stage
 					}
@@ -1029,9 +1029,9 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 							}
 						}
 						baselineStruct.applyPrereq(&sshList, commandChannel)
-						baselineStruct.applyMustHaves(&sshList, &rebootBool)
-						baselineStruct.applyMustNotHaves(&sshList)
-						baselineStruct.applyFinals(&sshList, &rebootBool)
+						baselineStruct.applyMustHaves(&sshList, &rebootBool, commandChannel)
+						baselineStruct.applyMustNotHaves(&sshList, commandChannel)
+						baselineStruct.applyFinals(&sshList, &rebootBool, commandChannel)
 
 						channelreaderlib.ChannelReaderGroups(output, &wg) // move to each apply stage
 					}
