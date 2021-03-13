@@ -5,7 +5,7 @@ import (
 	"github.com/APoniatowski/GoSSH/pkgmanlib"
 )
 
-func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
+func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string, commandChannel chan<- map[string]string) {
 	//MNH list
 	commandset := make(map[string]string)
 	fmt.Printf("Must Not Have Checklist: ")
@@ -34,6 +34,7 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 						commandset[key] = serviceCommandBuilder(&ve, &val, "uninstall")
 					}
 				}
+				commandChannel <- commandset
 				//for k, v := range commandset {
 				//	fmt.Printf("%v   %v\n", k, v)
 				//}
@@ -55,6 +56,7 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 						commandset[key] = serviceCommandBuilder(&ve, &val, "disable")
 					}
 				}
+				commandChannel <- commandset
 				//for k, v := range commandset {
 				//	fmt.Printf("%v   %v\n", k, v)
 				//}
@@ -78,6 +80,7 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 							commandset[key] = serviceCommandBuilder(&ve, &val, "enable")
 						}
 					}
+					commandChannel <- commandset
 					//for k, v := range commandset {
 					//	fmt.Printf("%v   %v\n", k, v)
 					//}
@@ -102,6 +105,7 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 							commandset[key] = pkgmanlib.OmniTools["userdel"] + ve
 						}
 					}
+					commandChannel <- commandset
 					//for k, v := range commandset {
 					//	fmt.Printf("%v   %v\n", k, v)
 					//}
@@ -138,6 +142,7 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 										"remove-open")
 								}
 							}
+							commandChannel <- commandset
 							//for k, v := range commandset {
 							//	// TODO No Open Firewall ports & protocols check per firewall zone apply
 							//	fmt.Printf("%v   %v\n", k, v)
@@ -159,6 +164,7 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 									"remove-open")
 							}
 						}
+						commandChannel <- commandset
 						//for k, v := range commandset {
 						//	// TODO No Open Firewall ports & protocols apply
 						//	fmt.Printf("%v   %v\n", k, v)
@@ -185,6 +191,7 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 										"remove-closed")
 								}
 							}
+							commandChannel <- commandset
 							//for k, v := range commandset {
 							//	// TODO No Closed Firewall ports & protocols check per firewall zone apply
 							//	fmt.Printf("%v   %v\n", k, v)
@@ -204,7 +211,7 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 									"remove-closed")
 							}
 						}
-
+						commandChannel <- commandset
 						//for k, v := range commandset {
 						//	// TODO No Open Firewall ports & protocols apply
 						//	fmt.Printf("%v   %v\n", k, v)
@@ -230,7 +237,7 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 						commandset[key] = "grep '" + ve + "' /etc/fstab"
 					}
 				}
-
+				commandChannel <- commandset
 				//    check if the mount address is in fstab
 				// iterate through sshList and create command for each server
 				// pass info to ssh session and waiting for a response
@@ -240,6 +247,7 @@ func (blstruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string) {
 						commandset[key] = " grep '" + ve + "' /etc/fstab | awk -F: '{ print $1 }' | " // need to delete the line
 					}
 				}
+				commandChannel <- commandset
 				//   grep the mount address
 				// iterate through sshList and create command for each server
 				// pass info to ssh session and waiting for a response

@@ -20,13 +20,13 @@ import (
 )
 
 // ApplyBaselines Apply defined baselines
-func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
+func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 	var warnings int
-	var maincategorywarnings int
-	var datawarnings int
-	var blerrors int
+	var mainCategoryWarnings int
+	var dataWarnings int
+	var baselineErrors int
 	// Baseline
-	for _, blItem := range *baselineyaml {
+	for _, blItem := range *baselineYAML {
 		fmt.Printf("%s:\n", blItem.Key)
 		groupValues, ok := blItem.Value.(yaml.MapSlice)
 		if !ok {
@@ -35,30 +35,30 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 		// Server groups
 		for _, groupItem := range groupValues {
 			// initialize the data
-			servergroupname := groupItem.Key.(string)
-			var blstruct ParsedBaseline
-			blstruct.musthave.configured.services = make(map[string]musthaveconfiguredservices)
-			blstruct.musthave.users.users = make(map[string]musthaveusersstruct)
-			blstruct.musthave.mounts.mountname = make(map[string]mountdetails)
-			blstepsValue, ok := groupItem.Value.(yaml.MapSlice)
+			serverGroupName := groupItem.Key.(string)
+			var baselineStruct ParsedBaseline
+			baselineStruct.musthave.configured.services = make(map[string]musthaveconfiguredservices)
+			baselineStruct.musthave.users.users = make(map[string]musthaveusersstruct)
+			baselineStruct.musthave.mounts.mountname = make(map[string]mountdetails)
+			baselineStepsValue, ok := groupItem.Value.(yaml.MapSlice)
 			if !ok {
-				blerrors++
+				baselineErrors++
 				panic("\nError parsing server groups.\nAborting...\n")
 			}
-			if strings.ToLower(servergroupname) == "all" {
+			if strings.ToLower(serverGroupName) == "all" {
 				fmt.Println("Applying baseline on all servers:")
 			} else {
-				fmt.Println("Applying baseline on", servergroupname+":")
+				fmt.Println("Applying baseline on", serverGroupName+":")
 			}
 			// Exclude, Prerequisites, Must-Have, Must-Not-Have, Final
-			for _, blstepItem := range blstepsValue {
-				nextValues, ok := blstepItem.Value.(yaml.MapSlice)
+			for _, baselineStepItem := range baselineStepsValue {
+				nextValues, ok := baselineStepItem.Value.(yaml.MapSlice)
 				if !ok {
-					maincategorywarnings++
+					mainCategoryWarnings++
 				}
-				blstepcheck := blstepItem.Key
-				if blstepItem.Key == nil {
-					blerrors++
+				baselineStepCheck := baselineStepItem.Key
+				if baselineStepItem.Key == nil {
+					baselineErrors++
 				}
 
 				// OS, Servers, Tools, Files, VCS, etc
@@ -69,82 +69,82 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 					}
 					if thirdStep.Key == nil {
 						warnings++
-						blerrors++
+						baselineErrors++
 					} else {
-						switch blstepcheck {
+						switch baselineStepCheck {
 						case "Exclude":
 							switch thirdStep.Key {
 							case "OS":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.exclude.osExcl = []string{""}
+									dataWarnings++
+									baselineStruct.exclude.osExcl = []string{""}
 								} else {
 									exclOS := make([]string, len(thirdStep.Value.([]interface{})))
 									OSslice := thirdStep.Value.([]interface{})
 									for i, v := range OSslice {
 										exclOS[i] = v.(string)
 									}
-									blstruct.exclude.osExcl = exclOS
+									baselineStruct.exclude.osExcl = exclOS
 								}
 							case "Servers":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.exclude.serversExcl = []string{""}
+									dataWarnings++
+									baselineStruct.exclude.serversExcl = []string{""}
 								} else {
 									exclServers := make([]string, len(thirdStep.Value.([]interface{})))
 									serverSlice := thirdStep.Value.([]interface{})
 									for i, v := range serverSlice {
 										exclServers[i] = v.(string)
 									}
-									blstruct.exclude.serversExcl = exclServers
+									baselineStruct.exclude.serversExcl = exclServers
 								}
 							}
 						case "Prerequisites":
 							switch thirdStep.Key {
 							case "Tools":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.prereq.tools = []string{""}
+									dataWarnings++
+									baselineStruct.prereq.tools = []string{""}
 								} else {
 									prereqTools := make([]string, len(thirdStep.Value.([]interface{})))
 									prereqToolsSlice := thirdStep.Value.([]interface{})
 									for i, v := range prereqToolsSlice {
 										prereqTools[i] = v.(string)
 									}
-									blstruct.prereq.tools = prereqTools
+									baselineStruct.prereq.tools = prereqTools
 								}
 							case "Files": // for loop
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.prereq.files.urls = []string{""}
-									blstruct.prereq.files.local.src = ""
-									blstruct.prereq.files.local.dest = ""
-									blstruct.prereq.files.remote.mounttype = ""
-									blstruct.prereq.files.remote.address = ""
-									blstruct.prereq.files.remote.username = ""
-									blstruct.prereq.files.remote.pwd = ""
-									blstruct.prereq.files.remote.src = ""
-									blstruct.prereq.files.remote.dest = ""
+									dataWarnings++
+									baselineStruct.prereq.files.urls = []string{""}
+									baselineStruct.prereq.files.local.src = ""
+									baselineStruct.prereq.files.local.dest = ""
+									baselineStruct.prereq.files.remote.mounttype = ""
+									baselineStruct.prereq.files.remote.address = ""
+									baselineStruct.prereq.files.remote.username = ""
+									baselineStruct.prereq.files.remote.pwd = ""
+									baselineStruct.prereq.files.remote.src = ""
+									baselineStruct.prereq.files.remote.dest = ""
 								} else {
 									for _, blItem = range nextblValues {
 										switch blItem.Key {
 										case "URLs":
 											if blItem.Value == nil {
-												datawarnings++
-												blstruct.prereq.files.urls = []string{""}
+												dataWarnings++
+												baselineStruct.prereq.files.urls = []string{""}
 											} else {
 												prereqURLs := make([]string, len(blItem.Value.([]interface{})))
 												prereqURLsSlice := blItem.Value.([]interface{})
 												for i, v := range prereqURLsSlice {
 													prereqURLs[i] = v.(string)
 												}
-												blstruct.prereq.files.urls = prereqURLs
+												baselineStruct.prereq.files.urls = prereqURLs
 											}
 										case "Local":
 											if blItem.Value == nil {
-												datawarnings++
-												blstruct.prereq.files.local.src = ""
-												blstruct.prereq.files.local.dest = ""
+												dataWarnings++
+												baselineStruct.prereq.files.local.src = ""
+												baselineStruct.prereq.files.local.dest = ""
 											} else {
 												extrablValues, ok := blItem.Value.(yaml.MapSlice)
 												if !ok {
@@ -155,30 +155,30 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 													switch nextblStep.Key {
 													case "Source":
 														if nextblStep.Value == nil {
-															datawarnings++
-															blstruct.prereq.files.local.src = ""
+															dataWarnings++
+															baselineStruct.prereq.files.local.src = ""
 														} else {
-															blstruct.prereq.files.local.src = nextblStep.Value.(string)
+															baselineStruct.prereq.files.local.src = nextblStep.Value.(string)
 														}
 													case "Destination":
 														if nextblStep.Value == nil {
-															datawarnings++
-															blstruct.prereq.files.local.dest = ""
+															dataWarnings++
+															baselineStruct.prereq.files.local.dest = ""
 														} else {
-															blstruct.prereq.files.local.dest = nextblStep.Value.(string)
+															baselineStruct.prereq.files.local.dest = nextblStep.Value.(string)
 														}
 													}
 												}
 											}
 										case "Remote":
 											if blItem.Value == nil {
-												datawarnings++
-												blstruct.prereq.files.remote.mounttype = ""
-												blstruct.prereq.files.remote.address = ""
-												blstruct.prereq.files.remote.username = ""
-												blstruct.prereq.files.remote.pwd = ""
-												blstruct.prereq.files.remote.src = ""
-												blstruct.prereq.files.remote.dest = ""
+												dataWarnings++
+												baselineStruct.prereq.files.remote.mounttype = ""
+												baselineStruct.prereq.files.remote.address = ""
+												baselineStruct.prereq.files.remote.username = ""
+												baselineStruct.prereq.files.remote.pwd = ""
+												baselineStruct.prereq.files.remote.src = ""
+												baselineStruct.prereq.files.remote.dest = ""
 											} else {
 												extrablValues, ok := blItem.Value.(yaml.MapSlice)
 												if !ok {
@@ -189,57 +189,57 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 													switch nextblStep.Key {
 													case "Type":
 														if nextblStep.Value == nil {
-															datawarnings++
-															blstruct.prereq.files.remote.mounttype = ""
+															dataWarnings++
+															baselineStruct.prereq.files.remote.mounttype = ""
 														} else {
-															blstruct.prereq.files.remote.mounttype = nextblStep.Value.(string)
+															baselineStruct.prereq.files.remote.mounttype = nextblStep.Value.(string)
 														}
 													case "Address":
 														if nextblStep.Value == nil {
-															datawarnings++
-															blstruct.prereq.files.remote.address = ""
+															dataWarnings++
+															baselineStruct.prereq.files.remote.address = ""
 														} else {
-															blstruct.prereq.files.remote.address = nextblStep.Value.(string)
+															baselineStruct.prereq.files.remote.address = nextblStep.Value.(string)
 														}
 													case "Username":
 														if nextblStep.Value == nil {
-															datawarnings++
-															blstruct.prereq.files.remote.username = ""
+															dataWarnings++
+															baselineStruct.prereq.files.remote.username = ""
 														} else {
-															blstruct.prereq.files.remote.username = nextblStep.Value.(string)
+															baselineStruct.prereq.files.remote.username = nextblStep.Value.(string)
 														}
 													case "Password":
 														if nextblStep.Value == nil {
-															datawarnings++
-															blstruct.prereq.files.remote.pwd = ""
+															dataWarnings++
+															baselineStruct.prereq.files.remote.pwd = ""
 														} else {
-															blstruct.prereq.files.remote.pwd = nextblStep.Value.(string)
+															baselineStruct.prereq.files.remote.pwd = nextblStep.Value.(string)
 														}
 													case "Source":
 														if nextblStep.Value == nil {
-															datawarnings++
-															blstruct.prereq.files.remote.src = ""
+															dataWarnings++
+															baselineStruct.prereq.files.remote.src = ""
 														} else {
-															blstruct.prereq.files.remote.src = nextblStep.Value.(string)
+															baselineStruct.prereq.files.remote.src = nextblStep.Value.(string)
 														}
 													case "Destination":
 														if nextblStep.Value == nil {
-															datawarnings++
-															blstruct.prereq.files.remote.dest = ""
+															dataWarnings++
+															baselineStruct.prereq.files.remote.dest = ""
 														} else {
-															blstruct.prereq.files.remote.dest = nextblStep.Value.(string)
+															baselineStruct.prereq.files.remote.dest = nextblStep.Value.(string)
 														}
 													case "Files":
 														if nextblStep.Value == nil {
-															datawarnings++
-															blstruct.prereq.files.remote.files = []string{""}
+															dataWarnings++
+															baselineStruct.prereq.files.remote.files = []string{""}
 														} else {
 															remoteFiles := make([]string, len(nextblStep.Value.([]interface{})))
 															remoteFilesSlice := nextblStep.Value.([]interface{})
 															for i, v := range remoteFilesSlice {
 																remoteFiles[i] = v.(string)
 															}
-															blstruct.prereq.files.remote.files = remoteFiles
+															baselineStruct.prereq.files.remote.files = remoteFiles
 														}
 													}
 												}
@@ -249,96 +249,96 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 								}
 							case "VCS":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.prereq.vcs.urls = []string{""}
-									blstruct.prereq.vcs.execute = []string{""}
+									dataWarnings++
+									baselineStruct.prereq.vcs.urls = []string{""}
+									baselineStruct.prereq.vcs.execute = []string{""}
 								} else {
 									for _, blItem = range nextblValues {
 										switch blItem.Key {
 										case "URLs":
 											if blItem.Value == nil {
-												datawarnings++
-												blstruct.prereq.vcs.urls = []string{""}
+												dataWarnings++
+												baselineStruct.prereq.vcs.urls = []string{""}
 											} else {
 												vcsURLs := make([]string, len(blItem.Value.([]interface{})))
 												vcsURLsSlice := blItem.Value.([]interface{})
 												for i, v := range vcsURLsSlice {
 													vcsURLs[i] = v.(string)
 												}
-												blstruct.prereq.vcs.urls = vcsURLs
+												baselineStruct.prereq.vcs.urls = vcsURLs
 											}
 										case "Execute":
 											if blItem.Value == nil {
-												datawarnings++
-												blstruct.prereq.vcs.execute = []string{""}
+												dataWarnings++
+												baselineStruct.prereq.vcs.execute = []string{""}
 											} else {
 												vcsCMDS := make([]string, len(blItem.Value.([]interface{})))
 												vcsCMDSSlice := blItem.Value.([]interface{})
 												for i, v := range vcsCMDSSlice {
 													vcsCMDS[i] = v.(string)
 												}
-												blstruct.prereq.vcs.execute = vcsCMDS
+												baselineStruct.prereq.vcs.execute = vcsCMDS
 											}
 										}
 									}
 								}
 							case "Script":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.prereq.script = ""
+									dataWarnings++
+									baselineStruct.prereq.script = ""
 								} else {
-									blstruct.prereq.script = thirdStep.Value.(string)
+									baselineStruct.prereq.script = thirdStep.Value.(string)
 								}
 							case "Clean-up":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.prereq.cleanup = false
+									dataWarnings++
+									baselineStruct.prereq.cleanup = false
 								} else {
-									blstruct.prereq.cleanup = thirdStep.Value.(bool)
+									baselineStruct.prereq.cleanup = thirdStep.Value.(bool)
 								}
 							}
 						case "Must-Have":
 							switch thirdStep.Key {
 							case "Installed":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.musthave.installed = []string{""}
+									dataWarnings++
+									baselineStruct.musthave.installed = []string{""}
 								} else {
 									mhInst := make([]string, len(thirdStep.Value.([]interface{})))
 									mhInstSlice := thirdStep.Value.([]interface{})
 									for i, v := range mhInstSlice {
 										mhInst[i] = v.(string)
 									}
-									blstruct.musthave.installed = mhInst
+									baselineStruct.musthave.installed = mhInst
 								}
 							case "Enabled":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.musthave.enabled = []string{""}
+									dataWarnings++
+									baselineStruct.musthave.enabled = []string{""}
 								} else {
 									mhEnabled := make([]string, len(thirdStep.Value.([]interface{})))
 									mhEnabledSlice := thirdStep.Value.([]interface{})
 									for i, v := range mhEnabledSlice {
 										mhEnabled[i] = v.(string)
 									}
-									blstruct.musthave.enabled = mhEnabled
+									baselineStruct.musthave.enabled = mhEnabled
 								}
 							case "Disabled":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.musthave.disabled = []string{""}
+									dataWarnings++
+									baselineStruct.musthave.disabled = []string{""}
 								} else {
 									mhDisabled := make([]string, len(thirdStep.Value.([]interface{})))
 									mhDisabledSlice := thirdStep.Value.([]interface{})
 									for i, v := range mhDisabledSlice {
 										mhDisabled[i] = v.(string)
 									}
-									blstruct.musthave.enabled = mhDisabled
+									baselineStruct.musthave.enabled = mhDisabled
 								}
 							case "Configured":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.musthave.configured.services[""] = musthaveconfiguredservices{source: []string{""}, destination: []string{""}}
+									dataWarnings++
+									baselineStruct.musthave.configured.services[""] = musthaveconfiguredservices{source: []string{""}, destination: []string{""}}
 								} else {
 									for _, blItem = range nextblValues {
 										service := blItem.Key.(string)
@@ -352,8 +352,8 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 											switch confItems.Key {
 											case "Source":
 												if confItems.Value == nil {
-													datawarnings++
-													blstruct.musthave.configured.services[service] = musthaveconfiguredservices{source: []string{""}}
+													dataWarnings++
+													baselineStruct.musthave.configured.services[service] = musthaveconfiguredservices{source: []string{""}}
 												} else {
 													mhConfSrc = make([]string, len(confItems.Value.([]interface{})))
 													mhConfSrcSlice := confItems.Value.([]interface{})
@@ -363,8 +363,8 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 												}
 											case "Destination":
 												if confItems.Value == nil {
-													datawarnings++
-													blstruct.musthave.configured.services[service] = musthaveconfiguredservices{destination: []string{""}}
+													dataWarnings++
+													baselineStruct.musthave.configured.services[service] = musthaveconfiguredservices{destination: []string{""}}
 												} else {
 													mhConfDest = make([]string, len(confItems.Value.([]interface{})))
 													mhConfDestSlice := confItems.Value.([]interface{})
@@ -373,14 +373,14 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 													}
 												}
 											}
-											blstruct.musthave.configured.services[service] = musthaveconfiguredservices{source: mhConfSrc, destination: mhConfDest}
+											baselineStruct.musthave.configured.services[service] = musthaveconfiguredservices{source: mhConfSrc, destination: mhConfDest}
 										}
 									}
 								}
 							case "Users":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.musthave.users.users[""] = musthaveusersstruct{groups: []string{""}, shell: "", home: "", sudoer: false}
+									dataWarnings++
+									baselineStruct.musthave.users.users[""] = musthaveusersstruct{groups: []string{""}, shell: "", home: "", sudoer: false}
 								} else {
 									for _, blItem = range nextblValues {
 										user := blItem.Key.(string)
@@ -396,7 +396,7 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 											switch userItems.Key {
 											case "Groups":
 												if userItems.Value == nil {
-													datawarnings++
+													dataWarnings++
 													mhUsergroup = []string{""}
 												} else {
 													mhUsergroup = make([]string, len(userItems.Value.([]interface{})))
@@ -407,27 +407,27 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 												}
 											case "Shell":
 												if userItems.Value == nil {
-													datawarnings++
+													dataWarnings++
 													mhUsershell = ""
 												} else {
 													mhUsershell = userItems.Value.(string)
 												}
 											case "Home-Dir":
 												if userItems.Value == nil {
-													datawarnings++
+													dataWarnings++
 													mhUserhome = ""
 												} else {
 													mhUserhome = userItems.Value.(string)
 												}
 											case "Sudoer":
 												if userItems.Value == nil {
-													datawarnings++
+													dataWarnings++
 													mhUsersudo = false
 												} else {
 													mhUsersudo = userItems.Value.(bool)
 												}
 											}
-											blstruct.musthave.users.users[user] = musthaveusersstruct{
+											baselineStruct.musthave.users.users[user] = musthaveusersstruct{
 												groups: mhUsergroup,
 												shell:  mhUsershell,
 												home:   mhUserhome,
@@ -438,45 +438,45 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 								}
 							case "Policies":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.musthave.policies.polimport = ""
-									blstruct.musthave.policies.polstatus = ""
-									blstruct.musthave.policies.polreboot = false
+									dataWarnings++
+									baselineStruct.musthave.policies.polimport = ""
+									baselineStruct.musthave.policies.polstatus = ""
+									baselineStruct.musthave.policies.polreboot = false
 								} else {
 									for _, blItem = range nextblValues {
 										switch blItem.Key {
 										case "Status":
 											if blItem.Value == nil {
-												datawarnings++
-												blstruct.musthave.policies.polstatus = ""
+												dataWarnings++
+												baselineStruct.musthave.policies.polstatus = ""
 											} else {
-												blstruct.musthave.policies.polstatus = blItem.Value.(string)
+												baselineStruct.musthave.policies.polstatus = blItem.Value.(string)
 											}
 										case "Import":
 											if blItem.Value == nil {
-												datawarnings++
-												blstruct.musthave.policies.polimport = ""
+												dataWarnings++
+												baselineStruct.musthave.policies.polimport = ""
 											} else {
-												blstruct.musthave.policies.polimport = blItem.Value.(string)
+												baselineStruct.musthave.policies.polimport = blItem.Value.(string)
 											}
 										case "Reboot":
 											if blItem.Value == nil {
-												datawarnings++
-												blstruct.musthave.policies.polreboot = false
+												dataWarnings++
+												baselineStruct.musthave.policies.polreboot = false
 											} else {
-												blstruct.musthave.policies.polreboot = blItem.Value.(bool)
+												baselineStruct.musthave.policies.polreboot = blItem.Value.(bool)
 											}
 										}
 									}
 								}
 							case "Rules":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.musthave.rules.fwopen.ports = []string{""}
-									blstruct.musthave.rules.fwopen.protocols = []string{""}
-									blstruct.musthave.rules.fwclosed.ports = []string{""}
-									blstruct.musthave.rules.fwclosed.protocols = []string{""}
-									blstruct.musthave.rules.fwzones = []string{""}
+									dataWarnings++
+									baselineStruct.musthave.rules.fwopen.ports = []string{""}
+									baselineStruct.musthave.rules.fwopen.protocols = []string{""}
+									baselineStruct.musthave.rules.fwclosed.ports = []string{""}
+									baselineStruct.musthave.rules.fwclosed.protocols = []string{""}
+									baselineStruct.musthave.rules.fwzones = []string{""}
 								} else {
 									for _, blItem = range nextblValues {
 										rulesValues, ok := blItem.Value.(yaml.MapSlice)
@@ -489,27 +489,27 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 												switch rulesItems.Key {
 												case "Ports":
 													if rulesItems.Value == nil {
-														datawarnings++
-														blstruct.musthave.rules.fwopen.ports = []string{""}
+														dataWarnings++
+														baselineStruct.musthave.rules.fwopen.ports = []string{""}
 													} else {
 														mhRulesOPorts := make([]string, len(rulesItems.Value.([]interface{})))
 														mhRulesOPortsSlice := rulesItems.Value.([]interface{})
 														for i, v := range mhRulesOPortsSlice {
 															mhRulesOPorts[i] = strconv.Itoa(v.(int))
 														}
-														blstruct.musthave.rules.fwopen.ports = mhRulesOPorts
+														baselineStruct.musthave.rules.fwopen.ports = mhRulesOPorts
 													}
 												case "Protocols":
 													if rulesItems.Value == nil {
-														datawarnings++
-														blstruct.musthave.rules.fwopen.ports = []string{""}
+														dataWarnings++
+														baselineStruct.musthave.rules.fwopen.ports = []string{""}
 													} else {
 														mhRulesOProtocols := make([]string, len(rulesItems.Value.([]interface{})))
 														mhRulesOProtocolsSlice := rulesItems.Value.([]interface{})
 														for i, v := range mhRulesOProtocolsSlice {
 															mhRulesOProtocols[i] = v.(string)
 														}
-														blstruct.musthave.rules.fwopen.protocols = mhRulesOProtocols
+														baselineStruct.musthave.rules.fwopen.protocols = mhRulesOProtocols
 													}
 												}
 											}
@@ -518,49 +518,49 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 												switch rulesItems.Key {
 												case "Ports":
 													if rulesItems.Value == nil {
-														datawarnings++
-														blstruct.musthave.rules.fwclosed.ports = []string{""}
+														dataWarnings++
+														baselineStruct.musthave.rules.fwclosed.ports = []string{""}
 													} else {
 														mhRulesCPorts := make([]string, len(rulesItems.Value.([]interface{})))
 														mhRulesCPortsSlice := rulesItems.Value.([]interface{})
 														for i, v := range mhRulesCPortsSlice {
 															mhRulesCPorts[i] = strconv.Itoa(v.(int))
 														}
-														blstruct.musthave.rules.fwclosed.ports = mhRulesCPorts
+														baselineStruct.musthave.rules.fwclosed.ports = mhRulesCPorts
 													}
 												case "Protocols":
 													if rulesItems.Value == nil {
-														datawarnings++
-														blstruct.musthave.rules.fwclosed.protocols = []string{""}
+														dataWarnings++
+														baselineStruct.musthave.rules.fwclosed.protocols = []string{""}
 													} else {
 														mhRulesCProtocols := make([]string, len(rulesItems.Value.([]interface{})))
 														mhRulesCProtocolsSlice := rulesItems.Value.([]interface{})
 														for i, v := range mhRulesCProtocolsSlice {
 															mhRulesCProtocols[i] = v.(string)
 														}
-														blstruct.musthave.rules.fwclosed.protocols = mhRulesCProtocols
+														baselineStruct.musthave.rules.fwclosed.protocols = mhRulesCProtocols
 													}
 												}
 											}
 										case "Zones":
 											if blItem.Value == nil {
-												datawarnings++
-												blstruct.musthave.rules.fwzones = []string{""}
+												dataWarnings++
+												baselineStruct.musthave.rules.fwzones = []string{""}
 											} else {
 												mhRulesZones := make([]string, len(blItem.Value.([]interface{})))
 												mhRulesZonesSlice := blItem.Value.([]interface{})
 												for i, v := range mhRulesZonesSlice {
 													mhRulesZones[i] = v.(string)
 												}
-												blstruct.musthave.rules.fwzones = mhRulesZones
+												baselineStruct.musthave.rules.fwzones = mhRulesZones
 											}
 										}
 									}
 								}
 							case "Mounts":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.musthave.mounts.mountname[""] = mountdetails{
+									dataWarnings++
+									baselineStruct.musthave.mounts.mountname[""] = mountdetails{
 										mounttype: "",
 										address:   "",
 										username:  "",
@@ -589,49 +589,49 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 											switch mountItems.Key {
 											case "Type":
 												if mountItems.Value == nil {
-													datawarnings++
+													dataWarnings++
 													mhMountType = ""
 												} else {
 													mhMountType = mountItems.Value.(string)
 												}
 											case "Address":
 												if mountItems.Value == nil {
-													datawarnings++
+													dataWarnings++
 													mhAddress = ""
 												} else {
 													mhAddress = mountItems.Value.(string)
 												}
 											case "Username":
 												if mountItems.Value == nil {
-													datawarnings++
+													dataWarnings++
 													mhUsername = ""
 												} else {
 													mhUsername = mountItems.Value.(string)
 												}
 											case "Password":
 												if mountItems.Value == nil {
-													datawarnings++
+													dataWarnings++
 													mhPassword = ""
 												} else {
 													mhPassword = mountItems.Value.(string)
 												}
 											case "Source":
 												if mountItems.Value == nil {
-													datawarnings++
+													dataWarnings++
 													mhMountSource = ""
 												} else {
 													mhMountSource = mountItems.Value.(string)
 												}
 											case "Destination":
 												if mountItems.Value == nil {
-													datawarnings++
+													dataWarnings++
 													mhMountDest = ""
 												} else {
 													mhMountDest = mountItems.Value.(string)
 												}
 											}
 										}
-										blstruct.musthave.mounts.mountname[mhMounts] = mountdetails{
+										baselineStruct.musthave.mounts.mountname[mhMounts] = mountdetails{
 											mounttype: mhMountType,
 											address:   mhAddress,
 											username:  mhUsername,
@@ -646,60 +646,60 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 							switch thirdStep.Key {
 							case "Installed":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.mustnothave.installed = []string{""}
+									dataWarnings++
+									baselineStruct.mustnothave.installed = []string{""}
 								} else {
 									mnhInst := make([]string, len(thirdStep.Value.([]interface{})))
 									mnhInstSlice := thirdStep.Value.([]interface{})
 									for i, v := range mnhInstSlice {
 										mnhInst[i] = v.(string)
 									}
-									blstruct.mustnothave.installed = mnhInst
+									baselineStruct.mustnothave.installed = mnhInst
 								}
 							case "Enabled":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.mustnothave.enabled = []string{""}
+									dataWarnings++
+									baselineStruct.mustnothave.enabled = []string{""}
 								} else {
 									mnhEnabled := make([]string, len(thirdStep.Value.([]interface{})))
 									mnhEnabledSlice := thirdStep.Value.([]interface{})
 									for i, v := range mnhEnabledSlice {
 										mnhEnabled[i] = v.(string)
 									}
-									blstruct.mustnothave.installed = mnhEnabled
+									baselineStruct.mustnothave.installed = mnhEnabled
 								}
 							case "Disabled":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.mustnothave.disabled = []string{""}
+									dataWarnings++
+									baselineStruct.mustnothave.disabled = []string{""}
 								} else {
 									mnhDisabled := make([]string, len(thirdStep.Value.([]interface{})))
 									mnhDisabledSlice := thirdStep.Value.([]interface{})
 									for i, v := range mnhDisabledSlice {
 										mnhDisabled[i] = v.(string)
 									}
-									blstruct.mustnothave.enabled = mnhDisabled
+									baselineStruct.mustnothave.enabled = mnhDisabled
 								}
 							case "Users":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.mustnothave.users = []string{""}
+									dataWarnings++
+									baselineStruct.mustnothave.users = []string{""}
 								} else {
 									mnhUsers := make([]string, len(thirdStep.Value.([]interface{})))
 									mnhUsersSlice := thirdStep.Value.([]interface{})
 									for i, v := range mnhUsersSlice {
 										mnhUsers[i] = v.(string)
 									}
-									blstruct.mustnothave.users = mnhUsers
+									baselineStruct.mustnothave.users = mnhUsers
 								}
 							case "Rules":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.mustnothave.rules.fwopen.ports = []string{""}
-									blstruct.mustnothave.rules.fwopen.protocols = []string{""}
-									blstruct.mustnothave.rules.fwclosed.ports = []string{""}
-									blstruct.mustnothave.rules.fwclosed.protocols = []string{""}
-									blstruct.mustnothave.rules.fwzones = []string{""}
+									dataWarnings++
+									baselineStruct.mustnothave.rules.fwopen.ports = []string{""}
+									baselineStruct.mustnothave.rules.fwopen.protocols = []string{""}
+									baselineStruct.mustnothave.rules.fwclosed.ports = []string{""}
+									baselineStruct.mustnothave.rules.fwclosed.protocols = []string{""}
+									baselineStruct.mustnothave.rules.fwzones = []string{""}
 								} else {
 									for _, blItem = range nextblValues {
 										rulesValues, ok := blItem.Value.(yaml.MapSlice)
@@ -712,27 +712,27 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 												switch rulesItems.Key {
 												case "Ports":
 													if rulesItems.Value == nil {
-														datawarnings++
-														blstruct.mustnothave.rules.fwopen.ports = []string{""}
+														dataWarnings++
+														baselineStruct.mustnothave.rules.fwopen.ports = []string{""}
 													} else {
 														mhRulesOPorts := make([]string, len(rulesItems.Value.([]interface{})))
 														mhRulesOPortsSlice := rulesItems.Value.([]interface{})
 														for i, v := range mhRulesOPortsSlice {
 															mhRulesOPorts[i] = strconv.Itoa(v.(int))
 														}
-														blstruct.mustnothave.rules.fwopen.ports = mhRulesOPorts
+														baselineStruct.mustnothave.rules.fwopen.ports = mhRulesOPorts
 													}
 												case "Protocols":
 													if rulesItems.Value == nil {
-														datawarnings++
-														blstruct.mustnothave.rules.fwopen.protocols = []string{""}
+														dataWarnings++
+														baselineStruct.mustnothave.rules.fwopen.protocols = []string{""}
 													} else {
 														mhRulesOProtocols := make([]string, len(rulesItems.Value.([]interface{})))
 														mhRulesOProtocolsSlice := rulesItems.Value.([]interface{})
 														for i, v := range mhRulesOProtocolsSlice {
 															mhRulesOProtocols[i] = v.(string)
 														}
-														blstruct.mustnothave.rules.fwopen.protocols = mhRulesOProtocols
+														baselineStruct.mustnothave.rules.fwopen.protocols = mhRulesOProtocols
 													}
 												}
 											}
@@ -741,168 +741,168 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 												switch rulesItems.Key {
 												case "Ports":
 													if rulesItems.Value == nil {
-														datawarnings++
-														blstruct.mustnothave.rules.fwclosed.ports = []string{""}
+														dataWarnings++
+														baselineStruct.mustnothave.rules.fwclosed.ports = []string{""}
 													} else {
 														mhRulesCPorts := make([]string, len(rulesItems.Value.([]interface{})))
 														mhRulesCPortsSlice := rulesItems.Value.([]interface{})
 														for i, v := range mhRulesCPortsSlice {
 															mhRulesCPorts[i] = strconv.Itoa(v.(int))
 														}
-														blstruct.mustnothave.rules.fwclosed.ports = mhRulesCPorts
+														baselineStruct.mustnothave.rules.fwclosed.ports = mhRulesCPorts
 													}
 												case "Protocols":
 													if rulesItems.Value == nil {
-														datawarnings++
-														blstruct.mustnothave.rules.fwclosed.protocols = []string{""}
+														dataWarnings++
+														baselineStruct.mustnothave.rules.fwclosed.protocols = []string{""}
 													} else {
 														mhRulesCProtocols := make([]string, len(rulesItems.Value.([]interface{})))
 														mhRulesCProtocolsSlice := rulesItems.Value.([]interface{})
 														for i, v := range mhRulesCProtocolsSlice {
 															mhRulesCProtocols[i] = v.(string)
 														}
-														blstruct.mustnothave.rules.fwclosed.protocols = mhRulesCProtocols
+														baselineStruct.mustnothave.rules.fwclosed.protocols = mhRulesCProtocols
 													}
 												}
 											}
 										case "Zones":
 											if blItem.Value == nil {
-												datawarnings++
-												blstruct.mustnothave.rules.fwzones = []string{""}
+												dataWarnings++
+												baselineStruct.mustnothave.rules.fwzones = []string{""}
 											} else {
 												mhRulesZones := make([]string, len(blItem.Value.([]interface{})))
 												mhRulesZonesSlice := blItem.Value.([]interface{})
 												for i, v := range mhRulesZonesSlice {
 													mhRulesZones[i] = v.(string)
 												}
-												blstruct.mustnothave.rules.fwzones = mhRulesZones
+												baselineStruct.mustnothave.rules.fwzones = mhRulesZones
 											}
 										}
 									}
 								}
 							case "Mounts":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.mustnothave.mounts = []string{""}
+									dataWarnings++
+									baselineStruct.mustnothave.mounts = []string{""}
 								} else {
 									mnhMounts := make([]string, len(thirdStep.Value.([]interface{})))
 									mnhMountsSlice := thirdStep.Value.([]interface{})
 									for i, v := range mnhMountsSlice {
 										mnhMounts[i] = v.(string)
 									}
-									blstruct.mustnothave.mounts = mnhMounts
+									baselineStruct.mustnothave.mounts = mnhMounts
 								}
 							}
 						case "Final":
 							switch thirdStep.Key {
 							case "Scripts":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.final.scripts = []string{""}
+									dataWarnings++
+									baselineStruct.final.scripts = []string{""}
 								} else {
 									fnlScripts := make([]string, len(thirdStep.Value.([]interface{})))
 									fnlScriptsSlice := thirdStep.Value.([]interface{})
 									for i, v := range fnlScriptsSlice {
 										fnlScripts[i] = v.(string)
 									}
-									blstruct.final.scripts = fnlScripts
+									baselineStruct.final.scripts = fnlScripts
 								}
 							case "Commands":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.final.commands = []string{""}
+									dataWarnings++
+									baselineStruct.final.commands = []string{""}
 								} else {
 									fnlCommands := make([]string, len(thirdStep.Value.([]interface{})))
 									fnlCommandsSlice := thirdStep.Value.([]interface{})
 									for i, v := range fnlCommandsSlice {
 										fnlCommands[i] = v.(string)
 									}
-									blstruct.final.commands = fnlCommands
+									baselineStruct.final.commands = fnlCommands
 								}
 							case "Collect":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.final.collect.logs = []string{""}
-									blstruct.final.collect.stats = []string{""}
-									blstruct.final.collect.files = []string{""}
-									blstruct.final.collect.users = false
+									dataWarnings++
+									baselineStruct.final.collect.logs = []string{""}
+									baselineStruct.final.collect.stats = []string{""}
+									baselineStruct.final.collect.files = []string{""}
+									baselineStruct.final.collect.users = false
 								} else {
 									for _, blItem = range nextblValues {
 										switch blItem.Key {
 										case "Logs":
 											if blItem.Value == nil {
-												datawarnings++
-												blstruct.final.collect.logs = []string{""}
+												dataWarnings++
+												baselineStruct.final.collect.logs = []string{""}
 											} else {
 												fnlColLog := make([]string, len(blItem.Value.([]interface{})))
 												fnlColLogSlice := blItem.Value.([]interface{})
 												for i, v := range fnlColLogSlice {
 													fnlColLog[i] = v.(string)
 												}
-												blstruct.final.collect.logs = fnlColLog
+												baselineStruct.final.collect.logs = fnlColLog
 											}
 										case "Stats":
 											if blItem.Value == nil {
-												datawarnings++
-												blstruct.final.collect.stats = []string{""}
+												dataWarnings++
+												baselineStruct.final.collect.stats = []string{""}
 											} else {
 												fnlColstats := make([]string, len(blItem.Value.([]interface{})))
 												fnlColstatsSlice := blItem.Value.([]interface{})
 												for i, v := range fnlColstatsSlice {
 													fnlColstats[i] = v.(string)
 												}
-												blstruct.final.collect.stats = fnlColstats
+												baselineStruct.final.collect.stats = fnlColstats
 											}
 										case "Files":
 											if blItem.Value == nil {
-												datawarnings++
-												blstruct.final.collect.files = []string{""}
+												dataWarnings++
+												baselineStruct.final.collect.files = []string{""}
 											} else {
 												fnlColFiles := make([]string, len(blItem.Value.([]interface{})))
 												fnlColFilesSlice := blItem.Value.([]interface{})
 												for i, v := range fnlColFilesSlice {
 													fnlColFiles[i] = v.(string)
 												}
-												blstruct.final.collect.files = fnlColFiles
+												baselineStruct.final.collect.files = fnlColFiles
 											}
 										case "Users":
 											if blItem.Value == nil {
-												datawarnings++
-												blstruct.final.collect.users = false
+												dataWarnings++
+												baselineStruct.final.collect.users = false
 											} else {
-												blstruct.final.collect.users = blItem.Value.(bool)
+												baselineStruct.final.collect.users = blItem.Value.(bool)
 											}
 										}
 									}
 								}
 							case "Restart":
 								if thirdStep.Value == nil {
-									datawarnings++
-									blstruct.final.restart.services = false
-									blstruct.final.restart.servers = false
+									dataWarnings++
+									baselineStruct.final.restart.services = false
+									baselineStruct.final.restart.servers = false
 								} else {
 									for _, blItem = range nextblValues {
 										switch blItem.Key {
 										case "Services":
 											if blItem.Value == nil {
-												datawarnings++
-												blstruct.final.restart.services = false
+												dataWarnings++
+												baselineStruct.final.restart.services = false
 											} else {
-												blstruct.final.restart.services = blItem.Value.(bool)
+												baselineStruct.final.restart.services = blItem.Value.(bool)
 											}
 										case "Servers":
 											if blItem.Value == nil {
-												datawarnings++
-												blstruct.final.restart.servers = false
+												dataWarnings++
+												baselineStruct.final.restart.servers = false
 											} else {
-												blstruct.final.restart.servers = blItem.Value.(bool)
+												baselineStruct.final.restart.servers = blItem.Value.(bool)
 											}
 										}
 									}
 								}
 							}
 						default:
-							blerrors++
+							baselineErrors++
 							panic("\nError parsing baseline.\n Please check your baseline.\nAborting...\n")
 						}
 					}
@@ -910,23 +910,86 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 			}
 
 			// TODO apply baseline
-			sshList := blstruct.applyOSExcludes(servergroupname, configs)
+			sshList := baselineStruct.applyOSExcludes(serverGroupName, configs)
 			disconnectSessions := make(chan bool)
-			disconnectSessions <- false // To keep sessions alive and not disconnect
 			var rebootBool bool
 			//fmt.Println(sshList)
 			// establish ssh connections to servers via goroutines and maintain sessions
 			for _, groupItem := range *configs {
-				if servergroupname == groupItem.Key {
+				if serverGroupName == groupItem.Key {
 					output := make(chan string)
 					readyState := make(chan []bool)
 					var wg sync.WaitGroup
-					fmt.Printf("Processing %s:\n", groupItem.Key)
+
 					groupValue, ok := groupItem.Value.(yaml.MapSlice)
 					if !ok {
 						panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
 					}
 					for _, serverItem := range groupValue {
+						servername := serverItem.Key
+						serverValue, ok := serverItem.Value.(yaml.MapSlice)
+						if !ok {
+							panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
+						}
+						var pp ParsedPool
+						pp.fqdn = serverValue[0].Value
+						pp.username = serverValue[1].Value
+						pp.password = serverValue[2].Value
+						pp.keypath = serverValue[3].Value
+						pp.port = serverValue[4].Value
+						pp.os = serverValue[5].Value
+						pp.defaulter()
+						commandChannel := make(chan map[string]string)
+						for i := range sshList {
+							if i == pp.fqdn.(string) {
+								wg.Add(1)
+								fmt.Println("sending false to disconnectsessions channel")
+								disconnectSessions <- false // To keep sessions alive and not disconnect
+								fmt.Println("starting ssh goroutine")
+								go pp.connectAndRunBaseline(commandChannel,
+									servername.(string),
+									output,
+									disconnectSessions,
+									readyState,
+									&wg)
+							}
+							fmt.Println("started goroutines, starting output goroutine")
+							go func() {
+								wg.Wait()
+								close(output)
+							}()
+
+						}
+						fmt.Println("readystate/sshlist")
+						fmt.Printf("%d  %d\n", len(readyState), len(sshList))
+						for {
+							if len(readyState) == len(sshList) {
+								break
+							}
+						}
+						fmt.Println("starting stages...")
+						baselineStruct.applyPrereq(&sshList, commandChannel)
+						baselineStruct.applyMustHaves(&sshList, &rebootBool)
+						baselineStruct.applyMustNotHaves(&sshList)
+						baselineStruct.applyFinals(&sshList, &rebootBool)
+
+						channelreaderlib.ChannelReaderGroups(output, &wg) // move to each apply stage
+					}
+				} else if strings.ToLower(serverGroupName) == "all" {
+					var allServers yaml.MapSlice
+					output := make(chan string)
+					readyState := make(chan []bool)
+					var wg sync.WaitGroup
+					// Concatenates the groups to create a single group
+					for _, groupItem := range *configs {
+						groupValue, ok := groupItem.Value.(yaml.MapSlice)
+						if !ok {
+							panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
+						}
+
+						allServers = append(allServers, groupValue...)
+					}
+					for _, serverItem := range allServers {
 						wg.Add(1)
 						servername := serverItem.Key
 						serverValue, ok := serverItem.Value.(yaml.MapSlice)
@@ -941,9 +1004,11 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 						pp.port = serverValue[4].Value
 						pp.os = serverValue[5].Value
 						pp.defaulter()
+						commandChannel := make(chan map[string]string)
 						for i := range sshList {
 							if i == pp.fqdn.(string) {
-								commandChannel := make(chan map[string]string)
+								wg.Add(1)
+								disconnectSessions <- false // To keep sessions alive and not disconnect
 
 								go pp.connectAndRunBaseline(commandChannel,
 									servername.(string),
@@ -951,25 +1016,24 @@ func ApplyBaselines(baselineyaml *yaml.MapSlice, configs *yaml.MapSlice) {
 									disconnectSessions,
 									readyState,
 									&wg)
+							}
+							go func() {
+								wg.Wait()
+								close(output)
+							}()
 
-								go func() {
-									wg.Wait()
-									close(output)
-								}()
-								for {
-									if len(readyState) == len(sshList) {
-										break
-									}
-								}
-								blstruct.applyPrereq(&sshList)
-								blstruct.applyMustHaves(&sshList, &rebootBool)
-								blstruct.applyMustNotHaves(&sshList)
-								blstruct.applyFinals(&sshList, &rebootBool)
-
-								channelreaderlib.ChannelReaderGroups(output, &wg)
-
+						}
+						for {
+							if len(readyState) == len(sshList) {
+								break
 							}
 						}
+						baselineStruct.applyPrereq(&sshList, commandChannel)
+						baselineStruct.applyMustHaves(&sshList, &rebootBool)
+						baselineStruct.applyMustNotHaves(&sshList)
+						baselineStruct.applyFinals(&sshList, &rebootBool)
+
+						channelreaderlib.ChannelReaderGroups(output, &wg) // move to each apply stage
 					}
 				}
 			}
@@ -991,7 +1055,7 @@ func (parseddata *ParsedPool) connectAndRunBaseline(command chan map[string]stri
 	servername string,
 	output chan<- string,
 	disconnect <-chan bool,
-	ready chan<- []bool,
+	ready chan []bool,
 	wg *sync.WaitGroup) {
 	pp := parseddata
 	authMethodCheck := []ssh.AuthMethod{}
@@ -1021,7 +1085,7 @@ func (parseddata *ParsedPool) connectAndRunBaseline(command chan map[string]stri
 			ssh.KeyAlgoECDSA521,
 			ssh.KeyAlgoED25519,
 		},
-		Timeout: 15 * time.Second,
+		Timeout: 5 * time.Second,
 	}
 	defer func() {
 		if recv := recover(); recv != nil {
@@ -1035,7 +1099,7 @@ func (parseddata *ParsedPool) connectAndRunBaseline(command chan map[string]stri
 		output <- validator
 		wg.Done()
 	} else {
-		var yesReady []bool
+		yesReady := <-ready
 		yesReady = append(yesReady, true)
 		ready <- yesReady
 		for {
@@ -1079,7 +1143,10 @@ func executeBaselines(servername string, cmd string, password string, connection
 		ssh.TTY_OP_OSPEED: 14400, // output speed = 14.4kbaud
 	}
 	if err := session.RequestPty("xterm", 50, 100, modes); err != nil {
-		session.Close()
+		err := session.Close()
+		if err != nil {
+			loggerlib.GeneralError(servername, "[ERROR: Closing Pty session] ", err)
+		}
 		loggerlib.GeneralError(servername, "[ERROR: Pty Request Failed] ", err)
 	}
 	in, err := session.StdinPipe()

@@ -5,7 +5,7 @@ import (
 )
 
 // TODO remove fmt.printf's here... took a while to find them all
-func (blstruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBool *bool) {
+func (blstruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBool *bool, commandChannel chan<- map[string]string) {
 	commandset := make(map[string]string)
 	// Final steps list
 	fmt.Println("Applying final instructions:")
@@ -30,6 +30,7 @@ func (blstruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBo
 				// execute script
 				fmt.Println(ve)
 			}
+			commandChannel <- commandset
 		} else {
 			fmt.Printf("Skipping...\n")
 		}
@@ -44,7 +45,9 @@ func (blstruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBo
 						commandset[key] = finalCommandBuilder(&ve,"command")
 					}
 				}
+
 			}
+			commandChannel <- commandset
 		} else {
 			fmt.Printf("Skipping...\n")
 		}
@@ -63,6 +66,7 @@ func (blstruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBo
 					// TODO transfer to ./collections/[servername]/logs
 					finalCommandBuilder(&ve,"logs")
 				}
+				commandChannel <- commandset
 			} else {
 				fmt.Printf("Skipping...\n")
 			}
@@ -73,6 +77,7 @@ func (blstruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBo
 					// TODO transfer to ./collections/[servername]/stats
 					finalCommandBuilder(&ve,"stats")
 				}
+				commandChannel <- commandset
 			} else {
 				fmt.Printf("Skipping...\n")
 			}
@@ -83,6 +88,7 @@ func (blstruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBo
 					// TODO transfer to ./collections/[servername]/files
 					finalCommandBuilder(&ve,"files")
 				}
+				commandChannel <- commandset
 			} else {
 				fmt.Printf("Skipping...\n")
 			}
@@ -95,6 +101,7 @@ func (blstruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBo
 						commandset[key] = "w"
 					}
 				}
+				commandChannel <- commandset
 			} else {
 				fmt.Printf("Skipping...\n")
 			}
@@ -116,6 +123,7 @@ func (blstruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBo
 						commandset[key] = "systemctl --daemon-reload"
 					}
 				}
+				commandChannel <- commandset
 			} else {
 				fmt.Printf("Skipping...\n")
 			}
@@ -128,6 +136,7 @@ func (blstruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBo
 						commandset[key] = "reboot"
 					}
 				}
+				commandChannel <- commandset
 			} else {
 				fmt.Printf("Skipping...\n")
 			}

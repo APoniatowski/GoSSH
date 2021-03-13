@@ -2,7 +2,7 @@ package sshlib
 
 import "fmt"
 
-func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string, rebootBool *bool) {
+func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string, rebootBool *bool, commandChannel chan<- map[string]string) {
 	commandset := make(map[string]string)
 	// MH list
 	fmt.Printf("Must Have Checklist: ")
@@ -35,6 +35,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string, reboo
 						commandset[key] = serviceCommandBuilder(&ve, &val, "install")
 					}
 				}
+				commandChannel <- commandset
 				//for k, v := range commandset {
 				//	fmt.Printf("%v   %v\n", k, v)
 				//}
@@ -57,6 +58,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string, reboo
 						commandset[key] = serviceCommandBuilder(&ve, &val, "enable")
 					}
 				}
+				commandChannel <- commandset
 				//for k, v := range commandset {
 				//	fmt.Printf("%v   %v\n", k, v)
 				//}
@@ -79,6 +81,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string, reboo
 							commandset[key] = serviceCommandBuilder(&ve, &val, "disable")
 						}
 					}
+					commandChannel <- commandset
 					// TODO Must Have Disabled apply
 					//for k, v := range commandset {
 					//	fmt.Printf("%v   %v\n", k, v)
@@ -125,6 +128,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string, reboo
 						commandset[key] = ve.userManagementCommandBuilder(&ke, "add")
 					}
 				}
+				commandChannel <- commandset
 				// TODO User apply
 				//for k, v := range commandset {
 				//	fmt.Printf("%v   %v\n", k, v)
@@ -160,6 +164,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string, reboo
 			if blstruct.musthave.policies.polreboot {
 				*rebootBool = true
 			}
+			commandChannel <- commandset
 			//for k, v := range commandset {
 			//	fmt.Printf("%v   %v\n", k, v)
 			//}
@@ -192,6 +197,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string, reboo
 										"apply-open")
 								}
 							}
+							commandChannel <- commandset
 							//for k, v := range commandset {
 							//	// TODO Open Firewall ports & protocols check per firewall zone apply
 							//	fmt.Printf("%v   %v\n", k, v)
@@ -213,6 +219,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string, reboo
 									"apply-open")
 							}
 						}
+						commandChannel <- commandset
 						//for k, v := range commandset {
 						//	// TODO Open Firewall ports & protocols apply
 						//	fmt.Printf("%v   %v\n", k, v)
@@ -239,6 +246,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string, reboo
 										"apply-closed")
 								}
 							}
+							commandChannel <- commandset
 							//for k, v := range commandset {
 							//	// TODO Closed Firewall ports & protocols check per firewall zone apply
 							//	fmt.Printf("%v   %v\n", k, v)
@@ -258,6 +266,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string, reboo
 									"apply-closed")
 							}
 						}
+						commandChannel <- commandset
 						//for k, v := range commandset {
 						//	// TODO Open Firewall ports & protocols apply
 						//	fmt.Printf("%v   %v\n", k, v)
@@ -310,6 +319,7 @@ func (blstruct *ParsedBaseline) applyMustHaves(sshList *map[string]string, reboo
 						}
 						// iterate through sshList and create command for each server
 						// pass info to ssh session and waiting for a response
+						commandChannel <- commandset
 					}
 					//for k, v := range commandset {
 					//	fmt.Printf("%v   %v\n", k, v)

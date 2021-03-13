@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
+func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string, commandChannel chan<- map[string]string) {
 	commandset := make(map[string]string)
 	// skipping because of this check... need to make a few changes
 	fmt.Printf("Prerequisites Checklist: ")
@@ -41,12 +41,13 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 						commandset[key] = serviceCommandBuilder(&ve, &val, "install")
 					}
 				}
-				// TODO Prereq Tools apply
+				commandChannel <- commandset
+				//TODO Prereq Tools apply
 				//for k, v := range commandset {
 				//	fmt.Printf("%v   %v\n", k, v)
 				//}
-				// send to channel
-				// wait for response and display compliancy
+				//send to channel
+				//wait for response and display compliancy
 			}
 		}
 		// prerequisite files URLs
@@ -61,6 +62,7 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 						commandset[key] = prereqURLFetch(&ve)
 					}
 				}
+				commandChannel <- commandset
 				// TODO URL Files
 				//for k, v := range commandset {
 				//	fmt.Printf("%v   %v\n", k, v)
@@ -93,6 +95,7 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 						*/
 					}
 				}
+				commandChannel <- commandset
 				//for k, v := range commandset {
 				//	fmt.Printf("%v   %v\n", k, v)
 				//}
@@ -121,6 +124,7 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 								commandset[key] = blstruct.prereq.files.remote.remoteFilesCommandBuilder(&ve, "apply")
 							}
 						}
+						commandChannel <- commandset
 						// TODO Prereq Mount Files apply
 						//for k, v := range commandset {
 						//	fmt.Printf("%v   %v\n", k, v)
@@ -152,6 +156,7 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 							commandset[key] = prereqURLFetch(&ve)
 						}
 					}
+					commandChannel <- commandset
 					//for k, v := range commandset {
 					//	fmt.Printf("%v   %v\n", k, v)
 					//}
@@ -167,6 +172,7 @@ func (blstruct *ParsedBaseline) applyPrereq(sshList *map[string]string) {
 							commandset[key] = ve
 						}
 					}
+					commandChannel <- commandset
 					//for k, v := range commandset {
 					//	fmt.Printf("%v   %v\n", k, v)
 					//}
