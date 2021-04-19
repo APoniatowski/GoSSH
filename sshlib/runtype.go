@@ -59,7 +59,6 @@ func RunAllServers(configs *yaml.MapSlice, command *string) {
 		if !ok {
 			panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
 		}
-
 		allServers = append(allServers, groupValue...)
 	}
 	for _, serverItem := range allServers {
@@ -77,7 +76,6 @@ func RunAllServers(configs *yaml.MapSlice, command *string) {
 		pp.port = serverValue[4].Value
 		pp.os = serverValue[5].Value
 		pp.defaulter()
-
 		go pp.connectAndRun(command, servername.(string), output, &wg)
 	}
 	go func() {

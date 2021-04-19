@@ -26,9 +26,9 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 	var dataWarnings int
 	var baselineErrors int
 	// Baseline
-	for _, blItem := range *baselineYAML {
-		fmt.Printf("%s:\n", blItem.Key)
-		groupValues, ok := blItem.Value.(yaml.MapSlice)
+	for _, baselineItem := range *baselineYAML {
+		fmt.Printf("%s:\n", baselineItem.Key)
+		groupValues, ok := baselineItem.Value.(yaml.MapSlice)
 		if !ok {
 			panic("\nCheck your baseline for issues\nAlternatively generate a template to see what is missing/wrong\n")
 		}
@@ -60,10 +60,9 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 				if baselineStepItem.Key == nil {
 					baselineErrors++
 				}
-
 				// OS, Servers, Tools, Files, VCS, etc
 				for _, thirdStep := range nextValues {
-					nextblValues, ok := thirdStep.Value.(yaml.MapSlice)
+					nextBaselineValues, ok := thirdStep.Value.(yaml.MapSlice)
 					if !ok {
 						warnings++
 					}
@@ -80,8 +79,8 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 									baselineStruct.exclude.osExcl = []string{""}
 								} else {
 									exclOS := make([]string, len(thirdStep.Value.([]interface{})))
-									OSslice := thirdStep.Value.([]interface{})
-									for i, v := range OSslice {
+									OsSlice := thirdStep.Value.([]interface{})
+									for i, v := range OsSlice {
 										exclOS[i] = v.(string)
 									}
 									baselineStruct.exclude.osExcl = exclOS
@@ -106,12 +105,12 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 									dataWarnings++
 									baselineStruct.prereq.tools = []string{""}
 								} else {
-									prereqTools := make([]string, len(thirdStep.Value.([]interface{})))
-									prereqToolsSlice := thirdStep.Value.([]interface{})
-									for i, v := range prereqToolsSlice {
-										prereqTools[i] = v.(string)
+									prerequisiteTools := make([]string, len(thirdStep.Value.([]interface{})))
+									prerequisiteToolsSlice := thirdStep.Value.([]interface{})
+									for i, v := range prerequisiteToolsSlice {
+										prerequisiteTools[i] = v.(string)
 									}
-									baselineStruct.prereq.tools = prereqTools
+									baselineStruct.prereq.tools = prerequisiteTools
 								}
 							case "Files": // for loop
 								if thirdStep.Value == nil {
@@ -126,52 +125,52 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 									baselineStruct.prereq.files.remote.src = ""
 									baselineStruct.prereq.files.remote.dest = ""
 								} else {
-									for _, blItem = range nextblValues {
-										switch blItem.Key {
+									for _, baselineItem = range nextBaselineValues {
+										switch baselineItem.Key {
 										case "URLs":
-											if blItem.Value == nil {
+											if baselineItem.Value == nil {
 												dataWarnings++
 												baselineStruct.prereq.files.urls = []string{""}
 											} else {
-												prereqURLs := make([]string, len(blItem.Value.([]interface{})))
-												prereqURLsSlice := blItem.Value.([]interface{})
-												for i, v := range prereqURLsSlice {
-													prereqURLs[i] = v.(string)
+												prerequisiteURLs := make([]string, len(baselineItem.Value.([]interface{})))
+												prerequisiteURLsSlice := baselineItem.Value.([]interface{})
+												for i, v := range prerequisiteURLsSlice {
+													prerequisiteURLs[i] = v.(string)
 												}
-												baselineStruct.prereq.files.urls = prereqURLs
+												baselineStruct.prereq.files.urls = prerequisiteURLs
 											}
 										case "Local":
-											if blItem.Value == nil {
+											if baselineItem.Value == nil {
 												dataWarnings++
 												baselineStruct.prereq.files.local.src = ""
 												baselineStruct.prereq.files.local.dest = ""
 											} else {
-												extrablValues, ok := blItem.Value.(yaml.MapSlice)
+												extraBaselineValues, ok := baselineItem.Value.(yaml.MapSlice)
 												if !ok {
 													fmt.Println("Error parsing baseline. Please check the baseline you specified or generate a template")
 												}
-												var nextblStep yaml.MapItem
-												for _, nextblStep = range extrablValues {
-													switch nextblStep.Key {
+												var nextBaselineStep yaml.MapItem
+												for _, nextBaselineStep = range extraBaselineValues {
+													switch nextBaselineStep.Key {
 													case "Source":
-														if nextblStep.Value == nil {
+														if nextBaselineStep.Value == nil {
 															dataWarnings++
 															baselineStruct.prereq.files.local.src = ""
 														} else {
-															baselineStruct.prereq.files.local.src = nextblStep.Value.(string)
+															baselineStruct.prereq.files.local.src = nextBaselineStep.Value.(string)
 														}
 													case "Destination":
-														if nextblStep.Value == nil {
+														if nextBaselineStep.Value == nil {
 															dataWarnings++
 															baselineStruct.prereq.files.local.dest = ""
 														} else {
-															baselineStruct.prereq.files.local.dest = nextblStep.Value.(string)
+															baselineStruct.prereq.files.local.dest = nextBaselineStep.Value.(string)
 														}
 													}
 												}
 											}
 										case "Remote":
-											if blItem.Value == nil {
+											if baselineItem.Value == nil {
 												dataWarnings++
 												baselineStruct.prereq.files.remote.mounttype = ""
 												baselineStruct.prereq.files.remote.address = ""
@@ -180,62 +179,62 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 												baselineStruct.prereq.files.remote.src = ""
 												baselineStruct.prereq.files.remote.dest = ""
 											} else {
-												extrablValues, ok := blItem.Value.(yaml.MapSlice)
+												extraBaselineValues, ok := baselineItem.Value.(yaml.MapSlice)
 												if !ok {
 													warnings++
 												}
-												var nextblStep yaml.MapItem
-												for _, nextblStep = range extrablValues {
-													switch nextblStep.Key {
+												var nextBaselineStep yaml.MapItem
+												for _, nextBaselineStep = range extraBaselineValues {
+													switch nextBaselineStep.Key {
 													case "Type":
-														if nextblStep.Value == nil {
+														if nextBaselineStep.Value == nil {
 															dataWarnings++
 															baselineStruct.prereq.files.remote.mounttype = ""
 														} else {
-															baselineStruct.prereq.files.remote.mounttype = nextblStep.Value.(string)
+															baselineStruct.prereq.files.remote.mounttype = nextBaselineStep.Value.(string)
 														}
 													case "Address":
-														if nextblStep.Value == nil {
+														if nextBaselineStep.Value == nil {
 															dataWarnings++
 															baselineStruct.prereq.files.remote.address = ""
 														} else {
-															baselineStruct.prereq.files.remote.address = nextblStep.Value.(string)
+															baselineStruct.prereq.files.remote.address = nextBaselineStep.Value.(string)
 														}
 													case "Username":
-														if nextblStep.Value == nil {
+														if nextBaselineStep.Value == nil {
 															dataWarnings++
 															baselineStruct.prereq.files.remote.username = ""
 														} else {
-															baselineStruct.prereq.files.remote.username = nextblStep.Value.(string)
+															baselineStruct.prereq.files.remote.username = nextBaselineStep.Value.(string)
 														}
 													case "Password":
-														if nextblStep.Value == nil {
+														if nextBaselineStep.Value == nil {
 															dataWarnings++
 															baselineStruct.prereq.files.remote.pwd = ""
 														} else {
-															baselineStruct.prereq.files.remote.pwd = nextblStep.Value.(string)
+															baselineStruct.prereq.files.remote.pwd = nextBaselineStep.Value.(string)
 														}
 													case "Source":
-														if nextblStep.Value == nil {
+														if nextBaselineStep.Value == nil {
 															dataWarnings++
 															baselineStruct.prereq.files.remote.src = ""
 														} else {
-															baselineStruct.prereq.files.remote.src = nextblStep.Value.(string)
+															baselineStruct.prereq.files.remote.src = nextBaselineStep.Value.(string)
 														}
 													case "Destination":
-														if nextblStep.Value == nil {
+														if nextBaselineStep.Value == nil {
 															dataWarnings++
 															baselineStruct.prereq.files.remote.dest = ""
 														} else {
-															baselineStruct.prereq.files.remote.dest = nextblStep.Value.(string)
+															baselineStruct.prereq.files.remote.dest = nextBaselineStep.Value.(string)
 														}
 													case "Files":
-														if nextblStep.Value == nil {
+														if nextBaselineStep.Value == nil {
 															dataWarnings++
 															baselineStruct.prereq.files.remote.files = []string{""}
 														} else {
-															remoteFiles := make([]string, len(nextblStep.Value.([]interface{})))
-															remoteFilesSlice := nextblStep.Value.([]interface{})
+															remoteFiles := make([]string, len(nextBaselineStep.Value.([]interface{})))
+															remoteFilesSlice := nextBaselineStep.Value.([]interface{})
 															for i, v := range remoteFilesSlice {
 																remoteFiles[i] = v.(string)
 															}
@@ -253,31 +252,31 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 									baselineStruct.prereq.vcs.urls = []string{""}
 									baselineStruct.prereq.vcs.execute = []string{""}
 								} else {
-									for _, blItem = range nextblValues {
-										switch blItem.Key {
+									for _, baselineItem = range nextBaselineValues {
+										switch baselineItem.Key {
 										case "URLs":
-											if blItem.Value == nil {
+											if baselineItem.Value == nil {
 												dataWarnings++
 												baselineStruct.prereq.vcs.urls = []string{""}
 											} else {
-												vcsURLs := make([]string, len(blItem.Value.([]interface{})))
-												vcsURLsSlice := blItem.Value.([]interface{})
+												vcsURLs := make([]string, len(baselineItem.Value.([]interface{})))
+												vcsURLsSlice := baselineItem.Value.([]interface{})
 												for i, v := range vcsURLsSlice {
 													vcsURLs[i] = v.(string)
 												}
 												baselineStruct.prereq.vcs.urls = vcsURLs
 											}
 										case "Execute":
-											if blItem.Value == nil {
+											if baselineItem.Value == nil {
 												dataWarnings++
 												baselineStruct.prereq.vcs.execute = []string{""}
 											} else {
-												vcsCMDS := make([]string, len(blItem.Value.([]interface{})))
-												vcsCMDSSlice := blItem.Value.([]interface{})
-												for i, v := range vcsCMDSSlice {
-													vcsCMDS[i] = v.(string)
+												vcsCommands := make([]string, len(baselineItem.Value.([]interface{})))
+												vcsCommandsSlice := baselineItem.Value.([]interface{})
+												for i, v := range vcsCommandsSlice {
+													vcsCommands[i] = v.(string)
 												}
-												baselineStruct.prereq.vcs.execute = vcsCMDS
+												baselineStruct.prereq.vcs.execute = vcsCommands
 											}
 										}
 									}
@@ -340,11 +339,11 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 									dataWarnings++
 									baselineStruct.musthave.configured.services[""] = musthaveconfiguredservices{source: []string{""}, destination: []string{""}}
 								} else {
-									for _, blItem = range nextblValues {
-										service := blItem.Key.(string)
+									for _, baselineItem = range nextBaselineValues {
+										service := baselineItem.Key.(string)
 										var mhConfSrc []string
 										var mhConfDest []string
-										confValues, ok := blItem.Value.(yaml.MapSlice)
+										confValues, ok := baselineItem.Value.(yaml.MapSlice)
 										if !ok {
 											warnings++
 										}
@@ -382,13 +381,13 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 									dataWarnings++
 									baselineStruct.musthave.users.users[""] = musthaveusersstruct{groups: []string{""}, shell: "", home: "", sudoer: false}
 								} else {
-									for _, blItem = range nextblValues {
-										user := blItem.Key.(string)
-										var mhUsergroup []string
-										var mhUsershell string
-										var mhUserhome string
-										var mhUsersudo bool
-										userValues, ok := blItem.Value.(yaml.MapSlice)
+									for _, baselineItem = range nextBaselineValues {
+										user := baselineItem.Key.(string)
+										var mhUserGroup []string
+										var mhUserShell string
+										var mhUserHome string
+										var mhUserSudo bool
+										userValues, ok := baselineItem.Value.(yaml.MapSlice)
 										if !ok {
 											warnings++
 										}
@@ -397,41 +396,41 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 											case "Groups":
 												if userItems.Value == nil {
 													dataWarnings++
-													mhUsergroup = []string{""}
+													mhUserGroup = []string{""}
 												} else {
-													mhUsergroup = make([]string, len(userItems.Value.([]interface{})))
-													mhUsergroupSlice := userItems.Value.([]interface{})
-													for i, v := range mhUsergroupSlice {
-														mhUsergroup[i] = v.(string)
+													mhUserGroup = make([]string, len(userItems.Value.([]interface{})))
+													mhUserGroupSlice := userItems.Value.([]interface{})
+													for i, v := range mhUserGroupSlice {
+														mhUserGroup[i] = v.(string)
 													}
 												}
 											case "Shell":
 												if userItems.Value == nil {
 													dataWarnings++
-													mhUsershell = ""
+													mhUserShell = ""
 												} else {
-													mhUsershell = userItems.Value.(string)
+													mhUserShell = userItems.Value.(string)
 												}
 											case "Home-Dir":
 												if userItems.Value == nil {
 													dataWarnings++
-													mhUserhome = ""
+													mhUserHome = ""
 												} else {
-													mhUserhome = userItems.Value.(string)
+													mhUserHome = userItems.Value.(string)
 												}
 											case "Sudoer":
 												if userItems.Value == nil {
 													dataWarnings++
-													mhUsersudo = false
+													mhUserSudo = false
 												} else {
-													mhUsersudo = userItems.Value.(bool)
+													mhUserSudo = userItems.Value.(bool)
 												}
 											}
 											baselineStruct.musthave.users.users[user] = musthaveusersstruct{
-												groups: mhUsergroup,
-												shell:  mhUsershell,
-												home:   mhUserhome,
-												sudoer: mhUsersudo,
+												groups: mhUserGroup,
+												shell:  mhUserShell,
+												home:   mhUserHome,
+												sudoer: mhUserSudo,
 											}
 										}
 									}
@@ -443,28 +442,28 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 									baselineStruct.musthave.policies.polstatus = ""
 									baselineStruct.musthave.policies.polreboot = false
 								} else {
-									for _, blItem = range nextblValues {
-										switch blItem.Key {
+									for _, baselineItem = range nextBaselineValues {
+										switch baselineItem.Key {
 										case "Status":
-											if blItem.Value == nil {
+											if baselineItem.Value == nil {
 												dataWarnings++
 												baselineStruct.musthave.policies.polstatus = ""
 											} else {
-												baselineStruct.musthave.policies.polstatus = blItem.Value.(string)
+												baselineStruct.musthave.policies.polstatus = baselineItem.Value.(string)
 											}
 										case "Import":
-											if blItem.Value == nil {
+											if baselineItem.Value == nil {
 												dataWarnings++
 												baselineStruct.musthave.policies.polimport = ""
 											} else {
-												baselineStruct.musthave.policies.polimport = blItem.Value.(string)
+												baselineStruct.musthave.policies.polimport = baselineItem.Value.(string)
 											}
 										case "Reboot":
-											if blItem.Value == nil {
+											if baselineItem.Value == nil {
 												dataWarnings++
 												baselineStruct.musthave.policies.polreboot = false
 											} else {
-												baselineStruct.musthave.policies.polreboot = blItem.Value.(bool)
+												baselineStruct.musthave.policies.polreboot = baselineItem.Value.(bool)
 											}
 										}
 									}
@@ -478,12 +477,12 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 									baselineStruct.musthave.rules.fwclosed.protocols = []string{""}
 									baselineStruct.musthave.rules.fwzones = []string{""}
 								} else {
-									for _, blItem = range nextblValues {
-										rulesValues, ok := blItem.Value.(yaml.MapSlice)
+									for _, baselineItem = range nextBaselineValues {
+										rulesValues, ok := baselineItem.Value.(yaml.MapSlice)
 										if !ok {
 											warnings++
 										}
-										switch blItem.Key {
+										switch baselineItem.Key {
 										case "Open":
 											for _, rulesItems := range rulesValues {
 												switch rulesItems.Key {
@@ -543,12 +542,12 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 												}
 											}
 										case "Zones":
-											if blItem.Value == nil {
+											if baselineItem.Value == nil {
 												dataWarnings++
 												baselineStruct.musthave.rules.fwzones = []string{""}
 											} else {
-												mhRulesZones := make([]string, len(blItem.Value.([]interface{})))
-												mhRulesZonesSlice := blItem.Value.([]interface{})
+												mhRulesZones := make([]string, len(baselineItem.Value.([]interface{})))
+												mhRulesZonesSlice := baselineItem.Value.([]interface{})
 												for i, v := range mhRulesZonesSlice {
 													mhRulesZones[i] = v.(string)
 												}
@@ -579,9 +578,9 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 									if !ok {
 										warnings++
 									}
-									for _, blItem = range nextblValues {
-										mhMounts = blItem.Key.(string)
-										mountValues, ok := blItem.Value.(yaml.MapSlice)
+									for _, baselineItem = range nextBaselineValues {
+										mhMounts = baselineItem.Key.(string)
+										mountValues, ok := baselineItem.Value.(yaml.MapSlice)
 										if !ok {
 											warnings++
 										}
@@ -701,12 +700,12 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 									baselineStruct.mustnothave.rules.fwclosed.protocols = []string{""}
 									baselineStruct.mustnothave.rules.fwzones = []string{""}
 								} else {
-									for _, blItem = range nextblValues {
-										rulesValues, ok := blItem.Value.(yaml.MapSlice)
+									for _, baselineItem = range nextBaselineValues {
+										rulesValues, ok := baselineItem.Value.(yaml.MapSlice)
 										if !ok {
 											warnings++
 										}
-										switch blItem.Key {
+										switch baselineItem.Key {
 										case "Open":
 											for _, rulesItems := range rulesValues {
 												switch rulesItems.Key {
@@ -766,12 +765,12 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 												}
 											}
 										case "Zones":
-											if blItem.Value == nil {
+											if baselineItem.Value == nil {
 												dataWarnings++
 												baselineStruct.mustnothave.rules.fwzones = []string{""}
 											} else {
-												mhRulesZones := make([]string, len(blItem.Value.([]interface{})))
-												mhRulesZonesSlice := blItem.Value.([]interface{})
+												mhRulesZones := make([]string, len(baselineItem.Value.([]interface{})))
+												mhRulesZonesSlice := baselineItem.Value.([]interface{})
 												for i, v := range mhRulesZonesSlice {
 													mhRulesZones[i] = v.(string)
 												}
@@ -827,50 +826,50 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 									baselineStruct.final.collect.files = []string{""}
 									baselineStruct.final.collect.users = false
 								} else {
-									for _, blItem = range nextblValues {
-										switch blItem.Key {
+									for _, baselineItem = range nextBaselineValues {
+										switch baselineItem.Key {
 										case "Logs":
-											if blItem.Value == nil {
+											if baselineItem.Value == nil {
 												dataWarnings++
 												baselineStruct.final.collect.logs = []string{""}
 											} else {
-												fnlColLog := make([]string, len(blItem.Value.([]interface{})))
-												fnlColLogSlice := blItem.Value.([]interface{})
+												fnlColLog := make([]string, len(baselineItem.Value.([]interface{})))
+												fnlColLogSlice := baselineItem.Value.([]interface{})
 												for i, v := range fnlColLogSlice {
 													fnlColLog[i] = v.(string)
 												}
 												baselineStruct.final.collect.logs = fnlColLog
 											}
 										case "Stats":
-											if blItem.Value == nil {
+											if baselineItem.Value == nil {
 												dataWarnings++
 												baselineStruct.final.collect.stats = []string{""}
 											} else {
-												fnlColstats := make([]string, len(blItem.Value.([]interface{})))
-												fnlColstatsSlice := blItem.Value.([]interface{})
-												for i, v := range fnlColstatsSlice {
-													fnlColstats[i] = v.(string)
+												finalCollectStats := make([]string, len(baselineItem.Value.([]interface{})))
+												finalCollectStatsSlice := baselineItem.Value.([]interface{})
+												for i, v := range finalCollectStatsSlice {
+													finalCollectStats[i] = v.(string)
 												}
-												baselineStruct.final.collect.stats = fnlColstats
+												baselineStruct.final.collect.stats = finalCollectStats
 											}
 										case "Files":
-											if blItem.Value == nil {
+											if baselineItem.Value == nil {
 												dataWarnings++
 												baselineStruct.final.collect.files = []string{""}
 											} else {
-												fnlColFiles := make([]string, len(blItem.Value.([]interface{})))
-												fnlColFilesSlice := blItem.Value.([]interface{})
+												fnlColFiles := make([]string, len(baselineItem.Value.([]interface{})))
+												fnlColFilesSlice := baselineItem.Value.([]interface{})
 												for i, v := range fnlColFilesSlice {
 													fnlColFiles[i] = v.(string)
 												}
 												baselineStruct.final.collect.files = fnlColFiles
 											}
 										case "Users":
-											if blItem.Value == nil {
+											if baselineItem.Value == nil {
 												dataWarnings++
 												baselineStruct.final.collect.users = false
 											} else {
-												baselineStruct.final.collect.users = blItem.Value.(bool)
+												baselineStruct.final.collect.users = baselineItem.Value.(bool)
 											}
 										}
 									}
@@ -881,21 +880,21 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 									baselineStruct.final.restart.services = false
 									baselineStruct.final.restart.servers = false
 								} else {
-									for _, blItem = range nextblValues {
-										switch blItem.Key {
+									for _, baselineItem = range nextBaselineValues {
+										switch baselineItem.Key {
 										case "Services":
-											if blItem.Value == nil {
+											if baselineItem.Value == nil {
 												dataWarnings++
 												baselineStruct.final.restart.services = false
 											} else {
-												baselineStruct.final.restart.services = blItem.Value.(bool)
+												baselineStruct.final.restart.services = baselineItem.Value.(bool)
 											}
 										case "Servers":
-											if blItem.Value == nil {
+											if baselineItem.Value == nil {
 												dataWarnings++
 												baselineStruct.final.restart.servers = false
 											} else {
-												baselineStruct.final.restart.servers = blItem.Value.(bool)
+												baselineStruct.final.restart.servers = baselineItem.Value.(bool)
 											}
 										}
 									}
@@ -908,7 +907,6 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 					}
 				}
 			}
-
 			// TODO apply baseline
 			sshList := baselineStruct.applyOSExcludes(serverGroupName, configs)
 			disconnectSessions := make(chan bool)
@@ -919,8 +917,9 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 				if serverGroupName == groupItem.Key {
 					output := make(chan string)
 					readyState := make(chan []bool)
+					commandChannel := make(chan map[string]string)
 					var wg sync.WaitGroup
-
+					var commandSync sync.WaitGroup
 					groupValue, ok := groupItem.Value.(yaml.MapSlice)
 					if !ok {
 						panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
@@ -939,54 +938,49 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 						pp.port = serverValue[4].Value
 						pp.os = serverValue[5].Value
 						pp.defaulter()
-						commandChannel := make(chan map[string]string)
+
 						for i := range sshList {
 							if i == pp.fqdn.(string) {
 								wg.Add(1)
-								fmt.Println("sending false to disconnectsessions channel")
 								disconnectSessions <- false // To keep sessions alive and not disconnect
-								fmt.Println("starting ssh goroutine")
 								go pp.connectAndRunBaseline(commandChannel,
 									servername.(string),
 									output,
 									disconnectSessions,
 									readyState,
-									&wg)
+									&wg,
+									&commandSync)
 							}
-							fmt.Println("started goroutines, starting output goroutine")
 							go func() {
 								wg.Wait()
 								close(output)
 							}()
-
 						}
-						fmt.Println("readystate/sshlist")
-						fmt.Printf("%d  %d\n", len(readyState), len(sshList))
+						fmt.Printf("%d  %d\n", len(readyState), len(sshList)) // delete later, debugging
 						for {
 							if len(readyState) == len(sshList) {
 								break
 							}
 						}
-						fmt.Println("starting stages...")
 						baselineStruct.applyPrereq(&sshList, commandChannel)
 						baselineStruct.applyMustHaves(&sshList, &rebootBool, commandChannel)
 						baselineStruct.applyMustNotHaves(&sshList, commandChannel)
 						baselineStruct.applyFinals(&sshList, &rebootBool, commandChannel)
-
 						channelreaderlib.ChannelReaderGroups(output, &wg) // move to each apply stage
 					}
 				} else if strings.ToLower(serverGroupName) == "all" {
 					var allServers yaml.MapSlice
 					output := make(chan string)
 					readyState := make(chan []bool)
+					commandChannel := make(chan map[string]string)
 					var wg sync.WaitGroup
+					var commandSync sync.WaitGroup
 					// Concatenates the groups to create a single group
 					for _, groupItem := range *configs {
 						groupValue, ok := groupItem.Value.(yaml.MapSlice)
 						if !ok {
 							panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
 						}
-
 						allServers = append(allServers, groupValue...)
 					}
 					for _, serverItem := range allServers {
@@ -1004,40 +998,36 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 						pp.port = serverValue[4].Value
 						pp.os = serverValue[5].Value
 						pp.defaulter()
-						commandChannel := make(chan map[string]string)
 						for i := range sshList {
 							if i == pp.fqdn.(string) {
 								wg.Add(1)
 								disconnectSessions <- false // To keep sessions alive and not disconnect
-
 								go pp.connectAndRunBaseline(commandChannel,
 									servername.(string),
 									output,
 									disconnectSessions,
 									readyState,
-									&wg)
+									&wg,
+									&commandSync)
 							}
-							go func() {
-								wg.Wait()
-								close(output)
-							}()
-
 						}
 						for {
 							if len(readyState) == len(sshList) {
-								break
+								break // wait for all servers to be connected and ready to accept commands
 							}
 						}
+						go func() {
+							wg.Wait()
+							close(output)
+						}()
 						baselineStruct.applyPrereq(&sshList, commandChannel)
 						baselineStruct.applyMustHaves(&sshList, &rebootBool, commandChannel)
 						baselineStruct.applyMustNotHaves(&sshList, commandChannel)
 						baselineStruct.applyFinals(&sshList, &rebootBool, commandChannel)
-
-						channelreaderlib.ChannelReaderGroups(output, &wg) // move to each apply stage
+						channelreaderlib.ChannelReaderBaselines(output, &wg, &commandSync) // move to each apply stage
 					}
 				}
 			}
-
 			if rebootBool {
 				// send reboot command to servers
 			} else {
@@ -1051,13 +1041,14 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // connectAndRun Establish a connection and run command(s), will add CLI args in the near future
-func (parseddata *ParsedPool) connectAndRunBaseline(command chan map[string]string,
+func (parsedData *ParsedPool) connectAndRunBaseline(command chan map[string]string,
 	servername string,
 	output chan<- string,
 	disconnect <-chan bool,
 	ready chan []bool,
-	wg *sync.WaitGroup) {
-	pp := parseddata
+	wg *sync.WaitGroup,
+	commandSync *sync.WaitGroup) {
+	pp := parsedData
 	authMethodCheck := []ssh.AuthMethod{}
 	key, err := ioutil.ReadFile(pp.keypath.(string))
 	if err != nil {
@@ -1065,7 +1056,7 @@ func (parseddata *ParsedPool) connectAndRunBaseline(command chan map[string]stri
 	} else {
 		signer, err := ssh.ParsePrivateKey(key)
 		if err != nil {
-			loggerlib.GeneralError(servername, "[INFO: Failed To Parse PrivKey] ", err)
+			loggerlib.GeneralError(servername, "[INFO: Failed To Parse Private Key] ", err)
 		}
 		authMethodCheck = append(authMethodCheck, ssh.PublicKeys(signer))
 	}
@@ -1104,20 +1095,23 @@ func (parseddata *ParsedPool) connectAndRunBaseline(command chan map[string]stri
 		ready <- yesReady
 		for {
 			commandCheck := <-command
-			if len(commandCheck) != 0 {
-				disconnectCheck := <-disconnect
-				if !disconnectCheck {
+			disconnectCheck := <-disconnect
+			if !disconnectCheck {
+				if len(commandCheck) != 0 {
 					for i, j := range commandCheck {
 						if i == pp.fqdn && j != "" {
+							commandSync.Add(1)
 							output <- executeBaselines(servername, j, pp.password.(string), connection)
 							commandCheck[i] = ""
 						}
 					}
 					command <- commandCheck
-				} else {
-					break
+					commandSync.Done()
 				}
+			} else {
+				break
 			}
+			// close sync group here?
 		}
 		defer connection.Close()
 		defer wg.Done()
@@ -1157,11 +1151,11 @@ func executeBaselines(servername string, cmd string, password string, connection
 	if err != nil {
 		loggerlib.GeneralError(servername, "[ERROR: Stdout Error] ", err)
 	}
-	var terminaloutput []byte
-	var waitoutput sync.WaitGroup
+	var terminalOutput []byte
+	var waitOutput sync.WaitGroup
 	// it does not wait for output on some machines that are taking too long to respond. I'd like to avoid using Rlocks/Runlocks for this
-	waitoutput.Add(1)
-	go func(in io.WriteCloser, out io.Reader, terminaloutput *[]byte) {
+	waitOutput.Add(1)
+	go func(in io.WriteCloser, out io.Reader, terminalOutput *[]byte) {
 		var (
 			line string
 			read = bufio.NewReader(out)
@@ -1171,7 +1165,7 @@ func executeBaselines(servername string, cmd string, password string, connection
 			if err != nil {
 				break
 			}
-			*terminaloutput = append(*terminaloutput, buffer)
+			*terminalOutput = append(*terminalOutput, buffer)
 			if buffer == byte('\n') {
 				line = ""
 				continue
@@ -1184,16 +1178,16 @@ func executeBaselines(servername string, cmd string, password string, connection
 				}
 			}
 		}
-		waitoutput.Done()
-	}(in, out, &terminaloutput)
+		waitOutput.Done()
+	}(in, out, &terminalOutput)
 	_, err = session.Output(cmd)
-	waitoutput.Wait()
+	waitOutput.Wait()
 	if err != nil {
 		validator = "NOK\n"
-		loggerlib.ErrorLogger(servername, "[INFO: Failed] ", terminaloutput)
+		loggerlib.ErrorLogger(servername, "[INFO: Failed] ", terminalOutput)
 	} else {
 		validator = "OK\n"
-		loggerlib.OutputLogger(servername, "[INFO: Success] ", terminaloutput)
+		loggerlib.OutputLogger(servername, "[INFO: Success] ", terminalOutput)
 	}
 	return validator
 }

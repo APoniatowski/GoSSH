@@ -6,11 +6,11 @@ import (
 	"strings"
 )
 
-func (blstruct *ParsedBaseline) applyOSExcludes(servergroupname string, configs *yaml.MapSlice) map[string]string {
+func (baselineStruct *ParsedBaseline) applyOSExcludes(serverGroupName string, configs *yaml.MapSlice) map[string]string {
 	sshList := make(map[string]string)
-	if strings.ToLower(servergroupname) == "all" {
-		if len(blstruct.exclude.osExcl) == 0 &&
-			len(blstruct.exclude.serversExcl) == 0 {
+	if strings.ToLower(serverGroupName) == "all" {
+		if len(baselineStruct.exclude.osExcl) == 0 &&
+			len(baselineStruct.exclude.serversExcl) == 0 {
 			var allServers yaml.MapSlice
 			// Concatenates the groups to create a single group
 			for _, groupItem := range *configs {
@@ -33,29 +33,29 @@ func (blstruct *ParsedBaseline) applyOSExcludes(servergroupname string, configs 
 				if !ok {
 					panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
 				}
-				if groupItem.Key == servergroupname {
+				if groupItem.Key == serverGroupName {
 					for _, serverItem := range groupValue {
-						var osnamecheck bool
-						var servernamecheck bool
+						var osNameCheck bool
+						var serverNameCheck bool
 						serverValue, ok := serverItem.Value.(yaml.MapSlice)
 						if !ok {
 							panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
 						}
-						if len(blstruct.exclude.osExcl) > 0 {
-							for _, ve := range blstruct.exclude.osExcl {
+						if len(baselineStruct.exclude.osExcl) > 0 {
+							for _, ve := range baselineStruct.exclude.osExcl {
 								if strings.EqualFold(serverValue[5].Value.(string), ve) {
-									osnamecheck = true
+									osNameCheck = true
 								}
 							}
 						}
-						if len(blstruct.exclude.serversExcl) > 0 {
-							for _, ve := range blstruct.exclude.serversExcl {
+						if len(baselineStruct.exclude.serversExcl) > 0 {
+							for _, ve := range baselineStruct.exclude.serversExcl {
 								if strings.EqualFold(serverValue[0].Value.(string), ve) {
-									servernamecheck = true
+									serverNameCheck = true
 								}
 							}
 						}
-						if !servernamecheck && !osnamecheck {
+						if !serverNameCheck && !osNameCheck {
 							sshList[serverValue[0].Value.(string)] = serverValue[5].Value.(string)
 						}
 					}
@@ -63,14 +63,14 @@ func (blstruct *ParsedBaseline) applyOSExcludes(servergroupname string, configs 
 			}
 		}
 	} else {
-		if len(blstruct.exclude.osExcl) == 0 &&
-			len(blstruct.exclude.serversExcl) == 0 {
+		if len(baselineStruct.exclude.osExcl) == 0 &&
+			len(baselineStruct.exclude.serversExcl) == 0 {
 			for _, groupItem := range *configs {
 				groupValue, ok := groupItem.Value.(yaml.MapSlice)
 				if !ok {
 					panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
 				}
-				if strings.EqualFold(groupItem.Key.(string), servergroupname) {
+				if strings.EqualFold(groupItem.Key.(string), serverGroupName) {
 					for _, serverItem := range groupValue {
 						serverValue, ok := serverItem.Value.(yaml.MapSlice)
 						if !ok {
@@ -86,29 +86,29 @@ func (blstruct *ParsedBaseline) applyOSExcludes(servergroupname string, configs 
 				if !ok {
 					panic(fmt.Sprintf("Unexpected type %T", groupItem.Value))
 				}
-				if strings.EqualFold(groupItem.Key.(string), servergroupname) {
+				if strings.EqualFold(groupItem.Key.(string), serverGroupName) {
 					for _, serverItem := range groupValue {
-						var osnamecheck bool
-						var servernamecheck bool
+						var osNameCheck bool
+						var serverNameCheck bool
 						serverValue, ok := serverItem.Value.(yaml.MapSlice)
 						if !ok {
 							panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
 						}
-						if len(blstruct.exclude.osExcl) > 0 {
-							for _, ve := range blstruct.exclude.osExcl {
+						if len(baselineStruct.exclude.osExcl) > 0 {
+							for _, ve := range baselineStruct.exclude.osExcl {
 								if strings.EqualFold(serverValue[5].Value.(string), ve) {
-									osnamecheck = true
+									osNameCheck = true
 								}
 							}
 						}
-						if len(blstruct.exclude.serversExcl) > 0 {
-							for _, ve := range blstruct.exclude.serversExcl {
+						if len(baselineStruct.exclude.serversExcl) > 0 {
+							for _, ve := range baselineStruct.exclude.serversExcl {
 								if strings.EqualFold(serverValue[0].Value.(string), ve) {
-									servernamecheck = true
+									serverNameCheck = true
 								}
 							}
 						}
-						if !servernamecheck && !osnamecheck {
+						if !serverNameCheck && !osNameCheck {
 							sshList[serverValue[0].Value.(string)] = serverValue[5].Value.(string)
 						}
 					}
