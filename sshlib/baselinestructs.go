@@ -18,11 +18,12 @@ type exclusion struct {
 
 // prerequisite struct
 type prereqs struct {
-	tools   []string
-	files   prereqsfiles
-	vcs     prereqvcs
-	script  string
-	cleanup bool
+	tools    []string
+	files    prereqsfiles
+	vcs      prereqvcs
+	script   string
+	commands []string
+	cleanup  bool
 }
 
 type prereqsfiles struct {

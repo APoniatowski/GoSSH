@@ -19,19 +19,19 @@ func main() {
 	var cmd []string
 	var switches *sshlib.Switches = &sshlib.OSSwitcher
 	cyan := color.Cyan.Render
-	// had issues with pointers and booleans, so I found a article which gave this as a solution:
+	// had issues with pointers and booleans, so I found an article which gave this as a solution:
 	toggleswitchtrue := true
 	toggleswitchfalse := false
 	switches.Updater = &toggleswitchfalse
 	switches.UpdaterFull = &toggleswitchfalse
 	switches.Install = &toggleswitchfalse
 	switches.Uninstall = &toggleswitchfalse
-	// create one variable and reference it, so essentially this would take less expensive, as it is pointing to 2 memory locations
+	// create one variable and reference it, so essentially this would make it less expensive, as it is pointing to 2 memory locations
 	// instead of 4.
 	app := cli.NewApp()
 	app.Name = "GoSSH"
 	app.Version = "2.0.0"
-	app.Usage = "Open Source Go Infrastucture Automation Tool"
+	app.Usage = "Open Source Go Infrastructure Automation Tool"
 	app.UsageText = "GoSSH [global options] command [subcommand] [script or arguments...]"
 	app.EnableBashCompletion = true
 	app.Commands = []cli.Command{

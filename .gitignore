@@ -26,6 +26,7 @@
 /pkg
 #README.md
 config/pool.yml
+config/test.yml
 config/pool-testing.yml
 config/pool-testing-linux.yml
 __debug_bin

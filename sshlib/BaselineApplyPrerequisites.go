@@ -24,6 +24,7 @@ func (baselineStruct *ParsedBaseline) applyPrereq(sshList *map[string]string, co
 		len(baselineStruct.prereq.files.urls) == 0 &&
 		len(baselineStruct.prereq.tools) == 0 &&
 		baselineStruct.prereq.script == "" &&
+		len(baselineStruct.prereq.commands) == 0 &&
 		!baselineStruct.prereq.cleanup {
 		commandSet[""] = ""
 		fmt.Printf("Skipping...\n")
@@ -169,6 +170,22 @@ func (baselineStruct *ParsedBaseline) applyPrereq(sshList *map[string]string, co
 					for key, val := range *sshList {
 						if commandSet[val] == "" {
 							// TODO Prereq VCS execution
+							commandSet[key] = ve
+						}
+					}
+					commandChannel <- commandSet
+					//for k, v := range commandSet {
+					//	fmt.Printf("%v   %v\n", k, v)
+					//}
+					// send to channel
+					// wait for response
+				}
+			}
+			if len(baselineStruct.prereq.commands) > 0 {
+				for _, ve := range baselineStruct.prereq.commands {
+					for key, val := range *sshList {
+						if commandSet[val] == "" {
+							// TODO Prereq commands
 							commandSet[key] = ve
 						}
 					}

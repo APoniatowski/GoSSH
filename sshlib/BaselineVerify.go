@@ -280,6 +280,18 @@ func VerifyBaselines(baselineyaml *yaml.MapSlice) {
 								} else {
 									blstruct.prereq.script = thirdStep.Value.(string)
 								}
+							case "Commands":
+								if thirdStep.Value == nil {
+									datawarnings++
+									blstruct.prereq.commands = []string{""}
+								} else {
+									prereqCommands := make([]string, len(thirdStep.Value.([]interface{})))
+									prereqCommandsSlice := thirdStep.Value.([]interface{})
+									for i, v := range prereqCommandsSlice {
+										prereqCommands[i] = v.(string)
+									}
+									blstruct.prereq.commands = prereqCommands
+								}
 
 							case "Clean-up":
 								if thirdStep.Value == nil {

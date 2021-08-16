@@ -38,6 +38,9 @@ Example - Setup webserver:            # this will be the name of a baseline that
           - command 2
           - command 3
       Script: /path/to/script       # Or one can keep everything blank and run a custom bash script to do prerequisite actions.
+      Commands:                     # Set of commands, in case custom configs are needed
+        - command 1
+        - command 2
       Clean-up: true                # clean-up of tools and downloaded urls/tools/etc. And tools in Must-Have will be ignored from clean-up
     Must-Have:                      # The servers 'must have' these configured, setting the baseline
       Installed:                    # list of tools and services that need to have been installed
@@ -212,7 +215,8 @@ Example - Stripped down baseline -- compliancy check:         #Dynamic name
       VCS: 
         URLs: 
         Execute: 
-      Script: 
+      Script:
+      Commands:
       Clean-up: false 
     Must-Have: 
       Installed: 

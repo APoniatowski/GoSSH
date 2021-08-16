@@ -12,7 +12,6 @@ import (
 	"github.com/APoniatowski/GoSSH/loggerlib"
 	"golang.org/x/crypto/ssh"
 
-	//"golang.org/x/crypto/ssh"
 	"strconv"
 	"strings"
 
@@ -288,6 +287,19 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 								} else {
 									baselineStruct.prereq.script = thirdStep.Value.(string)
 								}
+							case "Commands":
+								if thirdStep.Value == nil {
+									dataWarnings++
+									baselineStruct.prereq.commands = []string{""}
+								} else {
+									prereqCommands := make([]string, len(thirdStep.Value.([]interface{})))
+									prereqCommandsSlice := thirdStep.Value.([]interface{})
+									for i, v := range prereqCommandsSlice {
+										prereqCommands[i] = v.(string)
+									}
+									baselineStruct.prereq.commands = prereqCommands
+								}
+
 							case "Clean-up":
 								if thirdStep.Value == nil {
 									dataWarnings++
@@ -1030,8 +1042,6 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 			}
 			if rebootBool {
 				// send reboot command to servers
-			} else {
-				// close connections without rebooting
 			}
 			disconnectSessions <- true // When read, channels/sessions will be closed
 		}
@@ -1040,7 +1050,7 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// connectAndRun Establish a connection and run command(s), will add CLI args in the near future
+// connectAndRunBaseline Establish a connection and run command(s), will add CLI args in the near future
 func (parsedData *ParsedPool) connectAndRunBaseline(command chan map[string]string,
 	servername string,
 	output chan<- string,
