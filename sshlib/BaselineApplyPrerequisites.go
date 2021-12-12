@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (baselineStruct *ParsedBaseline) applyPrereq(sshList *map[string]string, commandChannel chan<- map[string]string) {
+func (baselineStruct *ParsedBaseline) applyPrereq(sshList *map[string]string, commandChannel chan<- map[string]string, received chan bool, isRoot *bool) {
 	commandSet := make(map[string]string)
 	// skipping because of this check... need to make a few changes
 	fmt.Printf("Prerequisites Checklist: ")
@@ -39,10 +39,20 @@ func (baselineStruct *ParsedBaseline) applyPrereq(sshList *map[string]string, co
 			for _, ve := range baselineStruct.prereq.tools {
 				for key, val := range *sshList {
 					if commandSet[val] == "" {
-						commandSet[key] = serviceCommandBuilder(&ve, &val, "install")
+						if *isRoot {
+							commandSet[key] = serviceCommandBuilder(&ve, &val, "install")
+						} else {
+							commandSet[key] = "sudo " + serviceCommandBuilder(&ve, &val, "install")
+						}
 					}
 				}
 				commandChannel <- commandSet
+				for {
+					isReceived := <-received
+					if isReceived {
+						received <- false
+					}
+				}
 				//TODO Prereq Tools apply
 				//for k, v := range commandSet {
 				//	fmt.Printf("%v   %v\n", k, v)
@@ -64,6 +74,12 @@ func (baselineStruct *ParsedBaseline) applyPrereq(sshList *map[string]string, co
 					}
 				}
 				commandChannel <- commandSet
+				for {
+					isReceived := <-received
+					if isReceived {
+						received <- false
+					}
+				}
 				// TODO URL Files
 				//for k, v := range commandSet {
 				//	fmt.Printf("%v   %v\n", k, v)
@@ -97,6 +113,12 @@ func (baselineStruct *ParsedBaseline) applyPrereq(sshList *map[string]string, co
 					}
 				}
 				commandChannel <- commandSet
+				for {
+					isReceived := <-received
+					if isReceived {
+						received <- false
+					}
+				}
 				//for k, v := range commandSet {
 				//	fmt.Printf("%v   %v\n", k, v)
 				//}
@@ -122,10 +144,20 @@ func (baselineStruct *ParsedBaseline) applyPrereq(sshList *map[string]string, co
 					for _, ve := range baselineStruct.prereq.files.remote.files {
 						for key, val := range *sshList {
 							if commandSet[val] == "" {
-								commandSet[key] = baselineStruct.prereq.files.remote.remoteFilesCommandBuilder(&ve, "apply")
+								if *isRoot {
+									commandSet[key] = baselineStruct.prereq.files.remote.remoteFilesCommandBuilder(&ve, "apply")
+								} else {
+									commandSet[key] = "sudo " + baselineStruct.prereq.files.remote.remoteFilesCommandBuilder(&ve, "apply")
+								}
 							}
 						}
 						commandChannel <- commandSet
+						for {
+							isReceived := <-received
+							if isReceived {
+								received <- false
+							}
+						}
 						// TODO Prereq Mount Files apply
 						//for k, v := range commandSet {
 						//	fmt.Printf("%v   %v\n", k, v)
@@ -158,6 +190,12 @@ func (baselineStruct *ParsedBaseline) applyPrereq(sshList *map[string]string, co
 						}
 					}
 					commandChannel <- commandSet
+					for {
+						isReceived := <-received
+						if isReceived {
+							received <- false
+						}
+					}
 					//for k, v := range commandSet {
 					//	fmt.Printf("%v   %v\n", k, v)
 					//}
@@ -174,6 +212,12 @@ func (baselineStruct *ParsedBaseline) applyPrereq(sshList *map[string]string, co
 						}
 					}
 					commandChannel <- commandSet
+					for {
+						isReceived := <-received
+						if isReceived {
+							received <- false
+						}
+					}
 					//for k, v := range commandSet {
 					//	fmt.Printf("%v   %v\n", k, v)
 					//}
@@ -186,10 +230,20 @@ func (baselineStruct *ParsedBaseline) applyPrereq(sshList *map[string]string, co
 					for key, val := range *sshList {
 						if commandSet[val] == "" {
 							// TODO Prereq commands
-							commandSet[key] = ve
+							if *isRoot {
+								commandSet[key] = ve
+							} else {
+								commandSet[key] = "sudo " + ve
+							}
 						}
 					}
 					commandChannel <- commandSet
+					for {
+						isReceived := <-received
+						if isReceived {
+							received <- false
+						}
+					}
 					//for k, v := range commandSet {
 					//	fmt.Printf("%v   %v\n", k, v)
 					//}

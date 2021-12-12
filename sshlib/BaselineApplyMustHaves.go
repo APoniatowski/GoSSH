@@ -2,7 +2,7 @@ package sshlib
 
 import "fmt"
 
-func (baselineStruct *ParsedBaseline) applyMustHaves(sshList *map[string]string, rebootBool *bool, commandChannel chan<- map[string]string) {
+func (baselineStruct *ParsedBaseline) applyMustHaves(sshList *map[string]string, rebootBool *bool, commandChannel chan<- map[string]string, received chan bool, isRoot *bool) {
 	commandSet := make(map[string]string)
 	// MH list
 	fmt.Printf("Must Have Checklist: ")
@@ -32,10 +32,20 @@ func (baselineStruct *ParsedBaseline) applyMustHaves(sshList *map[string]string,
 				for key, val := range *sshList {
 					if commandSet[val] == "" {
 						// TODO Must Have Installed apply make some changes and move to commandBuilders
-						commandSet[key] = serviceCommandBuilder(&ve, &val, "install")
+						if *isRoot {
+							commandSet[key] = serviceCommandBuilder(&ve, &val, "install")
+						} else {
+							commandSet[key] = "sudo " + serviceCommandBuilder(&ve, &val, "install")
+						}
 					}
 				}
 				commandChannel <- commandSet
+				for {
+					isReceived := <-received
+					if isReceived {
+						received <- false
+					}
+				}
 				//for k, v := range commandSet {
 				//	fmt.Printf("%v   %v\n", k, v)
 				//}
@@ -54,10 +64,20 @@ func (baselineStruct *ParsedBaseline) applyMustHaves(sshList *map[string]string,
 				for key, val := range *sshList {
 					if commandSet[val] == "" {
 						// TODO Must Have Enabled apply
-						commandSet[key] = serviceCommandBuilder(&ve, &val, "enable")
+						if *isRoot {
+							commandSet[key] = serviceCommandBuilder(&ve, &val, "enable")
+						} else {
+							commandSet[key] = "sudo " + serviceCommandBuilder(&ve, &val, "enable")
+						}
 					}
 				}
 				commandChannel <- commandSet
+				for {
+					isReceived := <-received
+					if isReceived {
+						received <- false
+					}
+				}
 				//for k, v := range commandSet {
 				//	fmt.Printf("%v   %v\n", k, v)
 				//}
@@ -76,10 +96,20 @@ func (baselineStruct *ParsedBaseline) applyMustHaves(sshList *map[string]string,
 					fmt.Printf("\n")
 					for key, val := range *sshList {
 						if commandSet[val] == "" {
-							commandSet[key] = serviceCommandBuilder(&ve, &val, "disable")
+							if *isRoot {
+								commandSet[key] = serviceCommandBuilder(&ve, &val, "disable")
+							} else {
+								commandSet[key] = "sudo " + serviceCommandBuilder(&ve, &val, "disable")
+							}
 						}
 					}
 					commandChannel <- commandSet
+					for {
+						isReceived := <-received
+						if isReceived {
+							received <- false
+						}
+					}
 					// TODO Must Have Disabled apply
 					//for k, v := range commandSet {
 					//	fmt.Printf("%v   %v\n", k, v)
@@ -123,10 +153,20 @@ func (baselineStruct *ParsedBaseline) applyMustHaves(sshList *map[string]string,
 				fmt.Printf("\n      %s:\n", ke)
 				for key, val := range *sshList {
 					if commandSet[val] == "" {
-						commandSet[key] = ve.userManagementCommandBuilder(&ke, "add")
+						if *isRoot {
+							commandSet[key] = ve.userManagementCommandBuilder(&ke, "add")
+						} else {
+							commandSet[key] = "sudo " + ve.userManagementCommandBuilder(&ke, "add")
+						}
 					}
 				}
 				commandChannel <- commandSet
+				for {
+					isReceived := <-received
+					if isReceived {
+						received <- false
+					}
+				}
 				// TODO User apply
 				//for k, v := range commandSet {
 				//	fmt.Printf("%v   %v\n", k, v)
@@ -155,13 +195,23 @@ func (baselineStruct *ParsedBaseline) applyMustHaves(sshList *map[string]string,
 			for key, val := range *sshList {
 				if commandSet[val] == "" {
 					// TODO Must Have Policies apply make some changes and move to commandBuilders
-					commandSet[key] = baselineStruct.musthave.policies.policyCommandBuilder("apply")
+					if *isRoot {
+						commandSet[key] = baselineStruct.musthave.policies.policyCommandBuilder("apply")
+					} else {
+						commandSet[key] = "sudo " + baselineStruct.musthave.policies.policyCommandBuilder("apply")
+					}
 				}
 			}
 			if baselineStruct.musthave.policies.polreboot {
 				*rebootBool = true
 			}
 			commandChannel <- commandSet
+			for {
+				isReceived := <-received
+				if isReceived {
+					received <- false
+				}
+			}
 			//for k, v := range commandSet {
 			//	fmt.Printf("%v   %v\n", k, v)
 			//}
@@ -187,13 +237,26 @@ func (baselineStruct *ParsedBaseline) applyMustHaves(sshList *map[string]string,
 						for i := range baselineStruct.musthave.rules.fwopen.ports {
 							for key, val := range *sshList {
 								if commandSet[val] == "" {
-									commandSet[key] = firewallCommandBuilder(&baselineStruct.musthave.rules.fwopen.ports[i],
-										&baselineStruct.musthave.rules.fwopen.protocols[i],
-										&ve,
-										"apply-open")
+									if *isRoot {
+										commandSet[key] = firewallCommandBuilder(&baselineStruct.musthave.rules.fwopen.ports[i],
+											&baselineStruct.musthave.rules.fwopen.protocols[i],
+											&ve,
+											"apply-open")
+									} else {
+										commandSet[key] = "sudo " + firewallCommandBuilder(&baselineStruct.musthave.rules.fwopen.ports[i],
+											&baselineStruct.musthave.rules.fwopen.protocols[i],
+											&ve,
+											"apply-open")
+									}
 								}
 							}
 							commandChannel <- commandSet
+							for {
+								isReceived := <-received
+								if isReceived {
+									received <- false
+								}
+							}
 							//for k, v := range commandSet {
 							//	// TODO Open Firewall ports & protocols check per firewall zone apply
 							//	fmt.Printf("%v   %v\n", k, v)
@@ -209,13 +272,26 @@ func (baselineStruct *ParsedBaseline) applyMustHaves(sshList *map[string]string,
 						for key, val := range *sshList {
 							if commandSet[val] == "" {
 								emptyZone := ""
-								commandSet[key] = firewallCommandBuilder(&baselineStruct.musthave.rules.fwopen.ports[i],
-									&baselineStruct.musthave.rules.fwopen.protocols[i],
-									&emptyZone,
-									"apply-open")
+								if *isRoot {
+									commandSet[key] = firewallCommandBuilder(&baselineStruct.musthave.rules.fwopen.ports[i],
+										&baselineStruct.musthave.rules.fwopen.protocols[i],
+										&emptyZone,
+										"apply-open")
+								} else {
+									commandSet[key] = "sudo " + firewallCommandBuilder(&baselineStruct.musthave.rules.fwopen.ports[i],
+										&baselineStruct.musthave.rules.fwopen.protocols[i],
+										&emptyZone,
+										"apply-open")
+								}
 							}
 						}
 						commandChannel <- commandSet
+						for {
+							isReceived := <-received
+							if isReceived {
+								received <- false
+							}
+						}
 						//for k, v := range commandSet {
 						//	// TODO Open Firewall ports & protocols apply
 						//	fmt.Printf("%v   %v\n", k, v)
@@ -236,13 +312,26 @@ func (baselineStruct *ParsedBaseline) applyMustHaves(sshList *map[string]string,
 						for i := range baselineStruct.musthave.rules.fwclosed.ports {
 							for key, val := range *sshList {
 								if commandSet[val] == "" {
-									commandSet[key] = firewallCommandBuilder(&baselineStruct.musthave.rules.fwclosed.ports[i],
-										&baselineStruct.musthave.rules.fwclosed.protocols[i],
-										&ve,
-										"apply-closed")
+									if *isRoot {
+										commandSet[key] = firewallCommandBuilder(&baselineStruct.musthave.rules.fwclosed.ports[i],
+											&baselineStruct.musthave.rules.fwclosed.protocols[i],
+											&ve,
+											"apply-closed")
+									} else {
+										commandSet[key] = "sudo " + firewallCommandBuilder(&baselineStruct.musthave.rules.fwclosed.ports[i],
+											&baselineStruct.musthave.rules.fwclosed.protocols[i],
+											&ve,
+											"apply-closed")
+									}
 								}
 							}
 							commandChannel <- commandSet
+							for {
+								isReceived := <-received
+								if isReceived {
+									received <- false
+								}
+							}
 							//for k, v := range commandSet {
 							//	// TODO Closed Firewall ports & protocols check per firewall zone apply
 							//	fmt.Printf("%v   %v\n", k, v)
@@ -256,13 +345,26 @@ func (baselineStruct *ParsedBaseline) applyMustHaves(sshList *map[string]string,
 						for key, val := range *sshList {
 							if commandSet[val] == "" {
 								emptyZone := ""
-								commandSet[key] = firewallCommandBuilder(&baselineStruct.musthave.rules.fwclosed.ports[i],
-									&baselineStruct.musthave.rules.fwclosed.protocols[i],
-									&emptyZone,
-									"apply-closed")
+								if *isRoot {
+									commandSet[key] = firewallCommandBuilder(&baselineStruct.musthave.rules.fwclosed.ports[i],
+										&baselineStruct.musthave.rules.fwclosed.protocols[i],
+										&emptyZone,
+										"apply-closed")
+								} else {
+									commandSet[key] = "sudo " + firewallCommandBuilder(&baselineStruct.musthave.rules.fwclosed.ports[i],
+										&baselineStruct.musthave.rules.fwclosed.protocols[i],
+										&emptyZone,
+										"apply-closed")
+								}
 							}
 						}
 						commandChannel <- commandSet
+						for {
+							isReceived := <-received
+							if isReceived {
+								received <- false
+							}
+						}
 						//for k, v := range commandSet {
 						//	// TODO Open Firewall ports & protocols apply
 						//	fmt.Printf("%v   %v\n", k, v)
@@ -310,12 +412,22 @@ func (baselineStruct *ParsedBaseline) applyMustHaves(sshList *map[string]string,
 						for key, val := range *sshList {
 							if commandSet[val] == "" {
 								// TODO Must Have Mounts apply
-								commandSet[key] = ve.mountCommandBuilder("apply")
+								if *isRoot {
+									commandSet[key] = ve.mountCommandBuilder("apply")
+								} else {
+									commandSet[key] = "sudo " + ve.mountCommandBuilder("apply")
+								}
 							}
 						}
 						// iterate through sshList and create command for each server
 						// pass info to ssh session and waiting for a response
 						commandChannel <- commandSet
+						for {
+							isReceived := <-received
+							if isReceived {
+								received <- false
+							}
+						}
 					}
 					//for k, v := range commandSet {
 					//	fmt.Printf("%v   %v\n", k, v)

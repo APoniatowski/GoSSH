@@ -5,7 +5,7 @@ import (
 	"github.com/APoniatowski/GoSSH/pkgmanlib"
 )
 
-func (baselineStruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string, commandChannel chan<- map[string]string) {
+func (baselineStruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]string, commandChannel chan<- map[string]string, received chan bool, isRoot *bool) {
 	//MNH list
 	commandSet := make(map[string]string)
 	fmt.Printf("Must Not Have Checklist: ")
@@ -31,10 +31,20 @@ func (baselineStruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]stri
 				for key, val := range *sshList {
 					if commandSet[val] == "" {
 						// TODO Must Not Have Installed apply make some changes and move to commandBuilders
-						commandSet[key] = serviceCommandBuilder(&ve, &val, "uninstall")
+						if *isRoot {
+							commandSet[key] = serviceCommandBuilder(&ve, &val, "uninstall")
+						} else {
+							commandSet[key] = "sudo " + serviceCommandBuilder(&ve, &val, "uninstall")
+						}
 					}
 				}
 				commandChannel <- commandSet
+				for {
+					isReceived := <-received
+					if isReceived {
+						received <- false
+					}
+				}
 				//for k, v := range commandSet {
 				//	fmt.Printf("%v   %v\n", k, v)
 				//}
@@ -53,10 +63,20 @@ func (baselineStruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]stri
 				for key, val := range *sshList {
 					if commandSet[val] == "" {
 						// TODO Must Not Have Enabled apply make some changes and move to commandBuilders
-						commandSet[key] = serviceCommandBuilder(&ve, &val, "disable")
+						if *isRoot {
+							commandSet[key] = serviceCommandBuilder(&ve, &val, "disable")
+						} else {
+							commandSet[key] = "sudo " + serviceCommandBuilder(&ve, &val, "disable")
+						}
 					}
 				}
 				commandChannel <- commandSet
+				for {
+					isReceived := <-received
+					if isReceived {
+						received <- false
+					}
+				}
 				//for k, v := range commandSet {
 				//	fmt.Printf("%v   %v\n", k, v)
 				//}
@@ -77,10 +97,20 @@ func (baselineStruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]stri
 					for key, val := range *sshList {
 						if commandSet[val] == "" {
 							// TODO Must Not Have Disabled apply make some changes and move to commandBuilders
-							commandSet[key] = serviceCommandBuilder(&ve, &val, "enable")
+							if *isRoot {
+								commandSet[key] = serviceCommandBuilder(&ve, &val, "enable")
+							} else {
+								commandSet[key] = "sudo " + serviceCommandBuilder(&ve, &val, "enable")
+							}
 						}
 					}
 					commandChannel <- commandSet
+					for {
+						isReceived := <-received
+						if isReceived {
+							received <- false
+						}
+					}
 					//for k, v := range commandSet {
 					//	fmt.Printf("%v   %v\n", k, v)
 					//}
@@ -102,10 +132,20 @@ func (baselineStruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]stri
 					for key, val := range *sshList {
 						if commandSet[val] == "" {
 							// TODO Must Not Have Users apply make some changes and move to commandBuilders
-							commandSet[key] = pkgmanlib.OmniTools["userdel"] + ve
+							if *isRoot {
+								commandSet[key] = pkgmanlib.OmniTools["userdel"] + ve
+							} else {
+								commandSet[key] = "sudo " + pkgmanlib.OmniTools["userdel"] + ve
+							}
 						}
 					}
 					commandChannel <- commandSet
+					for {
+						isReceived := <-received
+						if isReceived {
+							received <- false
+						}
+					}
 					//for k, v := range commandSet {
 					//	fmt.Printf("%v   %v\n", k, v)
 					//}
@@ -135,13 +175,26 @@ func (baselineStruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]stri
 						for i := range baselineStruct.mustnothave.rules.fwopen.ports {
 							for key, val := range *sshList {
 								if commandSet[val] == "" {
-									commandSet[key] = firewallCommandBuilder(&baselineStruct.mustnothave.rules.fwopen.ports[i],
-										&baselineStruct.mustnothave.rules.fwopen.protocols[i],
-										&ve,
-										"remove-open")
+									if *isRoot {
+										commandSet[key] = firewallCommandBuilder(&baselineStruct.mustnothave.rules.fwopen.ports[i],
+											&baselineStruct.mustnothave.rules.fwopen.protocols[i],
+											&ve,
+											"remove-open")
+									} else {
+										commandSet[key] = "sudo " + firewallCommandBuilder(&baselineStruct.mustnothave.rules.fwopen.ports[i],
+											&baselineStruct.mustnothave.rules.fwopen.protocols[i],
+											&ve,
+											"remove-open")
+									}
 								}
 							}
 							commandChannel <- commandSet
+							for {
+								isReceived := <-received
+								if isReceived {
+									received <- false
+								}
+							}
 							//for k, v := range commandSet {
 							//	// TODO No Open Firewall ports & protocols check per firewall zone apply
 							//	fmt.Printf("%v   %v\n", k, v)
@@ -157,13 +210,26 @@ func (baselineStruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]stri
 						for key, val := range *sshList {
 							if commandSet[val] == "" {
 								emptyZone := ""
-								commandSet[key] = firewallCommandBuilder(&baselineStruct.mustnothave.rules.fwopen.ports[i],
-									&baselineStruct.mustnothave.rules.fwopen.protocols[i],
-									&emptyZone,
-									"remove-open")
+								if *isRoot {
+									commandSet[key] = firewallCommandBuilder(&baselineStruct.mustnothave.rules.fwopen.ports[i],
+										&baselineStruct.mustnothave.rules.fwopen.protocols[i],
+										&emptyZone,
+										"remove-open")
+								} else {
+									commandSet[key] = "sudo " + firewallCommandBuilder(&baselineStruct.mustnothave.rules.fwopen.ports[i],
+										&baselineStruct.mustnothave.rules.fwopen.protocols[i],
+										&emptyZone,
+										"remove-open")
+								}
 							}
 						}
 						commandChannel <- commandSet
+						for {
+							isReceived := <-received
+							if isReceived {
+								received <- false
+							}
+						}
 						//for k, v := range commandSet {
 						//	// TODO No Open Firewall ports & protocols apply
 						//	fmt.Printf("%v   %v\n", k, v)
@@ -184,13 +250,26 @@ func (baselineStruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]stri
 						for i := range baselineStruct.mustnothave.rules.fwclosed.ports {
 							for key, val := range *sshList {
 								if commandSet[val] == "" {
-									commandSet[key] = firewallCommandBuilder(&baselineStruct.mustnothave.rules.fwclosed.ports[i],
-										&baselineStruct.mustnothave.rules.fwclosed.protocols[i],
-										&ve,
-										"remove-closed")
+									if *isRoot {
+										commandSet[key] = firewallCommandBuilder(&baselineStruct.mustnothave.rules.fwclosed.ports[i],
+											&baselineStruct.mustnothave.rules.fwclosed.protocols[i],
+											&ve,
+											"remove-closed")
+									} else {
+										commandSet[key] = "sudo " + firewallCommandBuilder(&baselineStruct.mustnothave.rules.fwclosed.ports[i],
+											&baselineStruct.mustnothave.rules.fwclosed.protocols[i],
+											&ve,
+											"remove-closed")
+									}
 								}
 							}
 							commandChannel <- commandSet
+							for {
+								isReceived := <-received
+								if isReceived {
+									received <- false
+								}
+							}
 							//for k, v := range commandSet {
 							//	// TODO No Closed Firewall ports & protocols check per firewall zone apply
 							//	fmt.Printf("%v   %v\n", k, v)
@@ -204,13 +283,26 @@ func (baselineStruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]stri
 						for key, val := range *sshList {
 							if commandSet[val] == "" {
 								emptyZone := ""
-								commandSet[key] = firewallCommandBuilder(&baselineStruct.mustnothave.rules.fwclosed.ports[i],
-									&baselineStruct.mustnothave.rules.fwclosed.protocols[i],
-									&emptyZone,
-									"remove-closed")
+								if *isRoot {
+									commandSet[key] = firewallCommandBuilder(&baselineStruct.mustnothave.rules.fwclosed.ports[i],
+										&baselineStruct.mustnothave.rules.fwclosed.protocols[i],
+										&emptyZone,
+										"remove-closed")
+								} else {
+									commandSet[key] = "sudo " + firewallCommandBuilder(&baselineStruct.mustnothave.rules.fwclosed.ports[i],
+										&baselineStruct.mustnothave.rules.fwclosed.protocols[i],
+										&emptyZone,
+										"remove-closed")
+								}
 							}
 						}
 						commandChannel <- commandSet
+						for {
+							isReceived := <-received
+							if isReceived {
+								received <- false
+							}
+						}
 						//for k, v := range commandSet {
 						//	// TODO No Open Firewall ports & protocols apply
 						//	fmt.Printf("%v   %v\n", k, v)
@@ -232,20 +324,40 @@ func (baselineStruct *ParsedBaseline) applyMustNotHaves(sshList *map[string]stri
 			for _, ve := range baselineStruct.mustnothave.mounts {
 				for key, val := range *sshList {
 					if commandSet[val] == "" {
-						commandSet[key] = "grep '" + ve + "' /etc/fstab"
+						if *isRoot {
+							commandSet[key] = "grep '" + ve + "' /etc/fstab"
+						} else {
+							commandSet[key] = "sudo grep '" + ve + "' /etc/fstab"
+						}
 					}
 				}
 				commandChannel <- commandSet
+				for {
+					isReceived := <-received
+					if isReceived {
+						received <- false
+					}
+				}
 				//    check if the mount address is in fstab
 				// iterate through sshList and create command for each server
 				// pass info to ssh session and waiting for a response
 				for key, val := range *sshList {
 					if commandSet[val] == "" {
 						// TODO Must Not Have Mounts apply
-						commandSet[key] = " grep '" + ve + "' /etc/fstab | awk -F: '{ print $1 }' | " // need to delete the line
+						if *isRoot {
+							commandSet[key] = "grep '" + ve + "' /etc/fstab | awk -F: '{ print $1 }' | " // need to delete the line
+						} else {
+							commandSet[key] = "sudo grep '" + ve + "' /etc/fstab | awk -F: '{ print $1 }' | " // need to delete the line
+						}
 					}
 				}
 				commandChannel <- commandSet
+				for {
+					isReceived := <-received
+					if isReceived {
+						received <- false
+					}
+				}
 				//   grep the mount address
 				// iterate through sshList and create command for each server
 				// pass info to ssh session and waiting for a response

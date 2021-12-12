@@ -5,7 +5,7 @@ import (
 )
 
 // TODO remove fmt.printf's here... took a while to find them all
-func (baselineStruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBool *bool, commandChannel chan<- map[string]string) {
+func (baselineStruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBool *bool, commandChannel chan<- map[string]string, received chan bool, isRoot *bool) {
 	commandSet := make(map[string]string)
 	// Final steps list
 	fmt.Println("Applying final instructions:")
@@ -31,6 +31,12 @@ func (baselineStruct *ParsedBaseline) applyFinals(sshList *map[string]string, re
 				fmt.Println(ve)
 			}
 			commandChannel <- commandSet
+			for {
+				isReceived := <-received
+				if isReceived {
+					received <- false
+				}
+			}
 		} else {
 			fmt.Printf("Skipping...\n")
 		}
@@ -42,11 +48,21 @@ func (baselineStruct *ParsedBaseline) applyFinals(sshList *map[string]string, re
 				for key, val := range *sshList {
 					if commandSet[val] == "" {
 						// TODO Final commands
-						commandSet[key] = finalCommandBuilder(&ve,"command")
+						if *isRoot {
+							commandSet[key] = finalCommandBuilder(&ve, "command")
+						} else {
+							commandSet[key] = "sudo " + finalCommandBuilder(&ve, "command")
+						}
 					}
 				}
 			}
 			commandChannel <- commandSet
+			for {
+				isReceived := <-received
+				if isReceived {
+					received <- false
+				}
+			}
 		} else {
 			fmt.Printf("Skipping...\n")
 		}
@@ -63,9 +79,15 @@ func (baselineStruct *ParsedBaseline) applyFinals(sshList *map[string]string, re
 				fmt.Printf("\n")
 				for _, ve := range baselineStruct.final.collect.logs {
 					// TODO transfer to ./collections/[servername]/logs
-					finalCommandBuilder(&ve,"logs")
+					finalCommandBuilder(&ve, "logs")
 				}
 				commandChannel <- commandSet
+				for {
+					isReceived := <-received
+					if isReceived {
+						received <- false
+					}
+				}
 			} else {
 				fmt.Printf("Skipping...\n")
 			}
@@ -74,9 +96,15 @@ func (baselineStruct *ParsedBaseline) applyFinals(sshList *map[string]string, re
 				fmt.Printf("\n")
 				for _, ve := range baselineStruct.final.collect.stats {
 					// TODO transfer to ./collections/[servername]/stats
-					finalCommandBuilder(&ve,"stats")
+					finalCommandBuilder(&ve, "stats")
 				}
 				commandChannel <- commandSet
+				for {
+					isReceived := <-received
+					if isReceived {
+						received <- false
+					}
+				}
 			} else {
 				fmt.Printf("Skipping...\n")
 			}
@@ -85,9 +113,15 @@ func (baselineStruct *ParsedBaseline) applyFinals(sshList *map[string]string, re
 				fmt.Printf("\n")
 				for _, ve := range baselineStruct.final.collect.files {
 					// TODO transfer to ./collections/[servername]/files
-					finalCommandBuilder(&ve,"files")
+					finalCommandBuilder(&ve, "files")
 				}
 				commandChannel <- commandSet
+				for {
+					isReceived := <-received
+					if isReceived {
+						received <- false
+					}
+				}
 			} else {
 				fmt.Printf("Skipping...\n")
 			}
@@ -101,6 +135,12 @@ func (baselineStruct *ParsedBaseline) applyFinals(sshList *map[string]string, re
 					}
 				}
 				commandChannel <- commandSet
+				for {
+					isReceived := <-received
+					if isReceived {
+						received <- false
+					}
+				}
 			} else {
 				fmt.Printf("Skipping...\n")
 			}
@@ -119,10 +159,20 @@ func (baselineStruct *ParsedBaseline) applyFinals(sshList *map[string]string, re
 				for key, val := range *sshList {
 					if commandSet[val] == "" {
 						// TODO Final service restart
-						commandSet[key] = "systemctl --daemon-reload"
+						if *isRoot {
+							commandSet[key] = "systemctl --daemon-reload"
+						} else {
+							commandSet[key] = "sudo systemctl --daemon-reload"
+						}
 					}
 				}
 				commandChannel <- commandSet
+				for {
+					isReceived := <-received
+					if isReceived {
+						received <- false
+					}
+				}
 			} else {
 				fmt.Printf("Skipping...\n")
 			}
@@ -132,10 +182,20 @@ func (baselineStruct *ParsedBaseline) applyFinals(sshList *map[string]string, re
 				for key, val := range *sshList {
 					if commandSet[val] == "" {
 						// TODO Final reboot
-						commandSet[key] = "reboot"
+						if *isRoot {
+							commandSet[key] = "shutdown -r +1"
+						} else {
+							commandSet[key] = "sudo shutdown -r +1"
+						}
 					}
 				}
 				commandChannel <- commandSet
+				for {
+					isReceived := <-received
+					if isReceived {
+						received <- false
+					}
+				}
 			} else {
 				fmt.Printf("Skipping...\n")
 			}

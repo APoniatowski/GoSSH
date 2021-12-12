@@ -927,6 +927,8 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 			// establish ssh connections to servers via goroutines and maintain sessions
 			for _, groupItem := range *configs {
 				if serverGroupName == groupItem.Key {
+					var isRoot bool
+					received := make(chan bool)
 					output := make(chan string)
 					readyState := make(chan []bool)
 					commandChannel := make(chan map[string]string)
@@ -949,8 +951,10 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 						pp.keypath = serverValue[3].Value
 						pp.port = serverValue[4].Value
 						pp.os = serverValue[5].Value
+						if pp.username == "" || pp.username == "root" {
+							isRoot = true
+						}
 						pp.defaulter()
-
 						for i := range sshList {
 							if i == pp.fqdn.(string) {
 								wg.Add(1)
@@ -961,7 +965,9 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 									disconnectSessions,
 									readyState,
 									&wg,
-									&commandSync)
+									&commandSync,
+									len(sshList),
+									received)
 							}
 							go func() {
 								wg.Wait()
@@ -974,14 +980,20 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 								break
 							}
 						}
-						baselineStruct.applyPrereq(&sshList, commandChannel)
-						baselineStruct.applyMustHaves(&sshList, &rebootBool, commandChannel)
-						baselineStruct.applyMustNotHaves(&sshList, commandChannel)
-						baselineStruct.applyFinals(&sshList, &rebootBool, commandChannel)
+						received <- false
+						baselineStruct.applyPrereq(&sshList, commandChannel, received, &isRoot)
+						baselineStruct.applyMustHaves(&sshList, &rebootBool, commandChannel, received, &isRoot)
+						baselineStruct.applyMustNotHaves(&sshList, commandChannel, received, &isRoot)
+						baselineStruct.applyFinals(&sshList, &rebootBool, commandChannel, received, &isRoot)
+						close(received)
+						close(readyState)
+						close(commandChannel)
 						channelreaderlib.ChannelReaderGroups(output, &wg) // move to each apply stage
 					}
 				} else if strings.ToLower(serverGroupName) == "all" {
 					var allServers yaml.MapSlice
+					var isRoot bool
+					received := make(chan bool)
 					output := make(chan string)
 					readyState := make(chan []bool)
 					commandChannel := make(chan map[string]string)
@@ -1009,6 +1021,11 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 						pp.keypath = serverValue[3].Value
 						pp.port = serverValue[4].Value
 						pp.os = serverValue[5].Value
+						if pp.username == "" || pp.username == "root" {
+							isRoot = true
+						} else {
+							isRoot = false
+						}
 						pp.defaulter()
 						for i := range sshList {
 							if i == pp.fqdn.(string) {
@@ -1020,7 +1037,9 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 									disconnectSessions,
 									readyState,
 									&wg,
-									&commandSync)
+									&commandSync,
+									len(sshList),
+									received)
 							}
 						}
 						for {
@@ -1032,10 +1051,14 @@ func ApplyBaselines(baselineYAML *yaml.MapSlice, configs *yaml.MapSlice) {
 							wg.Wait()
 							close(output)
 						}()
-						baselineStruct.applyPrereq(&sshList, commandChannel)
-						baselineStruct.applyMustHaves(&sshList, &rebootBool, commandChannel)
-						baselineStruct.applyMustNotHaves(&sshList, commandChannel)
-						baselineStruct.applyFinals(&sshList, &rebootBool, commandChannel)
+						received <- false
+						baselineStruct.applyPrereq(&sshList, commandChannel, received, &isRoot)
+						baselineStruct.applyMustHaves(&sshList, &rebootBool, commandChannel, received, &isRoot)
+						baselineStruct.applyMustNotHaves(&sshList, commandChannel, received, &isRoot)
+						baselineStruct.applyFinals(&sshList, &rebootBool, commandChannel, received, &isRoot)
+						close(received)
+						close(readyState)
+						close(commandChannel)
 						channelreaderlib.ChannelReaderBaselines(output, &wg, &commandSync) // move to each apply stage
 					}
 				}
@@ -1057,7 +1080,9 @@ func (parsedData *ParsedPool) connectAndRunBaseline(command chan map[string]stri
 	disconnect <-chan bool,
 	ready chan []bool,
 	wg *sync.WaitGroup,
-	commandSync *sync.WaitGroup) {
+	commandSync *sync.WaitGroup,
+	sshList int,
+	received chan bool) {
 	pp := parsedData
 	authMethodCheck := []ssh.AuthMethod{}
 	key, err := ioutil.ReadFile(pp.keypath.(string))
@@ -1106,17 +1131,21 @@ func (parsedData *ParsedPool) connectAndRunBaseline(command chan map[string]stri
 		for {
 			commandCheck := <-command
 			disconnectCheck := <-disconnect
+			wellReceived := <-received
 			if !disconnectCheck {
-				if len(commandCheck) != 0 {
+				if len(commandCheck) != 0 && len(commandCheck) == sshList && !wellReceived {
 					for i, j := range commandCheck {
 						if i == pp.fqdn && j != "" {
-							commandSync.Add(1)
-							output <- executeBaselines(servername, j, pp.password.(string), connection)
-							commandCheck[i] = ""
+							go func() {
+								commandSync.Add(1)
+								output <- executeBaselines(servername, j, pp.password.(string), connection, commandSync)
+								commandCheck[i] = ""
+							}()
 						}
 					}
+					commandSync.Wait()
 					command <- commandCheck
-					commandSync.Done()
+					received <- true
 				}
 			} else {
 				break
@@ -1128,8 +1157,8 @@ func (parsedData *ParsedPool) connectAndRunBaseline(command chan map[string]stri
 	}
 }
 
-func executeBaselines(servername string, cmd string, password string, connection *ssh.Client) string {
-	// adding recover to avoid panics during a run. Logs are written, so no need to panic when it its one of
+func executeBaselines(servername string, cmd string, password string, connection *ssh.Client, commandSync *sync.WaitGroup) string {
+	// adding recover to avoid panics during a run. Logs are written, so no need to panic when its one of
 	// the errors below.
 	defer func() {
 		if recv := recover(); recv != nil {
@@ -1199,5 +1228,6 @@ func executeBaselines(servername string, cmd string, password string, connection
 		validator = "OK\n"
 		loggerlib.OutputLogger(servername, "[INFO: Success] ", terminalOutput)
 	}
+	commandSync.Done()
 	return validator
 }
