@@ -70,7 +70,7 @@ func (baselineStruct *ParsedBaseline) applyPrereq(sshList *map[string]string, co
 			for _, ve := range baselineStruct.prereq.files.urls {
 				for key, val := range *sshList {
 					if commandSet[val] == "" {
-						commandSet[key] = prereqURLFetch(&ve)
+						commandSet[key] = prereqURLFetch(&ve, &baselineStruct.prereq.cleanup)
 					}
 				}
 				commandChannel <- commandSet
@@ -104,12 +104,7 @@ func (baselineStruct *ParsedBaseline) applyPrereq(sshList *map[string]string, co
 					if commandSet[val] == "" {
 						// TODO Prereq SCP Files apply make some changes and move to cmdbuilders
 						commandSet[key] = pkgmanlib.OmniTools["suminfo"] + baselineStruct.prereq.files.local.dest + srcFile
-						/*
-							-will need to find a better way to compare files and directories-
-							cat would kill memory, if its a large file or binary
-							sum only does files, not dirs
-							need to create for loop command if its a directory with md5sum
-						*/
+						// scp files
 					}
 				}
 				commandChannel <- commandSet
@@ -186,7 +181,7 @@ func (baselineStruct *ParsedBaseline) applyPrereq(sshList *map[string]string, co
 					for key, val := range *sshList {
 						if commandSet[val] == "" {
 							// TODO Prereq VCS Files apply
-							commandSet[key] = prereqURLFetch(&ve)
+							commandSet[key] = prereqURLFetch(&ve, &baselineStruct.prereq.cleanup)
 						}
 					}
 					commandChannel <- commandSet
