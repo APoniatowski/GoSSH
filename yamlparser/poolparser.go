@@ -13,14 +13,15 @@ import (
 )
 
 // Rollcall Parse and tally up the number of servers and groups and servers in groups
-func ParsePool() {
+func ParsePool() yaml.MapSlice {
 	cyan := color.Cyan.Render
 	green := color.Green.Render
 	red := color.Red.Render
 	yellow := color.Yellow.Render
 	fmt.Println(yellow("Parsing data..."))
 	data := ReadPool()
-	err := yaml.Unmarshal([]byte(data), &Pool)
+	var pool yaml.MapSlice
+	err := yaml.Unmarshal([]byte(data), &pool)
 	if err != nil {
 		fmt.Println(yellow("Data could not be parsed, "), red("encountered some errors..."))
 		fmt.Println(yellow("Please check your pool.yml file, or generate one with:"))
@@ -30,9 +31,9 @@ func ParsePool() {
 	} else {
 		fmt.Println(yellow("Data read, "), green("no errors encountered..."))
 	}
-	Waittotal = TotalServercount(Pool)
-	ServersPerGroup = ServersPerGroupcount(Pool)
-	Grouptotal = len(Pool)
+	Waittotal = TotalServercount(pool)
+	ServersPerGroup = ServersPerGroupcount(pool)
+	Grouptotal = len(pool)
 	fmt.Printf(yellow("Total number of servers: %d\n"), Waittotal)
 	fmt.Printf(yellow("Total number of servers per group: "))
 	for _, totalItem := range ServersPerGroup {
@@ -42,6 +43,7 @@ func ParsePool() {
 	fmt.Printf(yellow("Total groups of servers: %d\n"), Grouptotal)
 	fmt.Printf(yellow("Total number of logical cores: %d\n"), runtime.NumCPU())
 	fmt.Println(yellow("======================================================"))
+	return pool
 }
 
 // ParseServersList server list parser, parses it to a map of structs in main function

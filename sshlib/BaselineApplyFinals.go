@@ -2,204 +2,130 @@ package sshlib
 
 import (
 	"fmt"
+	"path"
 )
 
-// TODO remove fmt.printf's here... took a while to find them all
-func (baselineStruct *ParsedBaseline) applyFinals(sshList *map[string]string, rebootBool *bool, commandChannel chan<- map[string]string, received chan bool, isRoot *bool) {
-	commandSet := make(map[string]string)
-	// Final steps list
+// applyFinals builds the ordered final steps (custom commands, collections,
+// restarts/reboots). Pure builder. rebootBool (set by must-have policies) forces
+// a server reboot step. Script transfer and artifact collection are not yet
+// implemented end-to-end and are emitted as no-ops with a notice.
+func (baselineStruct *ParsedBaseline) applyFinals(sshList map[string]string, isRoot map[string]bool, rebootBool *bool) []baselineStep {
+	var steps []baselineStep
+	fin := &baselineStruct.final
 	fmt.Println("Applying final instructions:")
-	if len(baselineStruct.final.scripts) == 0 &&
-		len(baselineStruct.final.commands) == 0 &&
-		len(baselineStruct.final.collect.logs) == 0 &&
-		len(baselineStruct.final.collect.stats) == 0 &&
-		len(baselineStruct.final.collect.files) == 0 &&
-		!baselineStruct.final.collect.users &&
-		!baselineStruct.final.restart.services &&
-		!baselineStruct.final.restart.servers {
-		// fmt.Println("No final steps have been specified  -- Please check your baseline, if you believe this to be incorrect")
-	} else {
-		// final scripts
-		fmt.Println("  Execute: ")
-		fmt.Printf("    Scripts: ")
-		if len(baselineStruct.final.scripts) > 0 {
-			fmt.Printf("\n")
-			for _, ve := range baselineStruct.final.scripts {
-				// TODO Final scripts that need to be transferred
-				// transfer file to /tmp
-				// execute script
-				fmt.Println(ve)
-			}
-			commandChannel <- commandSet
-			for {
-				isReceived := <-received
-				if isReceived {
-					received <- false
-				}
-			}
-		} else {
-			fmt.Printf("Skipping...\n")
-		}
-		// final commands
-		fmt.Printf("    Commands: ")
-		if len(baselineStruct.final.commands) > 0 {
-			fmt.Printf("\n")
-			for _, ve := range baselineStruct.final.commands {
-				for key, val := range *sshList {
-					if commandSet[val] == "" {
-						// TODO Final commands
-						if *isRoot {
-							commandSet[key] = finalCommandBuilder(&ve, "command")
-						} else {
-							commandSet[key] = "sudo " + finalCommandBuilder(&ve, "command")
-						}
-					}
-				}
-			}
-			commandChannel <- commandSet
-			for {
-				isReceived := <-received
-				if isReceived {
-					received <- false
-				}
-			}
-		} else {
-			fmt.Printf("Skipping...\n")
-		}
-		// final collections
-		if len(baselineStruct.final.collect.logs) == 0 &&
-			len(baselineStruct.final.collect.stats) == 0 &&
-			len(baselineStruct.final.collect.files) == 0 &&
-			!baselineStruct.final.collect.users {
-			// fmt.Println("No collections specified  -- Please check your baseline, if you believe this to be incorrect")
-		} else {
-			fmt.Println("  Collect: ")
-			fmt.Printf("    Logs:")
-			if len(baselineStruct.final.collect.logs) > 0 {
-				fmt.Printf("\n")
-				for _, ve := range baselineStruct.final.collect.logs {
-					// TODO transfer to ./collections/[servername]/logs
-					finalCommandBuilder(&ve, "logs")
-				}
-				commandChannel <- commandSet
-				for {
-					isReceived := <-received
-					if isReceived {
-						received <- false
-					}
-				}
-			} else {
-				fmt.Printf("Skipping...\n")
-			}
-			fmt.Printf("    Stats:")
-			if len(baselineStruct.final.collect.stats) > 0 {
-				fmt.Printf("\n")
-				for _, ve := range baselineStruct.final.collect.stats {
-					// TODO transfer to ./collections/[servername]/stats
-					finalCommandBuilder(&ve, "stats")
-				}
-				commandChannel <- commandSet
-				for {
-					isReceived := <-received
-					if isReceived {
-						received <- false
-					}
-				}
-			} else {
-				fmt.Printf("Skipping...\n")
-			}
-			fmt.Printf("    Files: ")
-			if len(baselineStruct.final.collect.files) > 0 {
-				fmt.Printf("\n")
-				for _, ve := range baselineStruct.final.collect.files {
-					// TODO transfer to ./collections/[servername]/files
-					finalCommandBuilder(&ve, "files")
-				}
-				commandChannel <- commandSet
-				for {
-					isReceived := <-received
-					if isReceived {
-						received <- false
-					}
-				}
-			} else {
-				fmt.Printf("Skipping...\n")
-			}
-			fmt.Printf("    Users: ")
-			if baselineStruct.final.collect.users {
-				fmt.Printf("\n")
-				for key, val := range *sshList {
-					if commandSet[val] == "" {
-						// TODO write to log in collections?
-						commandSet[key] = "w"
-					}
-				}
-				commandChannel <- commandSet
-				for {
-					isReceived := <-received
-					if isReceived {
-						received <- false
-					}
-				}
-			} else {
-				fmt.Printf("Skipping...\n")
-			}
-		}
-		// final restarts
-		fmt.Println("  Restart: ")
-		if !baselineStruct.final.restart.services &&
-			!baselineStruct.final.restart.servers &&
-			!*rebootBool {
-			fmt.Printf("Skipping...\n")
-		} else {
-			fmt.Printf("    Services:")
-			// fmt.Println("Reboot:")
-			if baselineStruct.final.restart.services {
-				fmt.Printf("\n")
-				for key, val := range *sshList {
-					if commandSet[val] == "" {
-						// TODO Final service restart
-						if *isRoot {
-							commandSet[key] = "systemctl --daemon-reload"
-						} else {
-							commandSet[key] = "sudo systemctl --daemon-reload"
-						}
-					}
-				}
-				commandChannel <- commandSet
-				for {
-					isReceived := <-received
-					if isReceived {
-						received <- false
-					}
-				}
-			} else {
-				fmt.Printf("Skipping...\n")
-			}
-			fmt.Printf("    Servers:")
-			if *rebootBool || baselineStruct.final.restart.servers {
-				fmt.Printf("\n")
-				for key, val := range *sshList {
-					if commandSet[val] == "" {
-						// TODO Final reboot
-						if *isRoot {
-							commandSet[key] = "shutdown -r +1"
-						} else {
-							commandSet[key] = "sudo shutdown -r +1"
-						}
-					}
-				}
-				commandChannel <- commandSet
-				for {
-					isReceived := <-received
-					if isReceived {
-						received <- false
-					}
-				}
-			} else {
-				fmt.Printf("Skipping...\n")
-			}
+	if len(fin.scripts) == 0 &&
+		len(fin.commands) == 0 &&
+		len(fin.collect.logs) == 0 &&
+		len(fin.collect.stats) == 0 &&
+		len(fin.collect.files) == 0 &&
+		!fin.collect.users &&
+		!fin.restart.services &&
+		!fin.restart.servers &&
+		!*rebootBool {
+		return steps
+	}
+
+	// Final commands
+	if len(fin.commands) > 0 {
+		fmt.Printf("  Commands:\n")
+		for _, ve := range fin.commands {
+			ve := ve
+			cmds := buildCmds(sshList, isRoot, func(string) string {
+				return finalCommandBuilder(&ve, "command")
+			})
+			steps = append(steps, baselineStep{label: "Final cmd " + ve, cmds: cmds})
 		}
 	}
-	return
+
+	// Final scripts: push each script to /tmp as base64 over the command
+	// channel, make it executable, then run it (sudo when the host is non-root).
+	if len(fin.scripts) > 0 {
+		fmt.Printf("  Scripts:\n")
+		for _, p := range fin.scripts {
+			p := p
+			base := path.Base(p)
+			remote := "/tmp/" + base
+			cmds := make(map[string]string)
+			skip := false
+			for host := range sshList {
+				push, err := fileToCommand(p, remote, false)
+				if err != nil {
+					fmt.Printf("      %s: cannot read script %q: %v, skipping\n", host, p, err)
+					skip = true
+					break
+				}
+				cmds[host] = push + " && chmod +x '" + remote + "' && " + withSudo(isRoot[host], "'"+remote+"'")
+			}
+			if skip {
+				continue
+			}
+			steps = append(steps, baselineStep{label: "Script " + base, cmds: cmds})
+		}
+	}
+
+	// Final collections: run a command per host, capture its output, and let the
+	// orchestrator write each host's artifact under ./collections/<host>/.
+	if len(fin.collect.logs) > 0 || len(fin.collect.stats) > 0 || len(fin.collect.files) > 0 {
+		fmt.Printf("  Collect:\n")
+
+		// Logs: capture the service journal for today. --no-pager is REQUIRED:
+		// the executor runs commands over a PTY, so without it journalctl pipes to
+		// a pager (less) and blocks forever (-> dispatch timeout -> host dead).
+		for _, s := range fin.collect.logs {
+			s := s
+			cmds := buildCmds(sshList, nil, func(string) string {
+				return "journalctl --no-pager -u " + s + " -S today --no-tail 2>&1"
+			})
+			steps = append(steps, baselineStep{label: "Collect log " + s, cmds: cmds, collectAs: s + ".log"})
+		}
+
+		// Stats: reuse the final command builder; skip entries with no command.
+		for _, s := range fin.collect.stats {
+			s := s
+			cmd := finalCommandBuilder(&s, "stats")
+			if cmd == "" {
+				continue
+			}
+			cmds := buildCmds(sshList, nil, func(string) string {
+				return cmd
+			})
+			steps = append(steps, baselineStep{label: "Collect stat " + s, cmds: cmds, collectAs: s + ".stat"})
+		}
+
+		// Files: cat each requested file.
+		for _, fpath := range fin.collect.files {
+			fpath := fpath
+			base := path.Base(fpath)
+			cmds := buildCmds(sshList, nil, func(string) string {
+				return "cat '" + fpath + "' 2>&1"
+			})
+			steps = append(steps, baselineStep{label: "Collect file " + base, cmds: cmds, collectAs: base})
+		}
+	}
+
+	// Collect logged-in users
+	if fin.collect.users {
+		cmds := buildCmds(sshList, nil, func(string) string {
+			return "w"
+		})
+		steps = append(steps, baselineStep{label: "Collect users", cmds: cmds, collectAs: "users.txt"})
+	}
+
+	// Restart services
+	if fin.restart.services {
+		cmds := buildCmds(sshList, isRoot, func(string) string {
+			return "systemctl daemon-reload"
+		})
+		steps = append(steps, baselineStep{label: "Reload services", cmds: cmds})
+	}
+
+	// Reboot servers
+	if fin.restart.servers || *rebootBool {
+		cmds := buildCmds(sshList, isRoot, func(string) string {
+			return "shutdown -r +1"
+		})
+		steps = append(steps, baselineStep{label: "Reboot", cmds: cmds})
+	}
+
+	return steps
 }

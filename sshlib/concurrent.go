@@ -1,7 +1,8 @@
 package sshlib
 
 import (
-	"io/ioutil"
+	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -14,9 +15,9 @@ func (parseddata *ParsedPool) connectAndRun(command *string, servername string, 
 	pp := parseddata
 	derefcmd := *command
 	authMethodCheck := []ssh.AuthMethod{}
-	key, err := ioutil.ReadFile(pp.keypath.(string))
+	key, err := os.ReadFile(pp.KeyPath)
 	if err != nil {
-		authMethodCheck = append(authMethodCheck, ssh.Password(pp.password.(string)))
+		authMethodCheck = append(authMethodCheck, ssh.Password(pp.Password))
 	} else {
 		signer, err := ssh.ParsePrivateKey(key)
 		if err != nil {
@@ -29,7 +30,7 @@ func (parseddata *ParsedPool) connectAndRun(command *string, servername string, 
 	hostKeyCallback := ssh.InsecureIgnoreHostKey()
 	// }
 	sshConfig := &ssh.ClientConfig{
-		User:            pp.username.(string),
+		User:            pp.Username,
 		Auth:            authMethodCheck,
 		HostKeyCallback: hostKeyCallback,
 		HostKeyAlgorithms: []string{
@@ -44,10 +45,10 @@ func (parseddata *ParsedPool) connectAndRun(command *string, servername string, 
 	}
 	defer func() {
 		if recv := recover(); recv != nil {
-			recoveries = recv
+			_ = recv
 		}
 	}()
-	connection, err := ssh.Dial("tcp", pp.fqdn.(string)+":"+pp.port.(string), sshConfig)
+	connection, err := ssh.Dial("tcp", pp.FQDN+":"+strconv.Itoa(pp.Port), sshConfig)
 	if err != nil {
 		loggerlib.GeneralError(servername, "[ERROR: Connection Failed] ", err)
 		validator = "NOK\n"
@@ -57,6 +58,6 @@ func (parseddata *ParsedPool) connectAndRun(command *string, servername string, 
 		defer connection.Close()
 		defer wg.Done()
 		derefcmd = OSSwitcher.Switcher(*pp, derefcmd)
-		output <- executeCommand(servername, derefcmd, pp.password.(string), connection)
+		output <- executeCommand(servername, derefcmd, pp.Password, connection)
 	}
 }

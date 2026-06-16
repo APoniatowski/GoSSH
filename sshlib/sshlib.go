@@ -17,7 +17,7 @@ func executeCommand(servername string, cmd string, password string, connection *
 	//the errors below.
 	defer func() {
 		if recv := recover(); recv != nil {
-			recoveries = recv
+			_ = recv
 		}
 	}()
 	session, err := connection.NewSession()
@@ -82,5 +82,3 @@ func executeCommand(servername string, cmd string, password string, connection *
 	}
 	return validator
 }
-
-

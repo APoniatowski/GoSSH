@@ -40,4 +40,3 @@ func (mountDetails *mountdetails) mountCommandBuilder(chosenOption string) strin
 
 	return mountCommand.String()
 }
-

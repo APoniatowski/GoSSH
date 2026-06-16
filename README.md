@@ -2,8 +2,10 @@
 
 ![](https://github.com/Aponiatowski/GoSSH/workflows/GoSSH/badge.svg)     [![Go Report Card](https://goreportcard.com/badge/github.com/APoniatowski/GoSSH)](https://goreportcard.com/report/github.com/APoniatowski/GoSSH)   [![codebeat badge](https://codebeat.co/badges/e53dab58-a0df-4699-a4d6-cfe67fbd9b81)](https://codebeat.co/projects/github-com-aponiatowski-gossh-master)
 
+> CI: Forgejo Actions (`.forgejo/workflows/ci.yml`, `docker`-tagged DinD runners) runs build, gofmt, vet and `go test -race`, plus four integration suites over real SSH against throwaway systemd containers: a single-host smoke test, a 20-stage feature **matrix** (ubuntu + debian), a 3-tier **infra** scenario (nginx → api → redis), and a **breadth** suite spanning all four package managers (apt/dnf/pacman/zypper) plus a non-root sudo path.
 
-### Current version -> **v1.4.0**
+
+### Current version -> **v2.0.0**
 
 ### Goal with this project:
 I've seen so many times that other tools like ansible, saltstack, etc, perform really well and give in-depth information. To any engineer (devops, IT, software)
@@ -85,5 +87,66 @@ Subcommand:
 * install       --Install packages on servers in your pool
 * uninstall     --Uninstall packages on servers in your pool
 
+# Baselines (v2)
+
+Beyond ad-hoc commands, GoSSH can enforce a declarative **baseline** — a desired
+state defined in YAML — across a fleet, and verify compliance without making
+changes. This is the SaltStack/Ansible/Chef/Puppet-style capability, kept fast by
+the same per-server concurrent SSH engine.
+
+```
+GoSSH baseline apply  <name>    # bring servers to the desired state (./config/<name>.yml)
+GoSSH baseline check  <name>    # read-only compliance check (no changes)
+GoSSH baseline verify <name>    # validate the baseline file itself
+```
+
+A baseline file is `name -> server-group -> stages`, where the group name matches
+a group in `pool.yml`. Stages run in order:
+
+* **Exclude** — skip servers by OS or FQDN.
+* **Prerequisites** — tools to install, files to fetch (URL/local push/mount),
+  VCS, custom commands.
+* **Must-Have** — `Installed`, `Configured` (config files pushed to hosts),
+  `Users`, `Enabled`/`Disabled` services, firewall `Rules` (open/closed),
+  `Policies`, `Mounts`. (Configured + Users run before Enable/Disable so services
+  start with their config and users in place.)
+* **Must-Not-Have** — packages/services/users/rules/mounts that must be absent.
+* **Final** — custom commands, artifact `Collect` (logs/stats/files pulled to
+  `./collections/<host>/`), service reload, reboot.
+
+See `config/EXAMPLE-baselines.yml` for a fully-annotated example, or generate a
+template with `GoSSH generate baseline template`.
+
+**Exit codes** (`apply`/`check`): `0` compliant, `2` non-compliant (a must-have is
+missing or a must-not-have is present), `1` a host was unreachable / errored — so
+`baseline check` is usable as a CI/monitoring gate.
+
+Pool entries (`./config/pool.yml`) are `group -> server -> {FQDN, Username,
+Password, Key_Path, Port, OS}` (order-independent; `Key_Path`/`Port` optional).
+`OS` selects the package-manager/command dialect (debian, ubuntu, centos, rhel,
+fedora, opensuse, sles, arch, freebsd). A non-root `Username` makes GoSSH `sudo`
+each command and feed the configured password.
+
+# Testing
+
+Unit tests (incl. the race-tested concurrency engine and golden parser tests):
+
+```
+go test -race ./...
+```
+
+Integration suites run in CI on Docker-in-Docker; reproduce any locally with, e.g.:
+
+```
+docker compose -f test/integration/matrix/docker-compose.yml up --build \
+    --abort-on-container-exit --exit-code-from harness
+docker compose -f test/integration/matrix/docker-compose.yml down -v
+```
+
+(`matrix`, `infra`, and `breadth` each have their own compose project under
+`test/integration/`.)
+
 ### Outstanding issues
-*The known_hosts file is causing some issues (issue open for it). Ignoring known_hosts for now.
+* The known_hosts file is causing some issues (issue open for it). Ignoring known_hosts for now.
+* Baseline features deferred to VM-based testing: nfs mounts, firewall zones
+  (firewalld), VCS prerequisites (currently URL-fetch, not yet real `git clone`).

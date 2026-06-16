@@ -14,7 +14,7 @@ func GeneralCommandParse(cmd []string) string {
 	return command
 }
 
-//BashScriptParse bash script parser, to pass write the script on the server, run it and remove it.
+// BashScriptParse bash script parser, to pass write the script on the server, run it and remove it.
 // It also accepts args for the script. Dependency scripts will not work, as they are considered a separate script
 func BashScriptParse(cmd string, cmdargs []string) string {
 	scriptargs := strings.Join(cmdargs, " ")

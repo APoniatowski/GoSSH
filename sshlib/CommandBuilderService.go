@@ -11,9 +11,9 @@ func serviceCommandBuilder(service, osOption *string, serviceOption string) stri
 	case "search":
 		serviceCommand.WriteString(pkgmanlib.PkgSearch[*osOption] + *service)
 	case "install":
-		serviceCommand.WriteString(pkgmanlib.PkgInstall[*osOption] + *service)
+		serviceCommand.WriteString(pkgmanlib.PkgInstallYes[*osOption] + *service)
 	case "uninstall":
-		serviceCommand.WriteString(pkgmanlib.PkgUninstall[*osOption] + *service)
+		serviceCommand.WriteString(pkgmanlib.PkgUninstallYes[*osOption] + *service)
 	case "enable":
 		serviceCommand.WriteString(pkgmanlib.OmniTools["systemctlenable"] + *service)
 	case "disable":

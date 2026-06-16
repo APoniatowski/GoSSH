@@ -43,4 +43,3 @@ func finalCommandBuilder(command *string, chosenOption string) string {
 	}
 	return finalCommand.String()
 }
-

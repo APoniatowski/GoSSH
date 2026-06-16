@@ -1,7 +1,8 @@
 package sshlib
 
 import (
-	"io/ioutil"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/APoniatowski/GoSSH/loggerlib"
@@ -12,9 +13,9 @@ func (parseddata *ParsedPool) connectAndRunSeq(command *string, servername strin
 	pp := parseddata
 	derefcmd := *command
 	authMethodCheck := []ssh.AuthMethod{}
-	key, err := ioutil.ReadFile(pp.keypath.(string))
+	key, err := os.ReadFile(pp.KeyPath)
 	if err != nil {
-		authMethodCheck = append(authMethodCheck, ssh.Password(pp.password.(string)))
+		authMethodCheck = append(authMethodCheck, ssh.Password(pp.Password))
 	} else {
 		signer, err := ssh.ParsePrivateKey(key)
 		if err != nil {
@@ -27,7 +28,7 @@ func (parseddata *ParsedPool) connectAndRunSeq(command *string, servername strin
 	hostKeyCallback := ssh.InsecureIgnoreHostKey()
 	// }
 	sshConfig := &ssh.ClientConfig{
-		User:            pp.username.(string),
+		User:            pp.Username,
 		Auth:            authMethodCheck,
 		HostKeyCallback: hostKeyCallback,
 		HostKeyAlgorithms: []string{
@@ -42,10 +43,10 @@ func (parseddata *ParsedPool) connectAndRunSeq(command *string, servername strin
 	}
 	defer func() {
 		if recv := recover(); recv != nil {
-			recoveries = recv
+			_ = recv
 		}
 	}()
-	connection, err := ssh.Dial("tcp", pp.fqdn.(string)+":"+pp.port.(string), sshConfig)
+	connection, err := ssh.Dial("tcp", pp.FQDN+":"+strconv.Itoa(pp.Port), sshConfig)
 	if err != nil {
 		loggerlib.GeneralError(servername, "[ERROR: Connection Failed] ", err)
 		validator = "NOK\n"
@@ -54,5 +55,5 @@ func (parseddata *ParsedPool) connectAndRunSeq(command *string, servername strin
 	defer connection.Close()
 	derefcmd = OSSwitcher.Switcher(*pp, derefcmd)
 	// fmt.Printf("%v: ", servername)
-	return executeCommand(servername, derefcmd, pp.password.(string), connection)
+	return executeCommand(servername, derefcmd, pp.Password, connection)
 }

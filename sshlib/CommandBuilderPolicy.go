@@ -6,15 +6,18 @@ func (policies *musthavepolicies) policyCommandBuilder(chosenOption string) stri
 	policiesCommand := strings.Builder{}
 	switch chosenOption {
 	case "check":
+		if policies.polimport == "" {
+			break
+		}
 		policy := strings.Split(policies.polimport, "/")
 		policiesCommand.WriteString("semanage export -f /tmp/policy-check.mod;")
 		policiesCommand.WriteString("diff /tmp/policy-check.mod /tmp/")
-		policiesCommand.WriteString(policy[len(policy)])
+		policiesCommand.WriteString(policy[len(policy)-1])
 	case "apply":
 		policiesCommand.WriteString("semanage -i ")
 		policy := strings.Split(policies.polimport, "/")
 		policiesCommand.WriteString("/tmp/")
-		policiesCommand.WriteString(policy[len(policy) - 1])
+		policiesCommand.WriteString(policy[len(policy)-1])
 	default:
 		policiesCommand.WriteString("")
 	}

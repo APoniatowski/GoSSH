@@ -29,13 +29,7 @@ func RunGroups(configs *yaml.MapSlice, command *string) {
 			if !ok {
 				panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
 			}
-			var pp ParsedPool
-			pp.fqdn = serverValue[0].Value
-			pp.username = serverValue[1].Value
-			pp.password = serverValue[2].Value
-			pp.keypath = serverValue[3].Value
-			pp.port = serverValue[4].Value
-			pp.os = serverValue[5].Value
+			pp := parseServer(serverValue)
 			pp.defaulter()
 			go pp.connectAndRun(command, servername.(string), output, &wg)
 		}
@@ -68,13 +62,7 @@ func RunAllServers(configs *yaml.MapSlice, command *string) {
 		if !ok {
 			panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
 		}
-		var pp ParsedPool
-		pp.fqdn = serverValue[0].Value
-		pp.username = serverValue[1].Value
-		pp.password = serverValue[2].Value
-		pp.keypath = serverValue[3].Value
-		pp.port = serverValue[4].Value
-		pp.os = serverValue[5].Value
+		pp := parseServer(serverValue)
 		pp.defaulter()
 		go pp.connectAndRun(command, servername.(string), output, &wg)
 	}
@@ -99,13 +87,7 @@ func RunSequentially(configs *yaml.MapSlice, command *string) {
 			if !ok {
 				panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
 			}
-			var pp ParsedPool
-			pp.fqdn = serverValue[0].Value
-			pp.username = serverValue[1].Value
-			pp.password = serverValue[2].Value
-			pp.keypath = serverValue[3].Value
-			pp.port = serverValue[4].Value
-			pp.os = serverValue[5].Value
+			pp := parseServer(serverValue)
 			pp.defaulter()
 			s := spinner.New(spinner.CharSets[9], 25*time.Millisecond)
 			s.Prefix = servername.(string) + ": "

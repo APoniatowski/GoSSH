@@ -38,14 +38,15 @@ func ReadBaseline(bl string) string {
 }
 
 // BaselineParse Baseline parser
-func BaselineParse(bl string) {
+func BaselineParse(baselinePath string) yaml.MapSlice {
 	cyan := color.Cyan.Render
 	green := color.Green.Render
 	red := color.Red.Render
 	yellow := color.Yellow.Render
 	fmt.Println(yellow("Parsing data..."))
-	data := ReadBaseline(bl)
-	err := yaml.Unmarshal([]byte(data), &Baseline)
+	data := ReadBaseline(baselinePath)
+	var baseline yaml.MapSlice
+	err := yaml.Unmarshal([]byte(data), &baseline)
 	if err != nil {
 		fmt.Println(yellow("Baseline could not be parsed, "), red("encountered some errors..."))
 		fmt.Println(yellow("Please check your baseline.yml file, or generate one with:"))
@@ -56,4 +57,5 @@ func BaselineParse(bl string) {
 		fmt.Println(yellow("Baseline read, "), green("no errors encountered..."))
 		fmt.Println("=====================================================")
 	}
+	return baseline
 }

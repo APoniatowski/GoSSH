@@ -1,0 +1,48 @@
+Example - Basic kubernetes setup:
+  Master K8s Group:
+    Prerequisites:
+      Commands:
+        - comm
+        - comm 2
+    Must-Have:
+      Installed:
+        - kubeadm
+        - openssh
+        - kubelet
+        - kubectl
+      Enabled:
+        - kubelet
+        - openssh
+    Must-Not-Have:
+      Disabled:
+        - kubelet
+    Final:
+      Commands:
+        - echo '#!/bin/bash' > ~/token.sh
+        - kubeadm init
+        - kubeadm token create --print-join-command >> tee ~/token.sh  # create the join command as a shell script
+
+  Slave K8s group:
+    Prerequisites:
+      Tools:
+        - sshpass
+      Prerequisites:
+        Commands:
+          - sshpass -p "test" scp test@ubuntu-test-1:~/token.sh ~/token.sh  # copy the join command shell script from master
+          - sudo chmod +x ~/token.sh  # make it executable
+      Clean-up: true
+      Must-Have:
+        Installed:
+          - kubeadm
+          - openssh
+          - kubelet
+          - kubectl
+        Enabled:
+          - kubelet
+          - openssh
+      Must-Not-Have:
+        Disabled:
+          - kubelet
+      Final:
+        Commands:
+          - ~/token.sh

@@ -2,439 +2,235 @@ package sshlib
 
 import "fmt"
 
-func (baselineStruct *ParsedBaseline) applyMustHaves(sshList *map[string]string, rebootBool *bool, commandChannel chan<- map[string]string, received chan bool, isRoot *bool) {
-	commandSet := make(map[string]string)
-	// MH list
+// applyMustHaves builds the ordered "must have" steps (installs, enables,
+// disables, users, policies, firewall rules, mounts). Pure builder. It also
+// flips rebootBool when a policy requires a reboot, consumed later by finals.
+func (baselineStruct *ParsedBaseline) applyMustHaves(sshList map[string]string, isRoot map[string]bool, rebootBool *bool) []baselineStep {
+	var steps []baselineStep
+	mh := &baselineStruct.musthave
 	fmt.Printf("Must Have Checklist: ")
-	if len(baselineStruct.musthave.installed) == 0 &&
-		len(baselineStruct.musthave.enabled) == 0 &&
-		len(baselineStruct.musthave.disabled) == 0 &&
-		len(baselineStruct.musthave.configured.services) == 0 &&
-		len(baselineStruct.musthave.users.users) == 0 &&
-		baselineStruct.musthave.policies.polimport == "" &&
-		!baselineStruct.musthave.policies.polreboot &&
-		baselineStruct.musthave.policies.polstatus == "" &&
-		len(baselineStruct.musthave.rules.fwopen.ports) == 0 &&
-		len(baselineStruct.musthave.rules.fwopen.protocols) == 0 &&
-		len(baselineStruct.musthave.rules.fwclosed.ports) == 0 &&
-		len(baselineStruct.musthave.rules.fwclosed.protocols) == 0 &&
-		len(baselineStruct.musthave.rules.fwzones) == 0 &&
-		len(baselineStruct.musthave.mounts.mountname) == 0 {
-		commandSet[""] = ""
+	if len(mh.installed) == 0 &&
+		len(mh.enabled) == 0 &&
+		len(mh.disabled) == 0 &&
+		len(mh.configured.services) == 0 &&
+		len(mh.users.users) == 0 &&
+		mh.policies.polimport == "" &&
+		!mh.policies.polreboot &&
+		mh.policies.polstatus == "" &&
+		len(mh.rules.fwopen.ports) == 0 &&
+		len(mh.rules.fwopen.protocols) == 0 &&
+		len(mh.rules.fwclosed.ports) == 0 &&
+		len(mh.rules.fwclosed.protocols) == 0 &&
+		len(mh.rules.fwzones) == 0 &&
+		len(mh.mounts.mountname) == 0 {
+		fmt.Printf("Skipping...\n")
+		return steps
+	}
+	fmt.Printf("\n")
+
+	// Installed
+	fmt.Printf(" Installed: ")
+	if len(mh.installed) > 0 {
+		fmt.Printf("\n")
+		for _, ve := range mh.installed {
+			ve := ve
+			cmds := buildCmds(sshList, isRoot, func(os string) string {
+				return serviceCommandBuilder(&ve, &os, "install")
+			})
+			steps = append(steps, baselineStep{label: "Install " + ve, cmds: cmds})
+		}
+	} else {
+		fmt.Printf("Skipping...\n")
+	}
+
+	// Configured services (config-file transfer). Each config file is streamed
+	// to its destination as base64 over the command channel (see fileToCommand).
+	// NOTE: Configured (and Users) run BEFORE Enable/Disable so a service is
+	// started with its config already in place and required users present. (For a
+	// config change on an ALREADY-running service, systemd still needs an explicit
+	// restart/reload — use Final Restart; ordering alone does not reload it.)
+	fmt.Printf(" Configured Checklist: ")
+	if len(mh.configured.services) == 0 {
 		fmt.Printf("Skipping...\n")
 	} else {
-		// MH installed
 		fmt.Printf("\n")
-		fmt.Printf(" Installed: ")
-		if len(baselineStruct.musthave.installed) > 0 {
-			fmt.Printf("\n")
-			for _, ve := range baselineStruct.musthave.installed {
-				for key, val := range *sshList {
-					if commandSet[val] == "" {
-						// TODO Must Have Installed apply make some changes and move to commandBuilders
-						if *isRoot {
-							commandSet[key] = serviceCommandBuilder(&ve, &val, "install")
-						} else {
-							commandSet[key] = "sudo " + serviceCommandBuilder(&ve, &val, "install")
-						}
-					}
-				}
-				commandChannel <- commandSet
-				for {
-					isReceived := <-received
-					if isReceived {
-						received <- false
-					}
-				}
-				//for k, v := range commandSet {
-				//	fmt.Printf("%v   %v\n", k, v)
-				//}
-				// send to channel
-				// wait for response
-			}
-		} else {
-			fmt.Printf("Skipping...\n")
-		}
-		// MH enabled
-		fmt.Printf(" Enabled: ")
-		if len(baselineStruct.musthave.enabled) > 0 {
-			commandSet = make(map[string]string)
-			fmt.Printf("\n")
-			for _, ve := range baselineStruct.musthave.enabled {
-				for key, val := range *sshList {
-					if commandSet[val] == "" {
-						// TODO Must Have Enabled apply
-						if *isRoot {
-							commandSet[key] = serviceCommandBuilder(&ve, &val, "enable")
-						} else {
-							commandSet[key] = "sudo " + serviceCommandBuilder(&ve, &val, "enable")
-						}
-					}
-				}
-				commandChannel <- commandSet
-				for {
-					isReceived := <-received
-					if isReceived {
-						received <- false
-					}
-				}
-				//for k, v := range commandSet {
-				//	fmt.Printf("%v   %v\n", k, v)
-				//}
-				// send to channel
-				// wait for response
-			}
-		} else {
-			fmt.Printf("Skipping...\n")
-		}
-		// MH disabled
-		fmt.Printf(" Disabled: ")
-		if len(baselineStruct.musthave.disabled) > 0 {
-			commandSet = make(map[string]string)
-			for _, ve := range baselineStruct.musthave.disabled {
-				if ve != "" {
-					fmt.Printf("\n")
-					for key, val := range *sshList {
-						if commandSet[val] == "" {
-							if *isRoot {
-								commandSet[key] = serviceCommandBuilder(&ve, &val, "disable")
-							} else {
-								commandSet[key] = "sudo " + serviceCommandBuilder(&ve, &val, "disable")
-							}
-						}
-					}
-					commandChannel <- commandSet
-					for {
-						isReceived := <-received
-						if isReceived {
-							received <- false
-						}
-					}
-					// TODO Must Have Disabled apply
-					//for k, v := range commandSet {
-					//	fmt.Printf("%v   %v\n", k, v)
-					//}
-					// send to channel
-					// wait for response
-				} else {
-					fmt.Printf("Skipping...\n")
-				}
-			}
-		} else {
-			fmt.Printf("Skipping...\n")
-		}
-		// MH configured
-		fmt.Printf(" Configured Checklist: ")
-		for ke, ve := range baselineStruct.musthave.configured.services {
+		for ke, ve := range mh.configured.services {
 			if ke == "" {
-				fmt.Printf("Skipping...\n")
-			} else {
-				commandSet = make(map[string]string)
-				fmt.Printf("\n      %s:\n", ke)
-				if len(ve.source) == len(ve.destination) {
-					for i := range ve.source {
-						fmt.Println(ve.source[i])
-						fmt.Println(ve.destination[i])
-						// TODO Transfer config files via ssh
-						// pass source and destination to channel, to transfer the file
-					}
-				} else {
-					fmt.Printf("Skipping... Config mismatch in baseline file\n")
-				}
+				continue
 			}
-		}
-		// MH Users
-		fmt.Printf(" Users Checklist: ")
-		for ke, ve := range baselineStruct.musthave.users.users {
-			if ke == "" {
-				fmt.Printf("Skipping...\n")
-			} else {
-				commandSet = make(map[string]string)
-				fmt.Printf("\n      %s:\n", ke)
-				for key, val := range *sshList {
-					if commandSet[val] == "" {
-						if *isRoot {
-							commandSet[key] = ve.userManagementCommandBuilder(&ke, "add")
-						} else {
-							commandSet[key] = "sudo " + ve.userManagementCommandBuilder(&ke, "add")
-						}
-					}
-				}
-				commandChannel <- commandSet
-				for {
-					isReceived := <-received
-					if isReceived {
-						received <- false
-					}
-				}
-				// TODO User apply
-				//for k, v := range commandSet {
-				//	fmt.Printf("%v   %v\n", k, v)
-				//}
-				// fmt.Printf("   Groups: ")
-				// if len(ve.groups) > 0 {
-				// 	for _, val := range ve.groups {
-				// 		fmt.Printf("%s\n", val)
-				// 	}
-				// } else {
-				// 	fmt.Printf("\n")
-				// }
-				// fmt.Printf("   Shell: %v\n", ve.shell)
-				// fmt.Printf("   Home: %v\n", ve.home)
-				// fmt.Printf("   Sudoer: %v\n", ve.sudoer)
+			if len(ve.source) != len(ve.destination) {
+				fmt.Printf("      %s: config source/destination mismatch, skipping\n", ke)
+				continue
 			}
-		}
-		// MH Policies
-		fmt.Printf(" Policies Checklist: ")
-		if baselineStruct.musthave.policies.polstatus == "" &&
-			baselineStruct.musthave.policies.polimport == "" &&
-			!baselineStruct.musthave.policies.polreboot {
-			fmt.Printf("Skipping...\n")
-		} else {
-			commandSet = make(map[string]string)
-			for key, val := range *sshList {
-				if commandSet[val] == "" {
-					// TODO Must Have Policies apply make some changes and move to commandBuilders
-					if *isRoot {
-						commandSet[key] = baselineStruct.musthave.policies.policyCommandBuilder("apply")
-					} else {
-						commandSet[key] = "sudo " + baselineStruct.musthave.policies.policyCommandBuilder("apply")
+			ke, ve := ke, ve
+			for i := range ve.source {
+				src, dest := ve.source[i], ve.destination[i]
+				cmds := make(map[string]string)
+				skip := false
+				for host := range sshList {
+					cmd, err := fileToCommand(src, dest, !isRoot[host])
+					if err != nil {
+						fmt.Printf("      %s: cannot read config source %q: %v, skipping\n", ke, src, err)
+						skip = true
+						break
 					}
+					cmds[host] = cmd
 				}
-			}
-			if baselineStruct.musthave.policies.polreboot {
-				*rebootBool = true
-			}
-			commandChannel <- commandSet
-			for {
-				isReceived := <-received
-				if isReceived {
-					received <- false
+				if skip {
+					continue
 				}
-			}
-			//for k, v := range commandSet {
-			//	fmt.Printf("%v   %v\n", k, v)
-			//}
-			// Send command to channel
-			fmt.Printf("\n")
-		}
-		// MH Firewall rules
-		fmt.Printf(" Firewall Checklist: ")
-		if len(baselineStruct.musthave.rules.fwopen.ports) == 0 &&
-			len(baselineStruct.musthave.rules.fwopen.protocols) == 0 &&
-			len(baselineStruct.musthave.rules.fwclosed.ports) == 0 &&
-			len(baselineStruct.musthave.rules.fwclosed.protocols) == 0 &&
-			len(baselineStruct.musthave.rules.fwzones) == 0 {
-			fmt.Printf("Skipping...\n")
-		} else {
-			commandSet = make(map[string]string)
-			fmt.Printf("\n")
-			if len(baselineStruct.musthave.rules.fwopen.ports) == len(baselineStruct.musthave.rules.fwopen.protocols) {
-				if len(baselineStruct.musthave.rules.fwzones) > 0 {
-					fmt.Println("   Firewall zones:")
-					for _, ve := range baselineStruct.musthave.rules.fwzones {
-						fmt.Printf("      %v\n", ve)
-						for i := range baselineStruct.musthave.rules.fwopen.ports {
-							for key, val := range *sshList {
-								if commandSet[val] == "" {
-									if *isRoot {
-										commandSet[key] = firewallCommandBuilder(&baselineStruct.musthave.rules.fwopen.ports[i],
-											&baselineStruct.musthave.rules.fwopen.protocols[i],
-											&ve,
-											"apply-open")
-									} else {
-										commandSet[key] = "sudo " + firewallCommandBuilder(&baselineStruct.musthave.rules.fwopen.ports[i],
-											&baselineStruct.musthave.rules.fwopen.protocols[i],
-											&ve,
-											"apply-open")
-									}
-								}
-							}
-							commandChannel <- commandSet
-							for {
-								isReceived := <-received
-								if isReceived {
-									received <- false
-								}
-							}
-							//for k, v := range commandSet {
-							//	// TODO Open Firewall ports & protocols check per firewall zone apply
-							//	fmt.Printf("%v   %v\n", k, v)
-							//}
-							// firewall check creation per zone
-							// channel to ssh session and wait for a reply
-						}
-					}
-				} else {
-					for i := range baselineStruct.musthave.rules.fwopen.ports {
-						fmt.Printf("%s  %s\n", baselineStruct.musthave.rules.fwopen.ports[i],
-							baselineStruct.musthave.rules.fwopen.protocols[i])
-						for key, val := range *sshList {
-							if commandSet[val] == "" {
-								emptyZone := ""
-								if *isRoot {
-									commandSet[key] = firewallCommandBuilder(&baselineStruct.musthave.rules.fwopen.ports[i],
-										&baselineStruct.musthave.rules.fwopen.protocols[i],
-										&emptyZone,
-										"apply-open")
-								} else {
-									commandSet[key] = "sudo " + firewallCommandBuilder(&baselineStruct.musthave.rules.fwopen.ports[i],
-										&baselineStruct.musthave.rules.fwopen.protocols[i],
-										&emptyZone,
-										"apply-open")
-								}
-							}
-						}
-						commandChannel <- commandSet
-						for {
-							isReceived := <-received
-							if isReceived {
-								received <- false
-							}
-						}
-						//for k, v := range commandSet {
-						//	// TODO Open Firewall ports & protocols apply
-						//	fmt.Printf("%v   %v\n", k, v)
-						//}
-						// firewall check creation with no zone specified
-						// channel to ssh session and wait for a reply
-					}
-				}
-			} else {
-				fmt.Println("There seems to be inconsistencies between your firewall ports and protocols.")
-				fmt.Println("Please review your baseline and rectify it.")
-			}
-			if len(baselineStruct.musthave.rules.fwclosed.ports) == len(baselineStruct.musthave.rules.fwclosed.protocols) {
-				if len(baselineStruct.musthave.rules.fwzones) > 0 {
-					fmt.Println("   Firewall zones:")
-					for _, ve := range baselineStruct.musthave.rules.fwzones {
-						fmt.Printf("      %v\n", ve)
-						for i := range baselineStruct.musthave.rules.fwclosed.ports {
-							for key, val := range *sshList {
-								if commandSet[val] == "" {
-									if *isRoot {
-										commandSet[key] = firewallCommandBuilder(&baselineStruct.musthave.rules.fwclosed.ports[i],
-											&baselineStruct.musthave.rules.fwclosed.protocols[i],
-											&ve,
-											"apply-closed")
-									} else {
-										commandSet[key] = "sudo " + firewallCommandBuilder(&baselineStruct.musthave.rules.fwclosed.ports[i],
-											&baselineStruct.musthave.rules.fwclosed.protocols[i],
-											&ve,
-											"apply-closed")
-									}
-								}
-							}
-							commandChannel <- commandSet
-							for {
-								isReceived := <-received
-								if isReceived {
-									received <- false
-								}
-							}
-							//for k, v := range commandSet {
-							//	// TODO Closed Firewall ports & protocols check per firewall zone apply
-							//	fmt.Printf("%v   %v\n", k, v)
-							//}
-							// firewall check creation per zone
-							// channel to ssh session and wait for a reply
-						}
-					}
-				} else {
-					for i := range baselineStruct.musthave.rules.fwclosed.ports {
-						for key, val := range *sshList {
-							if commandSet[val] == "" {
-								emptyZone := ""
-								if *isRoot {
-									commandSet[key] = firewallCommandBuilder(&baselineStruct.musthave.rules.fwclosed.ports[i],
-										&baselineStruct.musthave.rules.fwclosed.protocols[i],
-										&emptyZone,
-										"apply-closed")
-								} else {
-									commandSet[key] = "sudo " + firewallCommandBuilder(&baselineStruct.musthave.rules.fwclosed.ports[i],
-										&baselineStruct.musthave.rules.fwclosed.protocols[i],
-										&emptyZone,
-										"apply-closed")
-								}
-							}
-						}
-						commandChannel <- commandSet
-						for {
-							isReceived := <-received
-							if isReceived {
-								received <- false
-							}
-						}
-						//for k, v := range commandSet {
-						//	// TODO Open Firewall ports & protocols apply
-						//	fmt.Printf("%v   %v\n", k, v)
-						//}
-						// firewall check creation with no zone specified
-						// channel to ssh session and wait for a reply
-					}
-				}
-			} else {
-				fmt.Println("There seems to be inconsistencies between your firewall ports and protocols.")
-				fmt.Println("Please review your baseline and rectify it.")
-			}
-		}
-		// MH mounts
-		fmt.Printf(" Mounts Checklist: ")
-		for ke, ve := range baselineStruct.musthave.mounts.mountname {
-			if ke == "" {
-				fmt.Printf("Skipping...\n")
-			} else {
-				if ve.mounttype == "" &&
-					ve.address == "" &&
-					ve.src == "" &&
-					ve.dest == "" {
-					fmt.Printf("\nNo info found for %s. Skipping...\n", ke)
-				} else {
-					fmt.Printf("\n")
-					commandSet = make(map[string]string)
-					notEnoughInfo := false
-					fmt.Printf("      %s:\n", ke)
-					if ve.mounttype == "" {
-						notEnoughInfo = true
-					}
-					if ve.address == "" {
-						notEnoughInfo = true
-					}
-					if ve.src == "" {
-						notEnoughInfo = true
-					}
-					if ve.dest == "" {
-						notEnoughInfo = true
-					}
-					if notEnoughInfo {
-						fmt.Printf("Critical mounting info missing for %s. Please review your baseline's mounting information. Skipping...\n", ke)
-					} else {
-						for key, val := range *sshList {
-							if commandSet[val] == "" {
-								// TODO Must Have Mounts apply
-								if *isRoot {
-									commandSet[key] = ve.mountCommandBuilder("apply")
-								} else {
-									commandSet[key] = "sudo " + ve.mountCommandBuilder("apply")
-								}
-							}
-						}
-						// iterate through sshList and create command for each server
-						// pass info to ssh session and waiting for a response
-						commandChannel <- commandSet
-						for {
-							isReceived := <-received
-							if isReceived {
-								received <- false
-							}
-						}
-					}
-					//for k, v := range commandSet {
-					//	fmt.Printf("%v   %v\n", k, v)
-					//}
-				}
+				steps = append(steps, baselineStep{label: "Config " + ke, cmds: cmds})
 			}
 		}
 	}
-	return
+
+	// Users
+	fmt.Printf(" Users Checklist: ")
+	if len(mh.users.users) == 0 {
+		fmt.Printf("Skipping...\n")
+	} else {
+		fmt.Printf("\n")
+		for ke, ve := range mh.users.users {
+			if ke == "" {
+				continue
+			}
+			ke, ve := ke, ve
+			cmds := buildCmds(sshList, isRoot, func(string) string {
+				return ve.userManagementCommandBuilder(&ke, "add")
+			})
+			steps = append(steps, baselineStep{label: "User " + ke, cmds: cmds})
+		}
+	}
+
+	// Enabled (after Configured/Users so the service starts with config in place)
+	fmt.Printf(" Enabled: ")
+	if len(mh.enabled) > 0 {
+		fmt.Printf("\n")
+		for _, ve := range mh.enabled {
+			ve := ve
+			cmds := buildCmds(sshList, isRoot, func(os string) string {
+				return serviceCommandBuilder(&ve, &os, "enable")
+			})
+			steps = append(steps, baselineStep{label: "Enable " + ve, cmds: cmds})
+		}
+	} else {
+		fmt.Printf("Skipping...\n")
+	}
+
+	// Disabled
+	fmt.Printf(" Disabled: ")
+	if len(mh.disabled) > 0 {
+		fmt.Printf("\n")
+		for _, ve := range mh.disabled {
+			if ve == "" {
+				continue
+			}
+			ve := ve
+			cmds := buildCmds(sshList, isRoot, func(os string) string {
+				return serviceCommandBuilder(&ve, &os, "disable")
+			})
+			steps = append(steps, baselineStep{label: "Disable " + ve, cmds: cmds})
+		}
+	} else {
+		fmt.Printf("Skipping...\n")
+	}
+
+	// Policies
+	fmt.Printf(" Policies Checklist: ")
+	if mh.policies.polstatus == "" && mh.policies.polimport == "" && !mh.policies.polreboot {
+		fmt.Printf("Skipping...\n")
+	} else {
+		fmt.Printf("\n")
+		if mh.policies.polreboot {
+			*rebootBool = true
+		}
+		cmds := buildCmds(sshList, isRoot, func(string) string {
+			return mh.policies.policyCommandBuilder("apply")
+		})
+		steps = append(steps, baselineStep{label: "Policies", cmds: cmds})
+	}
+
+	// Firewall rules
+	fmt.Printf(" Firewall Checklist: ")
+	if len(mh.rules.fwopen.ports) == 0 &&
+		len(mh.rules.fwopen.protocols) == 0 &&
+		len(mh.rules.fwclosed.ports) == 0 &&
+		len(mh.rules.fwclosed.protocols) == 0 &&
+		len(mh.rules.fwzones) == 0 {
+		fmt.Printf("Skipping...\n")
+	} else {
+		fmt.Printf("\n")
+		steps = append(steps, firewallSteps(sshList, isRoot, mh.rules.fwopen.ports, mh.rules.fwopen.protocols, mh.rules.fwzones, "apply-open")...)
+		steps = append(steps, firewallSteps(sshList, isRoot, mh.rules.fwclosed.ports, mh.rules.fwclosed.protocols, mh.rules.fwzones, "apply-closed")...)
+	}
+
+	// Mounts
+	fmt.Printf(" Mounts Checklist: ")
+	if len(mh.mounts.mountname) == 0 {
+		fmt.Printf("Skipping...\n")
+	} else {
+		fmt.Printf("\n")
+		for ke, ve := range mh.mounts.mountname {
+			if ke == "" {
+				continue
+			}
+			if ve.mounttype == "" || ve.address == "" || ve.src == "" || ve.dest == "" {
+				fmt.Printf("      %s: critical mount info missing, skipping\n", ke)
+				continue
+			}
+			ve := ve
+			cmds := buildCmds(sshList, isRoot, func(string) string {
+				return ve.mountCommandBuilder("apply")
+			})
+			steps = append(steps, baselineStep{label: "Mount " + ke, cmds: cmds})
+		}
+	}
+
+	return steps
+}
+
+// firewallSteps builds one step per port/protocol pair (optionally per zone).
+// Shared by must-have (apply-*), must-not-have (remove-*), and the read-only
+// check path. When action == "check" the commands are built without sudo
+// (isRoot is ignored) and labelled "fw check <port>/<proto>"; the apply actions
+// keep per-host sudo and the "<action> <port>/<proto>" label.
+func firewallSteps(sshList map[string]string, isRoot map[string]bool, ports, protocols, zones []string, action string) []baselineStep {
+	var steps []baselineStep
+	if len(ports) != len(protocols) {
+		fmt.Println("There seems to be inconsistencies between your firewall ports and protocols.")
+		fmt.Println("Please review your baseline and rectify it.")
+		return steps
+	}
+	check := action == "check"
+	build := func(port, protocol, zone string) {
+		cmds := make(map[string]string)
+		for host := range sshList {
+			cmd := firewallCommandBuilder(&port, &protocol, &zone, action)
+			if !check {
+				cmd = withSudo(isRoot[host], cmd)
+			}
+			cmds[host] = cmd
+		}
+		labelAction := action
+		if check {
+			labelAction = "fw check"
+		}
+		label := labelAction + " " + port + "/" + protocol
+		if zone != "" {
+			label += " zone " + zone
+		}
+		steps = append(steps, baselineStep{label: label, cmds: cmds})
+	}
+	if len(zones) > 0 {
+		for _, zone := range zones {
+			for i := range ports {
+				build(ports[i], protocols[i], zone)
+			}
+		}
+	} else {
+		for i := range ports {
+			build(ports[i], protocols[i], "")
+		}
+	}
+	return steps
 }

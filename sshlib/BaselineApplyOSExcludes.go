@@ -25,7 +25,8 @@ func (baselineStruct *ParsedBaseline) applyOSExcludes(serverGroupName string, co
 				if !ok {
 					panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
 				}
-				sshList[serverValue[0].Value.(string)] = serverValue[5].Value.(string)
+				pp := parseServer(serverValue)
+				sshList[pp.FQDN] = pp.OS
 			}
 		} else {
 			for _, groupItem := range *configs {
@@ -41,22 +42,23 @@ func (baselineStruct *ParsedBaseline) applyOSExcludes(serverGroupName string, co
 						if !ok {
 							panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
 						}
+						pp := parseServer(serverValue)
 						if len(baselineStruct.exclude.osExcl) > 0 {
 							for _, ve := range baselineStruct.exclude.osExcl {
-								if strings.EqualFold(serverValue[5].Value.(string), ve) {
+								if strings.EqualFold(pp.OS, ve) {
 									osNameCheck = true
 								}
 							}
 						}
 						if len(baselineStruct.exclude.serversExcl) > 0 {
 							for _, ve := range baselineStruct.exclude.serversExcl {
-								if strings.EqualFold(serverValue[0].Value.(string), ve) {
+								if strings.EqualFold(pp.FQDN, ve) {
 									serverNameCheck = true
 								}
 							}
 						}
 						if !serverNameCheck && !osNameCheck {
-							sshList[serverValue[0].Value.(string)] = serverValue[5].Value.(string)
+							sshList[pp.FQDN] = pp.OS
 						}
 					}
 				}
@@ -76,7 +78,8 @@ func (baselineStruct *ParsedBaseline) applyOSExcludes(serverGroupName string, co
 						if !ok {
 							panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
 						}
-						sshList[serverValue[0].Value.(string)] = serverValue[5].Value.(string)
+						pp := parseServer(serverValue)
+						sshList[pp.FQDN] = pp.OS
 					}
 				}
 			}
@@ -94,22 +97,23 @@ func (baselineStruct *ParsedBaseline) applyOSExcludes(serverGroupName string, co
 						if !ok {
 							panic(fmt.Sprintf("Unexpected type %T", serverItem.Value))
 						}
+						pp := parseServer(serverValue)
 						if len(baselineStruct.exclude.osExcl) > 0 {
 							for _, ve := range baselineStruct.exclude.osExcl {
-								if strings.EqualFold(serverValue[5].Value.(string), ve) {
+								if strings.EqualFold(pp.OS, ve) {
 									osNameCheck = true
 								}
 							}
 						}
 						if len(baselineStruct.exclude.serversExcl) > 0 {
 							for _, ve := range baselineStruct.exclude.serversExcl {
-								if strings.EqualFold(serverValue[0].Value.(string), ve) {
+								if strings.EqualFold(pp.FQDN, ve) {
 									serverNameCheck = true
 								}
 							}
 						}
 						if !serverNameCheck && !osNameCheck {
-							sshList[serverValue[0].Value.(string)] = serverValue[5].Value.(string)
+							sshList[pp.FQDN] = pp.OS
 						}
 					}
 				}

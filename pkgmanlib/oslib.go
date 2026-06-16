@@ -65,6 +65,34 @@ var PkgUninstall = map[string]string{
 	"freebsd":  "pkg delete ",
 }
 
+// PkgInstallYes map of non-interactive (assume-yes) install commands for every OS.
+// Used by the baseline engine so apply/remove never prompts and hangs in automation.
+var PkgInstallYes = map[string]string{
+	"debian":   "apt-get install -y ",
+	"centos":   "yum install -y ",
+	"fedora":   "dnf install -y ",
+	"opensuse": "zypper --non-interactive install ",
+	"arch":     "pacman -S --noconfirm ",
+	"rhel":     "yum install -y ",
+	"sles":     "zypper --non-interactive install ",
+	"ubuntu":   "apt-get install -y ",
+	"freebsd":  "pkg install -y ",
+}
+
+// PkgUninstallYes map of non-interactive (assume-yes) uninstall commands for every OS.
+// Used by the baseline engine so apply/remove never prompts and hangs in automation.
+var PkgUninstallYes = map[string]string{
+	"debian":   "apt-get remove -y ",
+	"centos":   "yum remove -y ",
+	"fedora":   "dnf remove -y ",
+	"opensuse": "zypper --non-interactive remove ",
+	"arch":     "pacman -R --noconfirm ",
+	"rhel":     "yum remove -y ",
+	"sles":     "zypper --non-interactive remove ",
+	"ubuntu":   "apt-get remove -y ",
+	"freebsd":  "pkg delete -y ",
+}
+
 // PkgSearch map to search installed packages
 var PkgSearch = map[string]string{
 	"debian":   "dpkg-query -l | grep ",

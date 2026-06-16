@@ -40,10 +40,10 @@ func main() {
 			Aliases: []string{"s"},
 			Usage:   "Run the command sequentially on all servers in your pool.",
 			Action: func(c *cli.Context) error {
-				yamlparser.ParsePool()
+				pool := yamlparser.ParsePool()
 				cmd = os.Args[2:]
 				command := clioptions.GeneralCommandParse(cmd)
-				sshlib.RunSequentially(&yamlparser.Pool, &command)
+				sshlib.RunSequentially(&pool, &command)
 				return nil
 			},
 			Subcommands: []cli.Command{
@@ -52,11 +52,11 @@ func main() {
 					Aliases: []string{"r"},
 					Usage:   "Run a bash script on the servers in your pool.",
 					Action: func(c *cli.Context) error {
-						yamlparser.ParsePool()
+						pool := yamlparser.ParsePool()
 						cmd := os.Args[3]
 						cmdargs := os.Args[4:]
 						command := clioptions.BashScriptParse(cmd, cmdargs)
-						sshlib.RunSequentially(&yamlparser.Pool, &command)
+						sshlib.RunSequentially(&pool, &command)
 						return nil
 					},
 				},
@@ -65,7 +65,7 @@ func main() {
 					Aliases: []string{"u"},
 					Usage:   "update all remote servers in pool.",
 					Action: func(c *cli.Context) error {
-						yamlparser.ParsePool()
+						pool := yamlparser.ParsePool()
 						command := ""
 						osSwitch := strings.Join(os.Args[3:], " ")
 						if osSwitch == "os" || osSwitch == "OS" {
@@ -73,7 +73,7 @@ func main() {
 						} else {
 							switches.Updater = &toggleswitchtrue
 						}
-						sshlib.RunSequentially(&yamlparser.Pool, &command)
+						sshlib.RunSequentially(&pool, &command)
 						return nil
 					},
 				},
@@ -82,12 +82,12 @@ func main() {
 					Aliases: []string{"i"},
 					Usage:   "Install packages on all remote servers in pool.",
 					Action: func(c *cli.Context) error {
-						yamlparser.ParsePool()
+						pool := yamlparser.ParsePool()
 						command := ""
 						cmdargs := os.Args[3:]
 						command = strings.Join(cmdargs, " ")
 						switches.Install = &toggleswitchtrue
-						sshlib.RunSequentially(&yamlparser.Pool, &command)
+						sshlib.RunSequentially(&pool, &command)
 						return nil
 					},
 				},
@@ -96,12 +96,12 @@ func main() {
 					Aliases: []string{"ui"},
 					Usage:   "Uninstall packages on all remote servers in pool.",
 					Action: func(c *cli.Context) error {
-						yamlparser.ParsePool()
+						pool := yamlparser.ParsePool()
 						command := ""
 						cmdargs := os.Args[3:]
 						command = strings.Join(cmdargs, " ")
 						switches.Uninstall = &toggleswitchtrue
-						sshlib.RunSequentially(&yamlparser.Pool, &command)
+						sshlib.RunSequentially(&pool, &command)
 						return nil
 					},
 				},
@@ -122,15 +122,15 @@ func main() {
 			Aliases: []string{"gs"},
 			Usage:   "Run the command on all servers, per group concurrently in your pool.",
 			Action: func(c *cli.Context) error {
-				yamlparser.ParsePool()
+				pool := yamlparser.ParsePool()
 				cmd = os.Args[2:]
 				command := clioptions.GeneralCommandParse(cmd)
 				if yamlparser.Grouptotal == 1 {
 					fmt.Println("There is only 1 group in the pool, consider segmenting them")
 					fmt.Println("or alternatively use 'all' instead")
-					sshlib.RunAllServers(&yamlparser.Pool, &command)
+					sshlib.RunAllServers(&pool, &command)
 				} else {
-					sshlib.RunGroups(&yamlparser.Pool, &command)
+					sshlib.RunGroups(&pool, &command)
 				}
 				return nil
 			},
@@ -140,16 +140,16 @@ func main() {
 					Aliases: []string{"r"},
 					Usage:   "Run a bash script on the servers in your pool.",
 					Action: func(c *cli.Context) error {
-						yamlparser.ParsePool()
+						pool := yamlparser.ParsePool()
 						cmd := os.Args[3]
 						cmdargs := os.Args[4:]
 						command := clioptions.BashScriptParse(cmd, cmdargs)
 						if yamlparser.Grouptotal == 1 {
 							fmt.Println("There is only 1 group in the pool, consider segmenting them")
 							fmt.Println("or alternatively use 'all' instead")
-							sshlib.RunAllServers(&yamlparser.Pool, &command)
+							sshlib.RunAllServers(&pool, &command)
 						} else {
-							sshlib.RunGroups(&yamlparser.Pool, &command)
+							sshlib.RunGroups(&pool, &command)
 						}
 						return nil
 					},
@@ -159,7 +159,7 @@ func main() {
 					Aliases: []string{"u"},
 					Usage:   "update all remote servers in pool.",
 					Action: func(c *cli.Context) error {
-						yamlparser.ParsePool()
+						pool := yamlparser.ParsePool()
 						command := ""
 						osSwitch := strings.Join(os.Args[3:], " ")
 						if osSwitch == "os" || osSwitch == "OS" {
@@ -170,9 +170,9 @@ func main() {
 						if yamlparser.Grouptotal == 1 {
 							fmt.Println("There is only 1 group in the pool, consider segmenting them")
 							fmt.Println("or alternatively use 'all' instead")
-							sshlib.RunAllServers(&yamlparser.Pool, &command)
+							sshlib.RunAllServers(&pool, &command)
 						} else {
-							sshlib.RunGroups(&yamlparser.Pool, &command)
+							sshlib.RunGroups(&pool, &command)
 						}
 						return nil
 					},
@@ -182,7 +182,7 @@ func main() {
 					Aliases: []string{"i"},
 					Usage:   "Install packages on all remote servers in pool.",
 					Action: func(c *cli.Context) error {
-						yamlparser.ParsePool()
+						pool := yamlparser.ParsePool()
 						command := ""
 						cmdargs := os.Args[3:]
 						command = strings.Join(cmdargs, " ")
@@ -190,9 +190,9 @@ func main() {
 						if yamlparser.Grouptotal == 1 {
 							fmt.Println("There is only 1 group in the pool, consider segmenting them")
 							fmt.Println("or alternatively use 'all' instead")
-							sshlib.RunAllServers(&yamlparser.Pool, &command)
+							sshlib.RunAllServers(&pool, &command)
 						} else {
-							sshlib.RunGroups(&yamlparser.Pool, &command)
+							sshlib.RunGroups(&pool, &command)
 						}
 						return nil
 					},
@@ -202,7 +202,7 @@ func main() {
 					Aliases: []string{"ui"},
 					Usage:   "Uninstall packages on all remote servers in pool.",
 					Action: func(c *cli.Context) error {
-						yamlparser.ParsePool()
+						pool := yamlparser.ParsePool()
 						command := ""
 						cmdargs := os.Args[3:]
 						command = strings.Join(cmdargs, " ")
@@ -210,9 +210,9 @@ func main() {
 						if yamlparser.Grouptotal == 1 {
 							fmt.Println("There is only 1 group in the pool, consider segmenting them")
 							fmt.Println("or alternatively use 'all' instead")
-							sshlib.RunAllServers(&yamlparser.Pool, &command)
+							sshlib.RunAllServers(&pool, &command)
 						} else {
-							sshlib.RunGroups(&yamlparser.Pool, &command)
+							sshlib.RunGroups(&pool, &command)
 						}
 						return nil
 					},
@@ -234,10 +234,10 @@ func main() {
 			Aliases: []string{"g"},
 			Usage:   "Run the command on a specific group in your pool.",
 			Action: func(c *cli.Context) error {
-				yamlparser.ParsePool()
+				pool := yamlparser.ParsePool()
 				cmd = os.Args[2:]
 				command := clioptions.GeneralCommandParse(cmd)
-				sshlib.RunSequentially(&yamlparser.Pool, &command)
+				sshlib.RunSequentially(&pool, &command)
 				return nil
 			},
 			Subcommands: []cli.Command{
@@ -246,11 +246,11 @@ func main() {
 					Aliases: []string{"r"},
 					Usage:   "Run a bash script on the servers in your pool.",
 					Action: func(c *cli.Context) error {
-						yamlparser.ParsePool()
+						pool := yamlparser.ParsePool()
 						cmd := os.Args[3]
 						cmdargs := os.Args[4:]
 						command := clioptions.BashScriptParse(cmd, cmdargs)
-						sshlib.RunSequentially(&yamlparser.Pool, &command)
+						sshlib.RunSequentially(&pool, &command)
 						return nil
 					},
 				},
@@ -259,7 +259,7 @@ func main() {
 					Aliases: []string{"u"},
 					Usage:   "update all remote servers in pool.",
 					Action: func(c *cli.Context) error {
-						yamlparser.ParsePool()
+						pool := yamlparser.ParsePool()
 						command := ""
 						osSwitch := strings.Join(os.Args[3:], " ")
 						if osSwitch == "os" || osSwitch == "OS" {
@@ -267,7 +267,7 @@ func main() {
 						} else {
 							switches.Updater = &toggleswitchtrue
 						}
-						sshlib.RunSequentially(&yamlparser.Pool, &command)
+						sshlib.RunSequentially(&pool, &command)
 						return nil
 					},
 				},
@@ -276,12 +276,12 @@ func main() {
 					Aliases: []string{"i"},
 					Usage:   "Install packages on all remote servers in pool.",
 					Action: func(c *cli.Context) error {
-						yamlparser.ParsePool()
+						pool := yamlparser.ParsePool()
 						command := ""
 						cmdargs := os.Args[3:]
 						command = strings.Join(cmdargs, " ")
 						switches.Install = &toggleswitchtrue
-						sshlib.RunSequentially(&yamlparser.Pool, &command)
+						sshlib.RunSequentially(&pool, &command)
 						return nil
 					},
 				},
@@ -290,12 +290,12 @@ func main() {
 					Aliases: []string{"ui"},
 					Usage:   "Uninstall packages on all remote servers in pool.",
 					Action: func(c *cli.Context) error {
-						yamlparser.ParsePool()
+						pool := yamlparser.ParsePool()
 						command := ""
 						cmdargs := os.Args[3:]
 						command = strings.Join(cmdargs, " ")
 						switches.Uninstall = &toggleswitchtrue
-						sshlib.RunSequentially(&yamlparser.Pool, &command)
+						sshlib.RunSequentially(&pool, &command)
 						return nil
 					},
 				},
@@ -316,10 +316,10 @@ func main() {
 			Aliases: []string{"a"},
 			Usage:   "Run the command on all servers concurrently in your pool.",
 			Action: func(c *cli.Context) error {
-				yamlparser.ParsePool()
+				pool := yamlparser.ParsePool()
 				cmd = os.Args[2:]
 				command := clioptions.GeneralCommandParse(cmd)
-				sshlib.RunAllServers(&yamlparser.Pool, &command)
+				sshlib.RunAllServers(&pool, &command)
 				return nil
 			},
 			Subcommands: []cli.Command{
@@ -328,11 +328,11 @@ func main() {
 					Aliases: []string{"r"},
 					Usage:   "Run a bash script on the servers in your pool.",
 					Action: func(c *cli.Context) error {
-						yamlparser.ParsePool()
+						pool := yamlparser.ParsePool()
 						cmd := os.Args[3]
 						cmdargs := os.Args[4:]
 						command := clioptions.BashScriptParse(cmd, cmdargs)
-						sshlib.RunAllServers(&yamlparser.Pool, &command)
+						sshlib.RunAllServers(&pool, &command)
 						return nil
 					},
 				},
@@ -341,7 +341,7 @@ func main() {
 					Aliases: []string{"u"},
 					Usage:   "Update all remote servers in pool.",
 					Action: func(c *cli.Context) error {
-						yamlparser.ParsePool()
+						pool := yamlparser.ParsePool()
 						command := ""
 						osSwitch := strings.Join(os.Args[3:], " ")
 						if osSwitch == "os" || osSwitch == "OS" {
@@ -349,7 +349,7 @@ func main() {
 						} else {
 							switches.Updater = &toggleswitchtrue
 						}
-						sshlib.RunAllServers(&yamlparser.Pool, &command)
+						sshlib.RunAllServers(&pool, &command)
 						return nil
 					},
 				},
@@ -358,12 +358,12 @@ func main() {
 					Aliases: []string{"i"},
 					Usage:   "Install packages on all remote servers in pool.",
 					Action: func(c *cli.Context) error {
-						yamlparser.ParsePool()
+						pool := yamlparser.ParsePool()
 						command := ""
 						cmdargs := os.Args[3:]
 						command = strings.Join(cmdargs, " ")
 						switches.Install = &toggleswitchtrue
-						sshlib.RunAllServers(&yamlparser.Pool, &command)
+						sshlib.RunAllServers(&pool, &command)
 						return nil
 					},
 				},
@@ -372,12 +372,12 @@ func main() {
 					Aliases: []string{"ui"},
 					Usage:   "Uninstall packages on all remote servers in pool.",
 					Action: func(c *cli.Context) error {
-						yamlparser.ParsePool()
+						pool := yamlparser.ParsePool()
 						command := ""
 						cmdargs := os.Args[3:]
 						command = strings.Join(cmdargs, " ")
 						switches.Uninstall = &toggleswitchtrue
-						sshlib.RunAllServers(&yamlparser.Pool, &command)
+						sshlib.RunAllServers(&pool, &command)
 						return nil
 					},
 				},
@@ -473,9 +473,12 @@ func main() {
 					Action: func(c *cli.Context) error {
 						cmd = os.Args[3:]
 						baselinepath := "./config/" + strings.Join(cmd, " ") + ".yml"
-						yamlparser.ParsePool()
-						yamlparser.BaselineParse(baselinepath)
-						sshlib.ApplyBaselines(&yamlparser.Baseline, &yamlparser.Pool)
+						pool := yamlparser.ParsePool()
+						baseline := yamlparser.BaselineParse(baselinepath)
+						report := sshlib.ApplyBaselines(&baseline, &pool)
+						if !report.Compliant() {
+							return cli.NewExitError(fmt.Sprintf("baseline not compliant (%s)", report.Summary()), report.ExitCode())
+						}
 						return nil
 					},
 				},
@@ -486,9 +489,12 @@ func main() {
 					Action: func(c *cli.Context) error {
 						cmd = os.Args[3:]
 						baselinepath := "./config/" + strings.Join(cmd, " ") + ".yml"
-						yamlparser.ParsePool()
-						yamlparser.BaselineParse(baselinepath)
-						sshlib.CheckBaselines(&yamlparser.Baseline, &yamlparser.Pool)
+						pool := yamlparser.ParsePool()
+						baseline := yamlparser.BaselineParse(baselinepath)
+						report := sshlib.CheckBaselines(&baseline, &pool)
+						if !report.Compliant() {
+							return cli.NewExitError(fmt.Sprintf("baseline not compliant (%s)", report.Summary()), report.ExitCode())
+						}
 						return nil
 					},
 				},
@@ -499,8 +505,8 @@ func main() {
 					Action: func(c *cli.Context) error {
 						cmd = os.Args[3:]
 						baselinepath := "./config/" + strings.Join(cmd, " ") + ".yml"
-						yamlparser.BaselineParse(baselinepath)
-						sshlib.VerifyBaselines(&yamlparser.Baseline)
+						baseline := yamlparser.BaselineParse(baselinepath)
+						sshlib.VerifyBaselines(&baseline)
 						return nil
 					},
 				},
