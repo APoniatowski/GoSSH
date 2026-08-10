@@ -27,24 +27,15 @@ func ChannelReaderAll(channel <-chan string, wg *sync.WaitGroup) {
 }
 
 // ChannelReaderGroups Function to read channel until it is closed (groups only)
-func ChannelReaderGroups(channel <-chan string, wg *sync.WaitGroup) {
-	loopcountval := len(yamlparser.ServersPerGroup) - 1
-	var totalsuccesscount int
-	for i := 0; i < loopcountval; i++ {
-		successcount := 0
-		barp := bar.New(yamlparser.ServersPerGroup[i])
-		for im := 0; im < yamlparser.ServersPerGroup[i]; im++ {
-			for message := range channel {
-				if message == "OK\n" {
-					barp.Tick()
-					successcount++
-					totalsuccesscount++
-				} else {
-					barp.Tick()
-				}
-			}
+func ChannelReaderGroups(channel <-chan string, wg *sync.WaitGroup, groupSize int) {
+	successcount := 0
+	barp := bar.New(groupSize)
+	for message := range channel {
+		if message == "OK\n" {
+			successcount++
 		}
-		barp.Done()
-		fmt.Printf("%d/%d Succeeded\n", successcount, yamlparser.ServersPerGroup[i])
+		barp.Tick()
 	}
+	barp.Done()
+	fmt.Printf("%d/%d Succeeded\n", successcount, groupSize)
 }

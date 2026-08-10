@@ -291,7 +291,7 @@ func RunGroups(configs *yaml.MapSlice, command *string) {
 			wg.Wait()
 			close(output)
 		}()
-		channelreaderlib.ChannelReaderGroups(output, &wg)
+		channelreaderlib.ChannelReaderGroups(output, &wg, len(groupValue))
 	}
 
 }
